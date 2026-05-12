@@ -1,0 +1,97 @@
+# =============================================================
+# GitLab CI/CD Pipeline — Novobydžovský čverec app
+# =============================================================
+# Stages:
+#   1. test    — build + unit testy backendu
+#   2. build   — build frontendu (Vue 3 + Vite)
+#   3. deploy  — GitLab Pages (frontend) + Render.com (backend)
+# =============================================================
+
+stages:
+  - test
+  - build
+  - deploy
+
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
+  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end"
+
+# Cache Maven dependencies
+cache:
+  key: "$CI_COMMIT_REF_SLUG"
+  paths:
+    - .m2/repository
+    - frontend/node_modules/
+
+# ---------------------------------------------------------------
+# STAGE: test — Backend build + testy
+# ---------------------------------------------------------------
+backend-test:
+  stage: test
+  image: maven:3.9-eclipse-temurin-21
+  script:
+    - cd backend
+    - mvn $MAVEN_CLI_OPTS test
+  artifacts:
+    when: always
+    reports:
+      junit:
+        - backend/target/surefire-reports/TEST-*.xml
+  only:
+    - main
+    - merge_requests
+
+# ---------------------------------------------------------------
+# STAGE: build — Frontend build
+# ---------------------------------------------------------------
+frontend-build:
+  stage: build
+  image: node:20-alpine
+  script:
+    - cd frontend
+    - npm ci
+    - npm run build
+  artifacts:
+    paths:
+      - frontend/dist/
+    expire_in: 1 hour
+  only:
+    - main
+    - merge_requests
+
+# ---------------------------------------------------------------
+# STAGE: deploy — GitLab Pages (frontend)
+# ---------------------------------------------------------------
+pages:
+  stage: deploy
+  image: alpine:latest
+  script:
+    - mkdir -p public
+    - cp -r frontend/dist/* public/
+  artifacts:
+    paths:
+      - public
+  only:
+    - main
+  needs:
+    - frontend-build
+
+# ---------------------------------------------------------------
+# STAGE: deploy — Render.com (backend)
+# ---------------------------------------------------------------
+deploy-backend:
+  stage: deploy
+  image: alpine:latest
+  script:
+    - apk add --no-cache curl
+    - |
+      if [ -n "$RENDER_DEPLOY_HOOK" ]; then
+        curl -X POST "$RENDER_DEPLOY_HOOK"
+        echo "Render.com deploy triggered"
+      else
+        echo "RENDER_DEPLOY_HOOK not set — skipping backend deploy"
+      fi
+  only:
+    - main
+  needs:
+    - backend-test
