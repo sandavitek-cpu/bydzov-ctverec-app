@@ -1,5 +1,5 @@
 # =============================================================
-# GitLab CI/CD Pipeline — Novobydžovský čverec app
+# GitLab CI/CD Pipeline — Novobydžovský čtverec app
 # =============================================================
 # Stages:
 #   1. test    — build + unit testy backendu
@@ -28,7 +28,7 @@ cache:
 # ---------------------------------------------------------------
 backend-test:
   stage: test
-  image: maven:3.9-eclipse-temurin-21
+  image: maven:3.9-eclipse-temurin-17
   script:
     - cd backend
     - mvn $MAVEN_CLI_OPTS test
@@ -47,6 +47,9 @@ backend-test:
 frontend-build:
   stage: build
   image: node:20-alpine
+  variables:
+    # SPA volá API na Renderu (obejde DNS api.bydzov-ctverec.cz, dokud není hotová)
+    VITE_API_BASE_URL: "https://bydzov-ctverec-api.onrender.com"
   script:
     - cd frontend
     - npm ci

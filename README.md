@@ -1,4 +1,4 @@
-# Novobydžovský čverec — webová aplikace
+# Novobydžovský čtverec — webová aplikace
 
 Webová aplikace pro správu a průběh **Novobydžovského čtverce** — motoristické soutěže pro historická vozidla konající se každý rok v Novém Bydžově.
 
@@ -7,7 +7,7 @@ Webová aplikace pro správu a průběh **Novobydžovského čtverce** — motor
 | Vrstva | Technologie | Hosting |
 |---|---|---|
 | Frontend | Vue 3 + Vite + Tailwind CSS | GitLab Pages (`app.bydzov-ctverec.cz`) |
-| Backend | Spring Boot 3 + Java 21 | Render.com free tier (`api.bydzov-ctverec.cz`) |
+| Backend | Spring Boot 3 + Java 17 | Render (`bydzov-ctverec-api.onrender.com`), později `api.bydzov-ctverec.cz` |
 | Databáze | PostgreSQL 17 | Neon.tech free tier |
 | Monitoring | UptimeRobot | free tier (wake-up ping) |
 | Email | Brevo / Sendinblue | free tier (300 emailů/den) |
@@ -37,12 +37,20 @@ bydzov-ctverec-app/
 └── README.md
 ```
 
+## Nasazení (bez práce na tvé straně)
+
+Po **pushnutí na `main`** GitLab sám otestuje backend, zbuildí frontend a nahraje ho na Pages; zároveň zavolá Render, aby přenasadil API (hook už máš v CI proměnných). Frontend je v kódu nastavený na **API na Renderu**, takže stránka zobrazí ročník i bez vlastní subdomény API.
+
+Až bude DNS hotová, v GitLabu můžeš změnit proměnnou `VITE_API_BASE_URL` na `https://api.bydzov-ctverec.cz` (volitelné).
+
 ## Spuštění lokálně
 
 ```bash
-# Backend
+# Backend — vyžaduje JDK 17+ a proměnnou DATABASE_URL (postgresql://… z Neon)
 cd backend
-./mvnw spring-boot:run
+mvn spring-boot:run
+
+# Firemní Maven mirror (403): mvn -s ci-settings.xml spring-boot:run
 
 # Frontend
 cd frontend
@@ -53,7 +61,7 @@ npm run dev
 ## CI/CD
 
 Push na `main` branch automaticky:
-1. Sestavuje a testuje backend (Maven + JUnit)
+1. Sestavuje a testuje backend (Maven + JUnit, JDK 17)
 2. Sestavuje frontend (Node 20 + Vite)
 3. Nasazuje frontend na GitLab Pages
 4. Triggeruje deploy backendu na Render.com
@@ -72,7 +80,8 @@ Secrets jsou uloženy v `Settings → CI/CD → Variables`:
 
 - **Projekt:** https://gitlab.com/pre-vit/bydzov-ctverec-app
 - **Frontend (po deploymentu):** https://app.bydzov-ctverec.cz
-- **Backend API (po deploymentu):** https://api.bydzov-ctverec.cz
+- **Backend API (aktuálně na Renderu):** https://bydzov-ctverec-api.onrender.com
+- **Backend API (až bude DNS):** https://api.bydzov-ctverec.cz
 - **Neon.tech konzole:** https://console.neon.tech/app/projects/sweet-violet-38872502
 - **Render.com dashboard:** https://dashboard.render.com
 - **UptimeRobot status:** https://stats.uptimerobot.com/SE8kCpiVgv
