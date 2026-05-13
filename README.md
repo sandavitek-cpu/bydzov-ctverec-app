@@ -25,10 +25,10 @@ Webová aplikace pro správu a průběh **Novobydžovského čtverce** — motor
 
 ```
 bydzov-ctverec-app/
+├── Dockerfile        # Docker image API (kontext = kořen repa — pro Render)
 ├── backend/          # Spring Boot aplikace
 │   ├── src/
-│   ├── pom.xml
-│   └── Dockerfile
+│   └── pom.xml
 ├── frontend/         # Vue 3 SPA
 │   ├── src/
 │   └── package.json
@@ -42,6 +42,8 @@ bydzov-ctverec-app/
 Po **pushnutí na `main`** GitLab sám otestuje backend, zbuildí frontend a nahraje ho na Pages; zároveň zavolá Render, aby přenasadil API (hook už máš v CI proměnných). Frontend je v kódu nastavený na **API na Renderu**, takže stránka zobrazí ročník i bez vlastní subdomény API.
 
 Až bude DNS hotová, v GitLabu můžeš změnit proměnnou `VITE_API_BASE_URL` na `https://api.bydzov-ctverec.cz` (volitelné).
+
+**Render (Docker):** v nastavení služby nech **Root Directory** prázdný a jako **Dockerfile Path** zadej `Dockerfile` (soubor v kořeni repa). Render pak posílá do buildu celý repozitář — starý `backend/Dockerfile` s `COPY pom.xml` v tom kontextu nefungoval.
 
 ## Spuštění lokálně
 
