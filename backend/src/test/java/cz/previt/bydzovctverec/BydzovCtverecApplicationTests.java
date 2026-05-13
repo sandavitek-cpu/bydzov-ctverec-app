@@ -38,6 +38,11 @@ class BydzovCtverecApplicationTests {
   }
 
   @Test
+  void rootIsPublicForRenderHealthProbe() throws Exception {
+    mockMvc.perform(get("/")).andExpect(status().isOk());
+  }
+
+  @Test
   void currentEditionIsPublic() throws Exception {
     mockMvc
         .perform(get("/api/public/editions/current"))

@@ -40,7 +40,10 @@ public class SecurityConfig {
     http.sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
     http.authorizeHttpRequests(
         auth ->
-            auth.requestMatchers("/actuator/**", "/api/public/**").permitAll().anyRequest().authenticated());
+            auth.requestMatchers("/", "/actuator/**", "/api/public/**")
+                .permitAll()
+                .anyRequest()
+                .authenticated());
     return http.build();
   }
 }

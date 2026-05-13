@@ -12,5 +12,5 @@ RUN addgroup -S spring && adduser -S spring -G spring
 USER spring:spring
 COPY --from=build /app/target/bydzov-ctverec-api.jar app.jar
 EXPOSE 8080
-ENV JAVA_OPTS=""
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=70.0 -XX:+ExitOnOutOfMemoryError"
 ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar"]
