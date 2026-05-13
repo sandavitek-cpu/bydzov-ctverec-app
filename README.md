@@ -43,7 +43,7 @@ Po **pushnutí na `main`** GitLab sám otestuje backend, zbuildí frontend a nah
 
 Až bude DNS hotová, v GitLabu můžeš změnit proměnnou `VITE_API_BASE_URL` na `https://api.bydzov-ctverec.cz` (volitelné).
 
-**Render (Docker):** v nastavení služby nech **Root Directory** prázdný a jako **Dockerfile Path** zadej `Dockerfile` (soubor v kořeni repa). Render pak posílá do buildu celý repozitář — starý `backend/Dockerfile` s `COPY pom.xml` v tom kontextu nefungoval.
+**Render (Docker):** v nastavení služby nech **Root Directory** prázdný a jako **Dockerfile Path** zadej `Dockerfile` (soubor v kořeni repa). V záložce **Environment** musí být proměnná **`DATABASE_URL`** se stejnou hodnotou jako v Neon (řetězec začínající `postgresql://…`) — GitLab CI proměnné se na Render **nepřenášejí**, je potřeba ji zadat znovu v Render dashboardu.
 
 ## Spuštění lokálně
 

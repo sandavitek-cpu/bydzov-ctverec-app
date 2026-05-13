@@ -4,6 +4,7 @@ import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.env.EnvironmentPostProcessor;
@@ -26,9 +27,12 @@ public class DatabaseUrlEnvironmentPostProcessor implements EnvironmentPostProce
     if (environment.matchesProfiles("test")) {
       return;
     }
-    String databaseUrl = environment.getProperty("DATABASE_URL");
+    String databaseUrl = resolveDatabaseUrl(environment);
     if (databaseUrl == null || databaseUrl.isBlank() || databaseUrl.startsWith("jdbc:")) {
       return;
+    }
+    if (databaseUrl.startsWith("postgres://")) {
+      databaseUrl = "postgresql://" + databaseUrl.substring("postgres://".length());
     }
     if (!databaseUrl.startsWith("postgresql://")) {
       return;
@@ -68,7 +72,22 @@ public class DatabaseUrlEnvironmentPostProcessor implements EnvironmentPostProce
     props.put("spring.datasource.url", jdbc.toString());
     props.put("spring.datasource.username", user);
     props.put("spring.datasource.password", password);
+    props.put("spring.datasource.driver-class-name", "org.postgresql.Driver");
 
     environment.getPropertySources().addFirst(new MapPropertySource(SOURCE, props));
+  }
+
+  /**
+   * GitLab CI má často jen DATABASE_URL; na Renderu je nutné stejné jméno přidat v Environment (není
+   * synchronizované z GitLabu). Zkusíme i běžné aliasy.
+   */
+  private static String resolveDatabaseUrl(ConfigurableEnvironment environment) {
+    for (String key : List.of("DATABASE_URL", "NEON_DATABASE_URL", "POSTGRES_URL")) {
+      String v = environment.getProperty(key);
+      if (v != null && !v.isBlank()) {
+        return v;
+      }
+    }
+    return null;
   }
 }
