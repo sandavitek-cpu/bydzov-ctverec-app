@@ -70,12 +70,16 @@ public class DataSeeder {
   @org.springframework.core.annotation.Order(1)
   CommandLineRunner seedEdition(EditionRepository editionRepository) {
     return args -> {
-      var existing = editionRepository.findByEditionYear(2026);
-      if (existing.isEmpty()) {
-        editionRepository.save(new Edition(2026, "30. ročník Novobydžovského čtverce"));
-        log.info("Edition 2026 seeded");
-      } else {
-        log.info("Edition 2026 exists (id={})", existing.get().getId());
+      try {
+        var existing = editionRepository.findByEditionYear(2026);
+        if (existing.isEmpty()) {
+          editionRepository.save(new Edition(2026, "30. ročník Novobydžovského čtverce"));
+          log.info("Edition 2026 seeded");
+        } else {
+          log.info("Edition 2026 exists (id={})", existing.get().getId());
+        }
+      } catch (Exception e) {
+        log.error("seedEdition failed: {}", e.getMessage());
       }
     };
   }
