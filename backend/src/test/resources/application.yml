@@ -14,3 +14,6 @@ spring:
           time_zone: UTC
   flyway:
     enabled: false
+
+jwt:
+  secret: test-secret-key-that-is-at-least-64-characters-long-for-hmac-sha-test

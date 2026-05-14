@@ -19,6 +19,9 @@ spring:
         jdbc:
           time_zone: UTC
 
+jwt:
+  secret: ${JWT_SECRET:default-dev-secret-change-in-production-at-least-64-chars-long!!}
+
 server:
   port: ${PORT:8080}
 
