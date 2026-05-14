@@ -4,6 +4,7 @@ import RegistrationView from '../views/RegistrationView.vue'
 import AdminLoginView from '../views/admin/AdminLoginView.vue'
 import AdminDashboardView from '../views/admin/AdminDashboardView.vue'
 import JudgeScoringView from '../views/JudgeScoringView.vue'
+import ResultsView from '../views/ResultsView.vue'
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -13,6 +14,7 @@ const router = createRouter({
     { path: '/admin/login', name: 'admin-login', component: AdminLoginView },
     { path: '/admin/prihlaseni', name: 'admin-dashboard', component: AdminDashboardView },
     { path: '/rozhodci', name: 'judge-scoring', component: JudgeScoringView },
+    { path: '/vysledky/:rok', name: 'results', component: ResultsView },
   ],
 })
 

@@ -67,6 +67,32 @@ export interface ScoreSubmit {
   points: number
 }
 
+export interface RunScore {
+  runNumber: number
+  points: number
+}
+
+export interface ResultRow {
+  rank: number
+  startNumber: number
+  teamName: string
+  vehicleCategory: string
+  vehiclePlate: string
+  totalPoints: number
+  runs: RunScore[]
+}
+
+export interface ResultsResponse {
+  year: number
+  results: ResultRow[]
+}
+
+export async function fetchResults(year: number) {
+  const res = await fetch(`${apiBaseUrl}/api/public/results/${year}`)
+  if (!res.ok) throw new Error(`API ${res.status}`)
+  return res.json() as Promise<ResultsResponse>
+}
+
 export async function submitScore(data: ScoreSubmit, headers: Record<string, string>) {
   const res = await fetch(`${apiBaseUrl}/api/scores`, {
     method: 'POST',
