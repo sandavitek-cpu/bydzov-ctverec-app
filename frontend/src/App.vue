@@ -22,6 +22,9 @@ import { RouterLink, RouterView } from 'vue-router'
           <RouterLink to="/zavodnik/itinerar" class="hover:text-slate-200" active-class="text-amber-300">
             Itinerář
           </RouterLink>
+          <RouterLink to="/zavodnik/stav" class="hover:text-slate-200" active-class="text-amber-300">
+            Můj stav
+          </RouterLink>
           <RouterLink to="/rozhodci" class="hover:text-slate-200" active-class="text-amber-300">
             Rozhodčí
           </RouterLink>

@@ -6,6 +6,7 @@ import AdminDashboardView from '../views/admin/AdminDashboardView.vue'
 import JudgeScoringView from '../views/JudgeScoringView.vue'
 import ResultsView from '../views/ResultsView.vue'
 import RacerItineraryView from '../views/RacerItineraryView.vue'
+import RacerStandingView from '../views/RacerStandingView.vue'
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -17,6 +18,7 @@ const router = createRouter({
     { path: '/rozhodci', name: 'judge-scoring', component: JudgeScoringView },
     { path: '/vysledky/:rok', name: 'results', component: ResultsView },
     { path: '/zavodnik/itinerar', name: 'racer-itinerary', component: RacerItineraryView },
+    { path: '/zavodnik/stav', name: 'racer-standing', component: RacerStandingView },
   ],
 })
 

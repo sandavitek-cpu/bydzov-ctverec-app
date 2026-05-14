@@ -9,7 +9,11 @@ import cz.previt.bydzovctverec.domain.ScheduleItemRepository;
 import cz.previt.bydzovctverec.domain.Score;
 import cz.previt.bydzovctverec.domain.ScoreRepository;
 import cz.previt.bydzovctverec.domain.User;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -68,7 +72,46 @@ public class RacerController {
     return ResponseEntity.ok(items.stream().map(i -> new ScheduleItemResponse(i.getTime(), i.getLabel(), i.getDescription())).toList());
   }
 
+  @GetMapping("/standing")
+  public ResponseEntity<?> myStanding(Authentication auth) {
+    User user = (User) auth.getPrincipal();
+    RacerRegistration reg = racerRegistrationRepository.findByEmail(user.getEmail()).orElse(null);
+    if (reg == null) {
+      return ResponseEntity.ok(Map.of("error", "Nejste přihlášen k závodu"));
+    }
+
+    List<Score> myScores = scoreRepository.findByRacerRegistrationIdOrderByRunNumber(reg.getId());
+    int totalPoints = myScores.stream().mapToInt(Score::getPoints).sum();
+
+    Edition edition = reg.getEdition();
+    List<Score> allScores = scoreRepository.findByEditionYearWithRacer(edition.getEditionYear());
+
+    Map<Long, Integer> totals = allScores.stream()
+        .collect(Collectors.groupingBy(
+            s -> s.getRacerRegistration().getId(),
+            Collectors.summingInt(Score::getPoints)));
+
+    List<Map.Entry<Long, Integer>> sorted = totals.entrySet().stream()
+        .sorted(Map.Entry.<Long, Integer>comparingByValue().reversed())
+        .toList();
+
+    int rank = 1;
+    for (var entry : sorted) {
+      if (entry.getKey().equals(reg.getId())) break;
+      rank++;
+    }
+
+    List<ScoreResponse> scoreResponses = myScores.stream()
+        .map(s -> new ScoreResponse(s.getId(), s.getRunNumber(), s.getPoints(), s.getNote()))
+        .toList();
+
+    return ResponseEntity.ok(new StandingResponse(
+        reg.getTeamName(), reg.getStartNumber(),
+        totalPoints, rank, totals.size(), scoreResponses));
+  }
+
   public record RacerRegistrationResponse(Long id, String firstName, String lastName, String email, String vehicleDescription) {}
-  public record ScoreResponse(Long id, Integer runNumber, Integer value, String note) {}
+  public record ScoreResponse(Long id, Integer runNumber, Integer points, String note) {}
   public record ScheduleItemResponse(String time, String label, String description) {}
+  public record StandingResponse(String teamName, Integer startNumber, int totalPoints, int rank, int totalRacers, List<ScoreResponse> scores) {}
 }
