@@ -38,5 +38,12 @@ onMounted(async () => {
         <p class="text-sm text-slate-500">Rok {{ edition.year }}</p>
       </template>
     </div>
+
+    <RouterLink
+      to="/registrace"
+      class="block rounded-xl bg-amber-500 px-6 py-4 text-center font-semibold text-black shadow-lg transition hover:bg-amber-400"
+    >
+      Přihlásit se do soutěže →
+    </RouterLink>
   </div>
 </template>

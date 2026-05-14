@@ -13,6 +13,9 @@ import { RouterLink, RouterView } from 'vue-router'
           <RouterLink to="/" class="hover:text-slate-200" active-class="text-amber-300">
             Domů
           </RouterLink>
+          <RouterLink to="/registrace" class="hover:text-slate-200" active-class="text-amber-300">
+            Přihláška
+          </RouterLink>
         </nav>
       </div>
     </header>

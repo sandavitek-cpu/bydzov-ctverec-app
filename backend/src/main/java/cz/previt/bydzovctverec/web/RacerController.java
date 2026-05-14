@@ -29,9 +29,9 @@ public class RacerController {
     User user = (User) auth.getPrincipal();
     RacerRegistration reg = racerRegistrationRepository.findByEmail(user.getEmail()).orElse(null);
     if (reg == null) {
-      return ResponseEntity.ok(new RegistrationResponse(null, null, null, null, null));
+      return ResponseEntity.ok(new RacerRegistrationResponse(null, null, null, null, null));
     }
-    return ResponseEntity.ok(new RegistrationResponse(
+    return ResponseEntity.ok(new RacerRegistrationResponse(
         reg.getId(), reg.getFirstName(), reg.getLastName(),
         reg.getEmail(), reg.getVehicleDescription()));
   }
@@ -50,6 +50,6 @@ public class RacerController {
     return ResponseEntity.ok(resp);
   }
 
-  public record RegistrationResponse(Long id, String firstName, String lastName, String email, String vehicleDescription) {}
+  public record RacerRegistrationResponse(Long id, String firstName, String lastName, String email, String vehicleDescription) {}
   public record ScoreResponse(Long id, Integer runNumber, Integer value, String note) {}
 }

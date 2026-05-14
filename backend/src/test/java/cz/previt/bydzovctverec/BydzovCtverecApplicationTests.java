@@ -142,6 +142,35 @@ class BydzovCtverecApplicationTests {
   }
 
   @Test
+  void publicRegistrationIsAllowedWithoutAuth() throws Exception {
+    mockMvc
+        .perform(post("/api/public/registrations")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(Map.of(
+                "teamName", "Tým test",
+                "email", "tym@test.cz",
+                "phone", "+420777123456",
+                "vehicleCategory", "OSOBNI",
+                "vehiclePlate", "5H1 2345",
+                "vehicleYear", 1990,
+                "crewCount", 2))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.teamName").value("Tým test"))
+        .andExpect(jsonPath("$.startNumber").isNumber())
+        .andExpect(jsonPath("$.startFee").isNumber())
+        .andExpect(jsonPath("$.status").value("PENDING"));
+  }
+
+  @Test
+  void registrationWithInvalidDataReturns400() throws Exception {
+    mockMvc
+        .perform(post("/api/public/registrations")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"teamName\":\"\"}"))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
   void unauthenticatedRequestToScoresReturns403() throws Exception {
     mockMvc
         .perform(post("/api/scores")
