@@ -86,13 +86,41 @@ deploy-backend:
   stage: deploy
   image: alpine:latest
   script:
-    - apk add --no-cache curl
+    - apk add --no-cache curl jq
     - |
-      if [ -n "$RENDER_DEPLOY_HOOK" ]; then
-        curl -X POST "$RENDER_DEPLOY_HOOK"
-        echo "Render.com deploy triggered"
-      else
+      if [ -z "$RENDER_DEPLOY_HOOK" ]; then
         echo "RENDER_DEPLOY_HOOK not set — skipping backend deploy"
+        exit 0
+      fi
+
+      echo "=== Spouštím deploy na Renderu ==="
+      RESPONSE=$(curl -s -X POST "$RENDER_DEPLOY_HOOK")
+      echo "$RESPONSE"
+
+      # Pokud máme API klíč, sledujeme průběh deploye
+      if [ -n "$RENDER_API_KEY" ] && [ -n "$RENDER_SERVICE_ID" ]; then
+        echo "=== Sleduji průběh deploye ==="
+        for i in $(seq 1 30); do
+          sleep 20
+          DEPLOY=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" \
+            "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys?limit=1")
+          STATUS=$(echo "$DEPLOY" | jq -r '.[0].status // empty')
+          if [ -z "$STATUS" ] || [ "$STATUS" = "null" ]; then
+            continue
+          fi
+          echo "  Status: $STATUS"
+          if [ "$STATUS" = "live" ] || [ "$STATUS" = "succeeded" ]; then
+            echo "✅ Deploy úspěšný!"
+            exit 0
+          elif [ "$STATUS" = "failed" ]; then
+            echo "❌ Deploy selhal!"
+            curl -s -H "Authorization: Bearer $RENDER_API_KEY" \
+              "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys?limit=1" \
+              | jq -r '.[0].deploy // "N/A"'
+            exit 1
+          fi
+        done
+        echo "⚠️ Deploy stále běží (timeout 10 min)"
       fi
   only:
     - main
