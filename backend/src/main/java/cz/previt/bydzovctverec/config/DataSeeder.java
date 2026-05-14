@@ -3,9 +3,12 @@ package cz.previt.bydzovctverec.config;
 import cz.previt.bydzovctverec.domain.Edition;
 import cz.previt.bydzovctverec.domain.EditionRepository;
 import cz.previt.bydzovctverec.domain.Role;
+import cz.previt.bydzovctverec.domain.ScheduleItem;
+import cz.previt.bydzovctverec.domain.ScheduleItemRepository;
 import cz.previt.bydzovctverec.domain.User;
 import cz.previt.bydzovctverec.domain.UserRepository;
 import java.time.Instant;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -49,12 +52,37 @@ public class DataSeeder {
   }
 
   @Bean
-  CommandLineRunner seedEdition(EditionRepository editionRepository) {
+  CommandLineRunner seedRacer(UserRepository userRepository, PasswordEncoder encoder) {
     return args -> {
-      if (editionRepository.findTopByOrderByEditionYearDesc().isEmpty()) {
-        editionRepository.save(new Edition(2026, "30. ročník Novobydžovského čtverce"));
-        log.info("Edition 2026 seeded");
+      if (userRepository.findByEmail("racer@bydzov-ctverec.cz").isEmpty()) {
+        userRepository.save(new User(
+            "racer@bydzov-ctverec.cz",
+            encoder.encode("racer123"),
+            Role.RACER,
+            "Testovací jezdec",
+            Instant.now()));
+        log.info("Racer user created (racer@bydzov-ctverec.cz / racer123)");
       }
+    };
+  }
+
+  @Bean
+  CommandLineRunner seedSchedule(EditionRepository editionRepository, ScheduleItemRepository scheduleItemRepository) {
+    return args -> {
+      Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
+      if (edition == null) return;
+      if (!scheduleItemRepository.findByEditionOrderBySortOrder(edition).isEmpty()) return;
+
+      List<ScheduleItem> items = List.of(
+          new ScheduleItem(edition, "08:00", "Prezence", "Kontrola dokladů, převzetí startovního balíčku", 1),
+          new ScheduleItem(edition, "09:00", "Briefing", "Povinná schůzka jezdců", 2),
+          new ScheduleItem(edition, "09:15", "1. kolo", "Start prvního měřeného úseku", 3),
+          new ScheduleItem(edition, "12:00", "Oběd", "Přestávka na občerstvení", 4),
+          new ScheduleItem(edition, "13:00", "2. kolo", "Start druhého měřeného úseku", 5),
+          new ScheduleItem(edition, "16:00", "Dojezd", "Ukončení závodu, odevzdání karet", 6),
+          new ScheduleItem(edition, "17:00", "Vyhlášení výsledků", "Slavnostní ceremoniál", 7));
+      scheduleItemRepository.saveAll(items);
+      log.info("Schedule for 2026 seeded ({} items)", items.size());
     };
   }
 }
