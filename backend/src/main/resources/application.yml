@@ -1,6 +1,12 @@
 spring:
   application:
     name: bydzov-ctverec-api
+  datasource:
+    hikari:
+      connection-timeout: 30000
+      max-lifetime: 600000
+      maximum-pool-size: 5
+      minimum-idle: 0
   flyway:
     enabled: true
   jpa:
@@ -9,6 +15,7 @@ spring:
       ddl-auto: validate
     properties:
       hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
         jdbc:
           time_zone: UTC
 

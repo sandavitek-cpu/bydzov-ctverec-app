@@ -64,8 +64,18 @@ public class DatabaseUrlEnvironmentPostProcessor implements EnvironmentPostProce
       jdbc.append(":").append(port);
     }
     jdbc.append(path == null || path.isEmpty() ? "/" : path);
+
+    boolean hasSslParam = query != null && (query.contains("sslmode=") || query.contains("ssl="));
+    StringBuilder queryBuilder = new StringBuilder();
     if (query != null && !query.isBlank()) {
-      jdbc.append("?").append(query);
+      queryBuilder.append(query);
+    }
+    if (!hasSslParam) {
+      if (!queryBuilder.isEmpty()) queryBuilder.append("&");
+      queryBuilder.append("sslmode=require");
+    }
+    if (!queryBuilder.isEmpty()) {
+      jdbc.append("?").append(queryBuilder);
     }
 
     Map<String, Object> props = new LinkedHashMap<>();
