@@ -29,7 +29,7 @@ let interval: ReturnType<typeof setInterval> | null = null
 
 async function load() {
   try {
-    const res = await fetch(`${apiBaseUrl}/api/racer/standing`, { headers: authHeaders() })
+    const res = await fetch(`${apiBaseUrl}/api/racer/position`, { headers: authHeaders() })
     if (res.status === 403) {
       logout()
       router.push('/admin/login')

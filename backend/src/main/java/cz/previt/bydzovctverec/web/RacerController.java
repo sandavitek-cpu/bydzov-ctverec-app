@@ -72,8 +72,8 @@ public class RacerController {
     return ResponseEntity.ok(items.stream().map(i -> new ScheduleItemResponse(i.getTime(), i.getLabel(), i.getDescription())).toList());
   }
 
-  @GetMapping("/standing")
-  public ResponseEntity<?> myStanding(Authentication auth) {
+  @GetMapping("/position")
+  public ResponseEntity<?> myPosition(Authentication auth) {
     User user = (User) auth.getPrincipal();
     RacerRegistration reg = racerRegistrationRepository.findByEmail(user.getEmail()).orElse(null);
     if (reg == null) {
