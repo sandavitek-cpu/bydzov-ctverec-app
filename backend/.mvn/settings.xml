@@ -1,0 +1,73 @@
+<settings>
+    <profiles>
+    <profile>
+		<id>m2e</id>
+		<activation>
+			<property>
+				<name>m2e.version</name>
+			</property>
+		</activation>
+		<properties>
+			<maven.build.timestamp>1</maven.build.timestamp>
+			<build.timestamp>1</build.timestamp>
+		</properties>
+	</profile>
+        <profile>
+            <id>Default</id>
+            <properties>
+                <release.url>https://nexus.ders.cool/repository/maven-releases/</release.url>
+                <snapshot.url>https://nexus.ders.cool/repository/maven-snapshots/</snapshot.url>
+		<git.username>vitsanda</git.username>
+		<maven.devel>true</maven.devel>
+            </properties>
+
+            
+            
+            <repositories>
+                <repository>
+                    <id>central</id>
+                    <url>https://repo.maven.apache.org/maven2</url>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>true</enabled>
+                    </snapshots>
+                </repository>                
+                <repository>
+			             <id>AsposeJavaAPI</id>
+			             <name>Aspose Java API</name>
+			             <url>https://maven.aspose.com/repository/simple/ext-release-local/</url>
+	              </repository>
+            </repositories>
+            <pluginRepositories>
+                <pluginRepository>
+                    <id>central</id>
+                    <url>https://repo.maven.apache.org/maven2</url>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>true</enabled>
+                    </snapshots>
+                </pluginRepository>
+            </pluginRepositories>
+        </profile>
+    </profiles>
+    <activeProfiles>
+        
+        <activeProfile>Default</activeProfile>
+    </activeProfiles>
+    <servers>
+        <server>
+            <id>maven.ders.cz.release</id>
+            <username>ders-developer</username>
+            <password>{1l2lGTzSTaEHmAhiXDAdGFPOBeuK31N50aq761xe1FBaISOk6dkcm7i6PRg1zV1ADdhpnwwv4bxHkPIYC+OAQQ==}</password>
+        </server>
+        <server>
+            <id>maven.ders.cz.snapshot</id>
+            <username>ders-developer</username>
+            <password>{1l2lGTzSTaEHmAhiXDAdGFPOBeuK31N50aq761xe1FBaISOk6dkcm7i6PRg1zV1ADdhpnwwv4bxHkPIYC+OAQQ==}</password>
+        </server>
+    </servers>
+</settings>

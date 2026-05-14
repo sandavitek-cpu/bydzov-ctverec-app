@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { fetchResults, type ResultRow } from '@/api'
+import { apiBaseUrl, fetchResults, type ResultRow } from '@/api'
+import { Client, type IFrame } from '@stomp/stompjs'
 
 const route = useRoute()
 const year = Number(route.params.rok) || 2026
@@ -9,7 +10,11 @@ const year = Number(route.params.rok) || 2026
 const results = ref<ResultRow[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
+const wsConnected = ref(false)
 let interval: ReturnType<typeof setInterval> | null = null
+let stompClient: Client | null = null
+
+const wsUrl = apiBaseUrl.replace(/^https?/, 'ws') + '/ws/results'
 
 async function load() {
   try {
@@ -25,13 +30,46 @@ async function load() {
   }
 }
 
+function onWsMessage(frame: IFrame) {
+  try {
+    const data = JSON.parse(frame.body)
+    if (data.year === year) {
+      results.value = data.results
+      error.value = null
+    }
+  } catch {
+  }
+}
+
 onMounted(() => {
   load()
-  interval = setInterval(load, 10000)
+
+  stompClient = new Client({
+    brokerURL: wsUrl,
+    reconnectDelay: 5000,
+  })
+
+  stompClient.onConnect = () => {
+    wsConnected.value = true
+    stompClient!.subscribe('/topic/results', onWsMessage)
+  }
+
+  stompClient.onDisconnect = () => {
+    wsConnected.value = false
+  }
+
+  stompClient.onStompError = () => {
+    wsConnected.value = false
+  }
+
+  stompClient.activate()
+
+  interval = setInterval(load, 15000)
 })
 
 onUnmounted(() => {
   if (interval) clearInterval(interval)
+  if (stompClient) stompClient.deactivate()
 })
 
 const categoryLabel: Record<string, string> = {
@@ -44,7 +82,13 @@ const categoryLabel: Record<string, string> = {
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-bold text-white">Výsledky {{ year }}</h1>
-        <p class="text-sm text-slate-500">Aktualizace každých 10 s</p>
+        <p class="text-sm text-slate-500">
+          {{ wsConnected ? 'Live' : 'Polling 15s' }}
+          <span
+            class="ml-1.5 inline-block h-2 w-2 rounded-full"
+            :class="wsConnected ? 'bg-emerald-500' : 'bg-slate-600'"
+          ></span>
+        </p>
       </div>
       <div v-if="results.length > 0" class="text-xs text-slate-600">
         {{ results.length }} závodník{{ results.length !== 1 ? 'ů' : '' }}
