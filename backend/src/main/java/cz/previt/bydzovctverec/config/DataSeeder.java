@@ -67,22 +67,36 @@ public class DataSeeder {
   }
 
   @Bean
+  @org.springframework.core.annotation.Order(1)
+  CommandLineRunner seedEdition(EditionRepository editionRepository) {
+    return args -> {
+      var existing = editionRepository.findByEditionYear(2026);
+      if (existing.isEmpty()) {
+        editionRepository.save(new Edition(2026, "30. ročník Novobydžovského čtverce"));
+        log.info("Edition 2026 seeded");
+      } else {
+        log.info("Edition 2026 exists (id={})", existing.get().getId());
+      }
+    };
+  }
+
+  @Bean
+  @org.springframework.core.annotation.Order(2)
   CommandLineRunner seedSchedule(EditionRepository editionRepository, ScheduleItemRepository scheduleItemRepository) {
     return args -> {
       Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
       if (edition == null) return;
-      if (!scheduleItemRepository.findByEditionOrderBySortOrder(edition).isEmpty()) return;
-
-      List<ScheduleItem> items = List.of(
+      var existing = scheduleItemRepository.findByEditionOrderBySortOrder(edition);
+      if (!existing.isEmpty()) return;
+      scheduleItemRepository.saveAll(List.of(
           new ScheduleItem(edition, "08:00", "Prezence", "Kontrola dokladů, převzetí startovního balíčku", 1),
           new ScheduleItem(edition, "09:00", "Briefing", "Povinná schůzka jezdců", 2),
           new ScheduleItem(edition, "09:15", "1. kolo", "Start prvního měřeného úseku", 3),
           new ScheduleItem(edition, "12:00", "Oběd", "Přestávka na občerstvení", 4),
           new ScheduleItem(edition, "13:00", "2. kolo", "Start druhého měřeného úseku", 5),
           new ScheduleItem(edition, "16:00", "Dojezd", "Ukončení závodu, odevzdání karet", 6),
-          new ScheduleItem(edition, "17:00", "Vyhlášení výsledků", "Slavnostní ceremoniál", 7));
-      scheduleItemRepository.saveAll(items);
-      log.info("Schedule for 2026 seeded ({} items)", items.size());
+          new ScheduleItem(edition, "17:00", "Vyhlášení výsledků", "Slavnostní ceremoniál", 7)));
+      log.info("Schedule for 2026 seeded");
     };
   }
 }
