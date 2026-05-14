@@ -66,6 +66,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/public/**").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/scores/**").hasAnyRole("ADMIN", "JUDGE")
+                .requestMatchers("/api/racer/**").hasRole("RACER")
                 .anyRequest()
                 .authenticated());
     http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
