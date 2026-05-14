@@ -69,7 +69,7 @@ public class SecurityConfig {
                 .requestMatchers(AntPathRequestMatcher.antMatcher("/api/public/**")).permitAll()
                 .requestMatchers(AntPathRequestMatcher.antMatcher("/api/admin/**")).hasRole("ADMIN")
                 .requestMatchers(AntPathRequestMatcher.antMatcher("/api/scores/**")).hasAnyRole("ADMIN", "JUDGE")
-                .requestMatchers(AntPathRequestMatcher.antMatcher("/api/racer/**")).hasRole("RACER")
+                .requestMatchers(AntPathRequestMatcher.antMatcher("/api/racer/**")).hasAnyRole("RACER", "ADMIN")
                 .anyRequest()
                 .authenticated());
     http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
