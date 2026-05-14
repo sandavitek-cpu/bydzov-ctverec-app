@@ -8,6 +8,8 @@ import jakarta.validation.Valid;
 import java.time.Instant;
 import java.util.Map;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -53,6 +55,23 @@ public class RegistrationController {
         reg.getId(), reg.getTeamName(), reg.getEmail(), reg.getPhone(),
         reg.getVehicleCategory(), reg.getVehiclePlate(), reg.getVehicleYear(),
         reg.getCrewCount(), reg.getStartNumber(), reg.getStartFee(), reg.getStatus()));
+  }
+
+  @GetMapping("/lookup/{startNumber}")
+  public ResponseEntity<?> lookupByStartNumber(@PathVariable Integer startNumber) {
+    Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
+    if (edition == null) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Žádný aktivní ročník"));
+    }
+    return racerRegistrationRepository
+        .findByEditionAndStartNumber(edition, startNumber)
+        .map(r -> ResponseEntity.ok(Map.of(
+            "id", r.getId(),
+            "teamName", r.getTeamName(),
+            "startNumber", r.getStartNumber(),
+            "vehicleCategory", r.getVehicleCategory(),
+            "vehiclePlate", r.getVehiclePlate())))
+        .orElse(ResponseEntity.notFound().build());
   }
 
   private int generateStartNumber(Edition edition) {

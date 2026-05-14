@@ -34,6 +34,21 @@ public class DataSeeder {
   }
 
   @Bean
+  CommandLineRunner seedJudge(UserRepository userRepository, PasswordEncoder encoder) {
+    return args -> {
+      if (userRepository.findByEmail("judge@bydzov-ctverec.cz").isEmpty()) {
+        userRepository.save(new User(
+            "judge@bydzov-ctverec.cz",
+            encoder.encode("judge123"),
+            Role.JUDGE,
+            "Rozhodčí",
+            Instant.now()));
+        log.info("Judge user created (judge@bydzov-ctverec.cz / judge123)");
+      }
+    };
+  }
+
+  @Bean
   CommandLineRunner seedEdition(EditionRepository editionRepository) {
     return args -> {
       if (editionRepository.findTopByOrderByEditionYearDesc().isEmpty()) {

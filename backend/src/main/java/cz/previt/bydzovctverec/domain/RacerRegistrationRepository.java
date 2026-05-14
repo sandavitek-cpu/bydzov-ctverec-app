@@ -15,6 +15,8 @@ public interface RacerRegistrationRepository extends JpaRepository<RacerRegistra
 
   List<RacerRegistration> findByEditionOrderByStartNumber(Edition edition);
 
+  Optional<RacerRegistration> findByEditionAndStartNumber(Edition edition, Integer startNumber);
+
   @Modifying
   @Query("UPDATE RacerRegistration r SET r.status = :status WHERE r.id = :id")
   void updateStatus(@Param("id") Long id, @Param("status") String status);
