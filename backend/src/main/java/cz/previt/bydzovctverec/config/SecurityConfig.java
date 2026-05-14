@@ -13,6 +13,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -62,12 +63,13 @@ public class SecurityConfig {
     http.authorizeHttpRequests(
         auth ->
             auth
-                .requestMatchers("/", "/actuator/**").permitAll()
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/public/**").permitAll()
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/scores/**").hasAnyRole("ADMIN", "JUDGE")
-                .requestMatchers("/api/racer/**").hasRole("RACER")
+                .requestMatchers(AntPathRequestMatcher.antMatcher("/")).permitAll()
+                .requestMatchers(AntPathRequestMatcher.antMatcher("/actuator/**")).permitAll()
+                .requestMatchers(AntPathRequestMatcher.antMatcher("/api/auth/**")).permitAll()
+                .requestMatchers(AntPathRequestMatcher.antMatcher("/api/public/**")).permitAll()
+                .requestMatchers(AntPathRequestMatcher.antMatcher("/api/admin/**")).hasRole("ADMIN")
+                .requestMatchers(AntPathRequestMatcher.antMatcher("/api/scores/**")).hasAnyRole("ADMIN", "JUDGE")
+                .requestMatchers(AntPathRequestMatcher.antMatcher("/api/racer/**")).hasRole("RACER")
                 .anyRequest()
                 .authenticated());
     http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

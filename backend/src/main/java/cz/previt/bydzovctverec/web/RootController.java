@@ -12,4 +12,5 @@ public class RootController {
   public String root() {
     return "bydzov-ctverec-api ok\n";
   }
+
 }
