@@ -97,7 +97,13 @@ public class DatabaseUrlEnvironmentPostProcessor implements EnvironmentPostProce
       if (v != null && !v.isBlank()) {
         return v;
       }
+      v = System.getenv(key);
+      if (v != null && !v.isBlank()) {
+        System.err.println("[DatabaseUrlEnvironmentPostProcessor] found " + key + " via System.getenv()");
+        return v;
+      }
     }
+    System.err.println("[DatabaseUrlEnvironmentPostProcessor] DATABASE_URL not found in environment or system env");
     return null;
   }
 }
