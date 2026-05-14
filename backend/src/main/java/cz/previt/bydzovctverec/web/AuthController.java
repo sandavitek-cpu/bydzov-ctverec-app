@@ -28,6 +28,11 @@ public class AuthController {
     this.userRepository = userRepository;
   }
 
+  @GetMapping("/ping")
+  public ResponseEntity<String> ping() {
+    return ResponseEntity.ok("pong");
+  }
+
   @PostMapping("/login")
   public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
     var auth = authenticationManager.authenticate(
