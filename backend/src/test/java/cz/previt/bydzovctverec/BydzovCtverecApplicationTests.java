@@ -162,6 +162,35 @@ class BydzovCtverecApplicationTests {
   }
 
   @Test
+  void adminCanListRegistrations() throws Exception {
+    userRepository.save(new User("admin@test.cz", passwordEncoder.encode("pass"), Role.ADMIN, "Admin", Instant.now()));
+    Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElseThrow();
+    racerRegistrationRepository.save(new RacerRegistration(edition, "TeamA", "a@t.cz", "111", "OSOBNI", "ABC", 2000, 2, 1, 1000, Instant.now()));
+
+    MvcResult loginResult = mockMvc
+        .perform(post("/api/auth/login")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"email\":\"admin@test.cz\",\"password\":\"pass\"}"))
+        .andExpect(status().isOk())
+        .andReturn();
+    String token = objectMapper.readTree(loginResult.getResponse().getContentAsString()).get("accessToken").asText();
+
+    mockMvc
+        .perform(get("/api/admin/registrations")
+            .header("Authorization", "Bearer " + token))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].teamName").value("TeamA"))
+        .andExpect(jsonPath("$[0].startNumber").value(1));
+  }
+
+  @Test
+  void nonAdminCannotAccessAdminRegistrations() throws Exception {
+    mockMvc
+        .perform(get("/api/admin/registrations"))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
   void registrationWithInvalidDataReturns400() throws Exception {
     mockMvc
         .perform(post("/api/public/registrations")
