@@ -37,7 +37,7 @@ public class RegistrationController {
   public ResponseEntity<?> register(@Valid @RequestBody RegistrationRequest request) {
     Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
     if (edition == null) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Žádný aktivní ročník"));
+      edition = editionRepository.save(new Edition(2026, "30. ročník Novobydžovského čtverce"));
     }
 
     int startNumber = generateStartNumber(edition);

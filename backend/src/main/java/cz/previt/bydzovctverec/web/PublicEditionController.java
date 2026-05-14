@@ -19,11 +19,11 @@ public class PublicEditionController {
 
   @GetMapping("/current")
   public ResponseEntity<EditionResponse> current() {
-    return editionRepository
-        .findTopByOrderByEditionYearDesc()
-        .map(e -> new EditionResponse(e.getId(), e.getEditionYear(), e.getLabel()))
-        .map(ResponseEntity::ok)
-        .orElse(ResponseEntity.notFound().build());
+    Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
+    if (edition == null) {
+      edition = editionRepository.save(new Edition(2026, "30. ročník Novobydžovského čtverce"));
+    }
+    return ResponseEntity.ok(new EditionResponse(edition.getId(), edition.getEditionYear(), edition.getLabel()));
   }
 
   public record EditionResponse(Long id, int year, String label) {}
