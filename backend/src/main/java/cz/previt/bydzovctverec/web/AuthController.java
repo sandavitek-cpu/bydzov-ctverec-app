@@ -7,8 +7,8 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -19,12 +19,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-  private final AuthenticationManager authenticationManager;
+  private final UserDetailsService userDetailsService;
+  private final PasswordEncoder passwordEncoder;
   private final JwtService jwtService;
   private final UserRepository userRepository;
 
-  public AuthController(AuthenticationManager authenticationManager, JwtService jwtService, UserRepository userRepository) {
-    this.authenticationManager = authenticationManager;
+  public AuthController(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder, JwtService jwtService, UserRepository userRepository) {
+    this.userDetailsService = userDetailsService;
+    this.passwordEncoder = passwordEncoder;
     this.jwtService = jwtService;
     this.userRepository = userRepository;
   }
@@ -35,11 +37,16 @@ public class AuthController {
   }
 
   @PostMapping("/login")
-  public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-    var auth = authenticationManager.authenticate(
-        new UsernamePasswordAuthenticationToken(request.email(), request.password()));
-    String userEmail = auth.getName();
-    User user = userRepository.findByEmail(userEmail).orElseThrow();
+  public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
+    try {
+      var userDetails = userDetailsService.loadUserByUsername(request.email());
+      if (!passwordEncoder.matches(request.password(), userDetails.getPassword())) {
+        return ResponseEntity.status(401).build();
+      }
+    } catch (Exception e) {
+      return ResponseEntity.status(401).build();
+    }
+    User user = userRepository.findByEmail(request.email()).orElseThrow();
     String accessToken = jwtService.generateAccessToken(user);
     String refreshToken = jwtService.generateRefreshToken(user);
     return ResponseEntity.ok(new LoginResponse(accessToken, refreshToken, user.getRole().name(), user.getName()));
