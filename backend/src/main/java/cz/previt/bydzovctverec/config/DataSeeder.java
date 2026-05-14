@@ -1,5 +1,7 @@
 package cz.previt.bydzovctverec.config;
 
+import cz.previt.bydzovctverec.domain.Edition;
+import cz.previt.bydzovctverec.domain.EditionRepository;
 import cz.previt.bydzovctverec.domain.Role;
 import cz.previt.bydzovctverec.domain.User;
 import cz.previt.bydzovctverec.domain.UserRepository;
@@ -27,6 +29,16 @@ public class DataSeeder {
             "Správce",
             Instant.now()));
         log.info("Admin user created (admin@bydzov-ctverec.cz / admin123)");
+      }
+    };
+  }
+
+  @Bean
+  CommandLineRunner seedEdition(EditionRepository editionRepository) {
+    return args -> {
+      if (editionRepository.findTopByOrderByEditionYearDesc().isEmpty()) {
+        editionRepository.save(new Edition(2026, "30. ročník Novobydžovského čtverce"));
+        log.info("Edition 2026 seeded");
       }
     };
   }
