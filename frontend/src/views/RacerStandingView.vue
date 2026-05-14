@@ -29,17 +29,19 @@ let interval: ReturnType<typeof setInterval> | null = null
 
 async function load() {
   try {
-    const res = await fetch(`${apiBaseUrl}/api/racer/position`, { headers: authHeaders() })
+    const res = await fetch(`${apiBaseUrl}/api/racer/scores`, { headers: authHeaders() })
     if (res.status === 403) {
       logout()
       router.push('/admin/login')
       return
     }
     const body = await res.json()
-    if (body.error) {
+    if (Array.isArray(body)) {
+      registered.value = false
+    } else if (body.error) {
       registered.value = false
     } else {
-      data.value = body
+      data.value = body as StandingData
       registered.value = true
     }
     error.value = null
