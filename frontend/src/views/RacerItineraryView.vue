@@ -30,13 +30,11 @@ async function load() {
       fetch(`${apiBaseUrl}/api/racer/schedule`, { headers: authHeaders() }),
       fetch(`${apiBaseUrl}/api/racer/registration`, { headers: authHeaders() }),
     ])
-    if (scheduleRes.status === 403 || regRes.status === 403) {
-      logout()
-      router.push('/admin/login')
-      return
+    if (scheduleRes.ok) items.value = await scheduleRes.json()
+    if (regRes.ok) reg.value = await regRes.json()
+    if (!scheduleRes.ok && !regRes.ok) {
+      error.value = `API ${scheduleRes.status}`
     }
-    items.value = await scheduleRes.json()
-    reg.value = await regRes.json()
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Chyba načítání'
   } finally {
