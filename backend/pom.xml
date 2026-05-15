@@ -13,7 +13,7 @@
 
   <groupId>cz.previt</groupId>
   <artifactId>bydzov-ctverec-api</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>0.4.0</version>
   <name>bydzov-ctverec-api</name>
   <description>Novobydžovský čtverec — backend API</description>
 
@@ -109,6 +109,13 @@
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>build-info</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

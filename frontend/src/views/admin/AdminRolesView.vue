@@ -160,7 +160,7 @@ onMounted(() => { load() })
           <div v-if="(usersByRole[role.id] || []).length === 0" class="text-xs text-slate-600">Žádní uživatelé</div>
           <div v-else class="space-y-1">
             <div v-for="u in usersByRole[role.id]" :key="u.id" class="flex items-center gap-2 text-xs text-slate-400">
-              <span class="text-slate-300">{{ u.name }}</span>
+              <span class="text-slate-300">{{ u.lastName ? u.firstName + ' ' + u.lastName : u.firstName }}</span>
               <span class="text-slate-600">{{ u.email }}</span>
               <span class="text-slate-600">(@{{ u.username }})</span>
             </div>

@@ -4,10 +4,13 @@ import cz.previt.bydzovctverec.domain.AppRole;
 import cz.previt.bydzovctverec.domain.AppRoleRepository;
 import cz.previt.bydzovctverec.domain.User;
 import cz.previt.bydzovctverec.domain.UserRepository;
+import cz.previt.bydzovctverec.domain.UserRole;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,10 +28,12 @@ public class AdminUserController {
 
   private final UserRepository userRepository;
   private final AppRoleRepository appRoleRepository;
+  private final PasswordEncoder passwordEncoder;
 
-  public AdminUserController(UserRepository userRepository, AppRoleRepository appRoleRepository) {
+  public AdminUserController(UserRepository userRepository, AppRoleRepository appRoleRepository, PasswordEncoder passwordEncoder) {
     this.userRepository = userRepository;
     this.appRoleRepository = appRoleRepository;
+    this.passwordEncoder = passwordEncoder;
   }
 
   @GetMapping
@@ -41,17 +46,26 @@ public class AdminUserController {
               || u.getEmail().toLowerCase().contains(query))
           .toList();
     }
-    var result = users.stream().map(u -> Map.of(
-        "id", u.getId(),
-        "email", u.getEmail(),
-        "username", u.getUsername(),
-        "name", u.getName(),
-        "role", u.getRole().name(),
-        "createdAt", u.getCreatedAt().toString(),
-        "appRoles", u.getAppRoles().stream().map(r -> Map.of(
-            "id", r.getId(),
-            "name", r.getName(),
-            "displayName", r.getDisplayName())).toList())).toList();
+    var result = users.stream().map(u -> {
+      var phone = u.getPhone() != null ? u.getPhone() : "";
+      var memberSince = u.getMemberSince() != null ? u.getMemberSince().toString() : "";
+      java.util.Map<String, Object> m = new java.util.HashMap<>();
+      m.put("id", u.getId());
+      m.put("email", u.getEmail());
+      m.put("username", u.getUsername());
+      m.put("firstName", u.getFirstName());
+      m.put("lastName", u.getLastName());
+      m.put("name", u.getName());
+      m.put("phone", phone);
+      m.put("memberSince", memberSince);
+      m.put("role", u.getRole().name());
+      m.put("createdAt", u.getCreatedAt().toString());
+      m.put("appRoles", u.getAppRoles().stream().map(r -> java.util.Map.of(
+          "id", r.getId(),
+          "name", r.getName(),
+          "displayName", r.getDisplayName())).toList());
+      return m;
+    }).toList();
     return ResponseEntity.ok(result);
   }
 
@@ -61,17 +75,24 @@ public class AdminUserController {
     var user = userRepository.findById(id);
     if (user.isEmpty()) return ResponseEntity.notFound().build();
     var u = user.get();
-    return ResponseEntity.ok(Map.of(
-        "id", u.getId(),
-        "email", u.getEmail(),
-        "username", u.getUsername(),
-        "name", u.getName(),
-        "role", u.getRole().name(),
-        "createdAt", u.getCreatedAt().toString(),
-        "appRoles", u.getAppRoles().stream().map(r -> Map.of(
-            "id", r.getId(),
-            "name", r.getName(),
-            "displayName", r.getDisplayName())).toList()));
+    var phone = u.getPhone() != null ? u.getPhone() : "";
+    var memberSince = u.getMemberSince() != null ? u.getMemberSince().toString() : "";
+    java.util.Map<String, Object> m = new java.util.HashMap<>();
+    m.put("id", u.getId());
+    m.put("email", u.getEmail());
+    m.put("username", u.getUsername());
+    m.put("firstName", u.getFirstName());
+    m.put("lastName", u.getLastName());
+    m.put("name", u.getName());
+    m.put("phone", phone);
+    m.put("memberSince", memberSince);
+    m.put("role", u.getRole().name());
+    m.put("createdAt", u.getCreatedAt().toString());
+    m.put("appRoles", u.getAppRoles().stream().map(r -> java.util.Map.of(
+        "id", r.getId(),
+        "name", r.getName(),
+        "displayName", r.getDisplayName())).toList());
+    return ResponseEntity.ok(m);
   }
 
   @PutMapping("/{id}")
@@ -80,21 +101,96 @@ public class AdminUserController {
     var userOpt = userRepository.findById(id);
     if (userOpt.isEmpty()) return ResponseEntity.notFound().build();
     var user = userOpt.get();
-    var name = body.get("name");
+    var firstName = body.get("firstName");
+    var lastName = body.get("lastName");
     var email = body.get("email");
-    if (name != null && !name.isBlank()) user.setName(name);
+    var phone = body.get("phone");
+    if (firstName != null && !firstName.isBlank()) user.setFirstName(firstName);
+    if (lastName != null) user.setLastName(lastName);
     if (email != null && !email.isBlank()) {
       if (!email.equals(user.getEmail()) && userRepository.findByEmail(email).isPresent()) {
         return ResponseEntity.badRequest().body(Map.of("error", "Email již existuje"));
       }
       user.setEmail(email);
     }
+    if (phone != null) user.setPhone(phone);
+    var memberSinceStr = body.get("memberSince");
+    if (memberSinceStr != null && !memberSinceStr.isBlank()) {
+      user.setMemberSince(LocalDate.parse(memberSinceStr));
+    }
     userRepository.save(user);
-    return ResponseEntity.ok(Map.of(
-        "id", user.getId(),
-        "email", user.getEmail(),
-        "username", user.getUsername(),
-        "name", user.getName()));
+    var respPhone = user.getPhone() != null ? user.getPhone() : "";
+    var respMemberSince = user.getMemberSince() != null ? user.getMemberSince().toString() : "";
+    java.util.Map<String, Object> m = new java.util.HashMap<>();
+    m.put("id", user.getId());
+    m.put("email", user.getEmail());
+    m.put("username", user.getUsername());
+    m.put("firstName", user.getFirstName());
+    m.put("lastName", user.getLastName());
+    m.put("name", user.getName());
+    m.put("phone", respPhone);
+    m.put("memberSince", respMemberSince);
+    m.put("role", user.getRole().name());
+    m.put("createdAt", user.getCreatedAt().toString());
+    return ResponseEntity.ok(m);
+  }
+
+  @PostMapping
+  @Transactional
+  public ResponseEntity<?> create(@RequestBody Map<String, String> body) {
+    var username = body.get("username");
+    var email = body.get("email");
+    var password = body.get("password");
+    var firstName = body.get("firstName");
+    var lastName = body.get("lastName");
+    if (username == null || username.isBlank()
+        || email == null || email.isBlank()
+        || password == null || password.isBlank()
+        || firstName == null || firstName.isBlank()) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Chybí povinná pole"));
+    }
+    if (lastName == null) lastName = "";
+    if (password.length() < 6) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Heslo musí mít alespoň 6 znaků"));
+    }
+    if (userRepository.findByUsername(username).isPresent()) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Uživatelské jméno již existuje"));
+    }
+    if (userRepository.findByEmail(email).isPresent()) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Email již existuje"));
+    }
+    var user = new User(email, username, passwordEncoder.encode(password), UserRole.RACER, firstName, lastName, java.time.Instant.now());
+    var phone = body.get("phone");
+    if (phone != null) user.setPhone(phone);
+    var memberSinceStr = body.get("memberSince");
+    if (memberSinceStr != null && !memberSinceStr.isBlank()) {
+      user.setMemberSince(LocalDate.parse(memberSinceStr));
+    }
+    userRepository.save(user);
+    return ResponseEntity.ok(Map.of("id", user.getId(), "message", "Uživatel vytvořen"));
+  }
+
+  @DeleteMapping("/{id}")
+  @Transactional
+  public ResponseEntity<?> delete(@PathVariable Long id) {
+    var userOpt = userRepository.findById(id);
+    if (userOpt.isEmpty()) return ResponseEntity.notFound().build();
+    userRepository.delete(userOpt.get());
+    return ResponseEntity.noContent().build();
+  }
+
+  @PutMapping("/{id}/password")
+  @Transactional
+  public ResponseEntity<?> setPassword(@PathVariable Long id, @RequestBody Map<String, String> body) {
+    var userOpt = userRepository.findById(id);
+    if (userOpt.isEmpty()) return ResponseEntity.notFound().build();
+    var newPassword = body.get("newPassword");
+    if (newPassword == null || newPassword.isBlank() || newPassword.length() < 6) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Heslo musí mít alespoň 6 znaků"));
+    }
+    userOpt.get().setPassword(passwordEncoder.encode(newPassword));
+    userRepository.save(userOpt.get());
+    return ResponseEntity.ok(Map.of("message", "Heslo změněno"));
   }
 
   @PostMapping("/{userId}/roles")

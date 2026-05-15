@@ -18,7 +18,7 @@ Webová aplikace pro správu a průběh **Novobydžovského čtverce** — motor
 - Dashboard pořadatele s přehledem přihlášek
 - Bodovací formulář pro rozhodchí na stanovišti
 - Živá výsledková tabulka (veřejná URL)
-- JWT autentizace a správa rolí (ADMIN / RACER / JUDGE)
+- JWT autentizace a správa rolí (ADMIN / RACER / JUDGE — "Komisař" v UI)
 - GitLab CI/CD + GitLab Pages deployment
 
 ## Struktura repozitáře

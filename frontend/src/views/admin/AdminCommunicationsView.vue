@@ -24,7 +24,7 @@ if (!isAdmin.value) {
 const recipientOptions = [
   { value: 'ALL_RACERS', label: 'Všichni závodníci' },
   { value: 'ADMINS', label: 'Pořadatelé' },
-  { value: 'JUDGES', label: 'Rozhodčí' },
+  { value: 'JUDGES', label: 'Komisaři' },
 ]
 
 async function send() {
@@ -65,7 +65,7 @@ async function loadHistory() {
 const recipientLabel: Record<string, string> = {
   ALL_RACERS: 'Všichni závodníci',
   ADMINS: 'Pořadatelé',
-  JUDGES: 'Rozhodčí',
+  JUDGES: 'Komisaři',
 }
 
 onMounted(loadHistory)

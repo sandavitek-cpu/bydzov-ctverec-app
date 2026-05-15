@@ -3,12 +3,13 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import CheckpointMap from '@/components/CheckpointMap.vue'
-import { apiBaseUrl, createAdminCheckpoint, updateAdminCheckpoint, deleteAdminCheckpoint, type CheckpointData } from '@/api'
+import { apiBaseUrl, createAdminCheckpoint, updateAdminCheckpoint, deleteAdminCheckpoint, fetchAdminUsers, type AdminUser, type CheckpointData } from '@/api'
 
 const router = useRouter()
 const { isAdmin, authHeaders, logout } = useAuth()
 
 const checkpoints = ref<CheckpointData[]>([])
+const users = ref<AdminUser[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const editing = ref<CheckpointData | null>(null)
@@ -94,7 +95,17 @@ function centerMap(cp: CheckpointData) {
   form.value.lng = cp.lng
 }
 
-onMounted(load)
+function onMapSelectCheckpoint(id: number) {
+  const cp = checkpoints.value.find(c => c.id === id)
+  if (cp) startEdit(cp)
+}
+
+onMounted(async () => {
+  await load()
+  try {
+    users.value = await fetchAdminUsers(authHeaders())
+  } catch {}
+})
 </script>
 
 <template>
@@ -148,7 +159,10 @@ onMounted(load)
               </div>
               <div>
                 <label class="block text-xs text-slate-500">Dobrovolník</label>
-                <input v-model="form.volunteerName" class="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white placeholder-slate-500" />
+                <select v-model="form.volunteerName" class="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white">
+                  <option value="" class="bg-slate-800">– nevybrán –</option>
+                  <option v-for="u in users" :key="u.id" :value="u.name" class="bg-slate-800">{{ u.name }}</option>
+                </select>
               </div>
             </div>
             <div class="flex gap-2 pt-1">
@@ -204,13 +218,6 @@ onMounted(load)
               </div>
               <div class="flex gap-1">
                 <button
-                  @click="centerMap(cp)"
-                  class="rounded px-2 py-1 text-xs text-slate-500 transition hover:bg-slate-800 hover:text-slate-300"
-                  title="Přenastavit mapu"
-                >
-                  🗺
-                </button>
-                <button
                   @click="startEdit(cp)"
                   class="rounded px-2 py-1 text-xs text-slate-500 transition hover:bg-slate-800 hover:text-slate-300"
                 >
@@ -236,6 +243,7 @@ onMounted(load)
         :lng="form.lng"
         :checkpoints="checkpoints"
         @click="(lat, lng) => { form.lat = lat; form.lng = lng }"
+        @select-checkpoint="onMapSelectCheckpoint"
       />
     </div>
   </div>

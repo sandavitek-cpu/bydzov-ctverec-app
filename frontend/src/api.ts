@@ -236,6 +236,26 @@ export async function downloadLog(headers: Record<string, string>) {
   return res.blob()
 }
 
+export interface AdminUser {
+  id: number
+  email: string
+  username: string
+  firstName: string
+  lastName: string
+  name: string
+  phone: string
+  memberSince: string
+  role: string
+  createdAt: string
+  appRoles: { id: number; name: string; displayName: string }[]
+}
+
+export async function fetchAdminUsers(headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/users`, { headers })
+  if (!res.ok) throw new Error(`API ${res.status}`)
+  return res.json() as Promise<AdminUser[]>
+}
+
 export async function submitScore(data: ScoreSubmit, headers: Record<string, string>) {
   const res = await fetch(`${apiBaseUrl}/api/scores`, {
     method: 'POST',
@@ -246,5 +266,22 @@ export async function submitScore(data: ScoreSubmit, headers: Record<string, str
   if (!res.ok) {
     throw new Error(body.message ?? `API ${res.status}`)
   }
+  return body
+}
+
+export async function fetchAccount(headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/account`, { headers })
+  if (!res.ok) throw new Error(`API ${res.status}`)
+  return res.json() as Promise<AdminUser>
+}
+
+export async function updateAccount(data: { name?: string; email?: string; phone?: string }, headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/account`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...headers },
+    body: JSON.stringify(data),
+  })
+  const body = await res.json()
+  if (!res.ok) throw new Error(body.error ?? `API ${res.status}`)
   return body
 }

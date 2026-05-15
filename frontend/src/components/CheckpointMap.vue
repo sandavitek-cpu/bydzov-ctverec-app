@@ -11,6 +11,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   click: [lat: number, lng: number]
+  selectCheckpoint: [id: number]
 }>()
 
 const container = ref<HTMLElement | null>(null)
@@ -76,6 +77,9 @@ function updateCpMarkers() {
     const m = L.marker([cp.lat, cp.lng], { icon })
       .addTo(map!)
       .bindTooltip(`${cp.sortOrder}. ${cp.name}`, { direction: 'top' })
+    if (cp.id != null) {
+      m.on('click', () => emit('selectCheckpoint', cp.id!))
+    }
     cpMarkers.push(m)
   })
 }

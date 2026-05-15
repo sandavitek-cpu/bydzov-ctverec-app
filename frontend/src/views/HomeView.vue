@@ -23,7 +23,7 @@ onMounted(async () => {
       <p class="text-sm uppercase tracking-widest text-amber-500/90">Motoristická soutěž</p>
       <h1 class="mt-2 text-3xl font-bold text-white md:text-4xl">Historická vozidla v Novém Bydžově</h1>
       <p class="mt-3 text-slate-400">
-        Webová aplikace pro přihlášky, pořadatele a rozhodčí — vývojová verze napojená na API.
+        Webová aplikace pro přihlášky, pořadatele a komisaře — vývojová verze napojená na API.
       </p>
     </div>
 

@@ -2,6 +2,8 @@ package cz.previt.bydzovctverec.config;
 
 import cz.previt.bydzovctverec.domain.AppRole;
 import cz.previt.bydzovctverec.domain.AppRoleRepository;
+import cz.previt.bydzovctverec.domain.ChangeLogEntry;
+import cz.previt.bydzovctverec.domain.ChangeLogEntryRepository;
 import cz.previt.bydzovctverec.domain.ArchiveEntry;
 import cz.previt.bydzovctverec.domain.ArchiveEntryRepository;
 import cz.previt.bydzovctverec.domain.Checkpoint;
@@ -35,7 +37,7 @@ public class DataSeeder {
         if (appRoleRepository.count() > 0) return;
         appRoleRepository.saveAll(List.of(
             new AppRole("ADMIN", "Administrátor", Instant.now()),
-            new AppRole("JUDGE", "Rozhodčí", Instant.now()),
+            new AppRole("JUDGE", "Komisař", Instant.now()),
             new AppRole("RACER", "Závodník", Instant.now())));
         log.info("Roles seeded");
       } catch (Exception e) {
@@ -59,7 +61,7 @@ public class DataSeeder {
               "admin@bydzov-ctverec.cz", "admin",
               encoder.encode("admin123"),
               UserRole.ADMIN,
-              "Správce",
+              "Správce", "",
               Instant.now());
           user.getAppRoles().addAll(roles);
           userRepository.save(user);
@@ -83,7 +85,7 @@ public class DataSeeder {
               "judge@bydzov-ctverec.cz", "judge",
               encoder.encode("judge123"),
               UserRole.JUDGE,
-              "Rozhodčí",
+              "Komisař", "",
               Instant.now());
           user.getAppRoles().addAll(roles);
           userRepository.save(user);
@@ -107,7 +109,7 @@ public class DataSeeder {
               "racer@bydzov-ctverec.cz", "racer",
               encoder.encode("racer123"),
               UserRole.RACER,
-              "Testovací jezdec",
+              "Testovací", "jezdec",
               Instant.now());
           user.getAppRoles().addAll(roles);
           userRepository.save(user);
@@ -190,6 +192,22 @@ public class DataSeeder {
         log.info("Checkpoints for 2026 seeded");
       } catch (Exception e) {
         log.error("seedCheckpoints failed: {}", e.getMessage());
+      }
+    };
+  }
+
+  @Bean
+  CommandLineRunner seedChangeLog(ChangeLogEntryRepository repo) {
+    return args -> {
+      try {
+        if (repo.count() > 0) return;
+        repo.saveAll(List.of(
+            new ChangeLogEntry("0.1.0", "Inicializace projektu – JWT auth, role ADMIN/JUDGE/RACER, přihlášky, výsledky", Instant.parse("2026-04-01T00:00:00Z")),
+            new ChangeLogEntry("0.2.0", "Username login, interaktivní mapa stanovišť, CRUD uživatelů, nastavení účtu, změna hesla, telefon", Instant.parse("2026-05-01T00:00:00Z")),
+            new ChangeLogEntry("0.3.0", "Datum vstupu do klubu (memberSince), info lišta s verzí, přejmenování Rozhodčí → Komisaři", Instant.now())));
+        log.info("Changelog seeded");
+      } catch (Exception e) {
+        log.error("seedChangeLog failed: {}", e.getMessage());
       }
     };
   }

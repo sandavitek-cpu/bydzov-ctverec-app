@@ -14,6 +14,7 @@ import ArchiveView from '../views/ArchiveView.vue'
 import RacerItineraryView from '../views/RacerItineraryView.vue'
 import RacerStandingView from '../views/RacerStandingView.vue'
 import RacerMapView from '../views/RacerMapView.vue'
+import AccountSettingsView from '../views/AccountSettingsView.vue'
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -27,13 +28,15 @@ const router = createRouter({
     { path: '/admin/logovani', name: 'admin-logging', component: AdminLoggingView },
     { path: '/admin/role', name: 'admin-roles', component: AdminRolesView },
     { path: '/admin/uzivatele', name: 'admin-users', component: AdminUsersView },
-    { path: '/rozhodci', name: 'judge-scoring', component: JudgeScoringView },
+    { path: '/rozhodci', redirect: '/komisari' },
+    { path: '/komisari', name: 'judge-scoring', component: JudgeScoringView },
     { path: '/vysledky/:rok', name: 'results', component: ResultsView },
     { path: '/archiv', name: 'archive', component: ArchiveView },
     { path: '/archiv/:rok', name: 'archive-year', component: ArchiveView },
     { path: '/zavodnik/itinerar', name: 'racer-itinerary', component: RacerItineraryView },
     { path: '/zavodnik/stav', name: 'racer-standing', component: RacerStandingView },
     { path: '/zavodnik/mapa', name: 'racer-map', component: RacerMapView },
+    { path: '/ucet', name: 'account', component: AccountSettingsView },
   ],
 })
 
