@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -69,6 +70,28 @@ public class AdminUserController {
             "id", r.getId(),
             "name", r.getName(),
             "displayName", r.getDisplayName())).toList()));
+  }
+
+  @PutMapping("/{id}")
+  @Transactional
+  public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Map<String, String> body) {
+    var userOpt = userRepository.findById(id);
+    if (userOpt.isEmpty()) return ResponseEntity.notFound().build();
+    var user = userOpt.get();
+    var name = body.get("name");
+    var email = body.get("email");
+    if (name != null && !name.isBlank()) user.setName(name);
+    if (email != null && !email.isBlank()) {
+      if (!email.equals(user.getEmail()) && userRepository.findByEmail(email).isPresent()) {
+        return ResponseEntity.badRequest().body(Map.of("error", "Email již existuje"));
+      }
+      user.setEmail(email);
+    }
+    userRepository.save(user);
+    return ResponseEntity.ok(Map.of(
+        "id", user.getId(),
+        "email", user.getEmail(),
+        "name", user.getName()));
   }
 
   @PostMapping("/{userId}/roles")

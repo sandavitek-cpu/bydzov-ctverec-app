@@ -68,9 +68,12 @@ public class User {
 
   public Long getId() { return id; }
   public String getEmail() { return email; }
+  public void setEmail(String email) { this.email = email; }
   public String getPassword() { return password; }
   public UserRole getRole() { return role; }
+  public void setRole(UserRole role) { this.role = role; }
   public String getName() { return name; }
+  public void setName(String name) { this.name = name; }
   public Instant getCreatedAt() { return createdAt; }
   public Set<AppRole> getAppRoles() { return appRoles; }
 }

@@ -13,6 +13,9 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 const searchQuery = ref('')
 const selectedUser = ref<any | null>(null)
+const editName = ref('')
+const editEmail = ref('')
+const saving = ref(false)
 
 if (!isAdmin.value) {
   router.push('/admin/login')
@@ -52,7 +55,11 @@ async function selectUser(id: number) {
     const res = await fetch(`${apiBaseUrl}/api/admin/users/${id}`, {
       headers: { ...authHeaders() },
     })
-    if (res.ok) selectedUser.value = await res.json()
+    if (res.ok) {
+      selectedUser.value = await res.json()
+      editName.value = selectedUser.value.name
+      editEmail.value = selectedUser.value.email
+    }
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Chyba načítání'
   }
@@ -60,6 +67,27 @@ async function selectUser(id: number) {
 
 function closeUser() {
   selectedUser.value = null
+  saving.value = false
+}
+
+async function saveUser() {
+  if (!selectedUser.value) return
+  saving.value = true
+  error.value = null
+  try {
+    const res = await fetch(`${apiBaseUrl}/api/admin/users/${selectedUser.value.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ name: editName.value, email: editEmail.value }),
+    })
+    if (!res.ok) { const body = await res.json(); throw new Error(body.error ?? 'Chyba uložení') }
+    await selectUser(selectedUser.value.id)
+    await loadUsers()
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Chyba uložení'
+  } finally {
+    saving.value = false
+  }
 }
 
 async function addRole(roleId: number) {
@@ -184,9 +212,24 @@ onMounted(async () => {
           <h2 class="text-lg font-semibold text-white">{{ selectedUser.name }}</h2>
           <button @click="closeUser" class="text-slate-500 hover:text-slate-300">✕</button>
         </div>
-        <div class="mt-4 space-y-2 text-sm">
-          <div><span class="text-slate-500">Email:</span> <span class="text-white">{{ selectedUser.email }}</span></div>
-          <div><span class="text-slate-500">Registrován:</span> <span class="text-white">{{ new Date(selectedUser.createdAt).toLocaleString('cs') }}</span></div>
+        <div class="mt-4 space-y-3">
+          <div>
+            <label class="block text-xs text-slate-500">Jméno</label>
+            <input v-model="editName"
+              class="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white" />
+          </div>
+          <div>
+            <label class="block text-xs text-slate-500">Email</label>
+            <input v-model="editEmail" type="email"
+              class="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white" />
+          </div>
+          <div class="text-xs text-slate-600">
+            Registrován: {{ new Date(selectedUser.createdAt).toLocaleString('cs') }}
+          </div>
+          <button @click="saveUser" :disabled="saving"
+            class="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-500 disabled:opacity-50">
+            {{ saving ? 'Ukládám…' : 'Uložit změny' }}
+          </button>
         </div>
 
         <div class="mt-4">
@@ -209,12 +252,13 @@ onMounted(async () => {
         <div class="mt-4">
           <h3 class="text-sm font-medium text-slate-400">Přidat roli</h3>
           <div class="mt-2 flex flex-wrap gap-2">
-            <button v-for="r in roles" :key="r.id"
-              v-if="!selectedUser.appRoles.some((a: any) => a.id === r.id)"
-              @click="addRole(r.id)"
-              class="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 transition hover:bg-slate-800">
-              + {{ r.displayName }}
-            </button>
+            <template v-for="r in roles" :key="r.id">
+              <button v-if="!selectedUser.appRoles.some((a: any) => a.id === r.id)"
+                @click="addRole(r.id)"
+                class="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 transition hover:bg-slate-800">
+                + {{ r.displayName }}
+              </button>
+            </template>
             <span v-if="roles.every((r: any) => selectedUser.appRoles.some((a: any) => a.id === r.id))"
               class="text-xs text-slate-600">
               Uživatel má všechny role
