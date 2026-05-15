@@ -23,7 +23,7 @@ export function useAuth() {
     return token.value ? { Authorization: `Bearer ${token.value}` } : {}
   }
 
-  const isAdmin = computed(() => role.value === 'ADMIN')
+  const isAdmin = computed(() => role.value.split(',').includes('ADMIN'))
   const isLoggedIn = computed(() => !!token.value)
 
   async function loginRequest(email: string, password: string) {

@@ -1,6 +1,7 @@
 package cz.previt.bydzovctverec.web;
 
 import cz.previt.bydzovctverec.config.JwtService;
+import cz.previt.bydzovctverec.domain.AppRole;
 import cz.previt.bydzovctverec.domain.User;
 import cz.previt.bydzovctverec.domain.UserRepository;
 import jakarta.validation.Valid;
@@ -43,7 +44,10 @@ public class AuthController {
     User user = userRepository.findByEmail(request.email()).orElseThrow();
     String accessToken = jwtService.generateAccessToken(user);
     String refreshToken = jwtService.generateRefreshToken(user);
-    return ResponseEntity.ok(new LoginResponse(accessToken, refreshToken, user.getRole().name(), user.getName()));
+    var roleStr = user.getAppRoles().isEmpty()
+        ? user.getRole().name()
+        : user.getAppRoles().stream().map(AppRole::getName).collect(java.util.stream.Collectors.joining(","));
+    return ResponseEntity.ok(new LoginResponse(accessToken, refreshToken, roleStr, user.getName()));
   }
 
   @PostMapping("/refresh")

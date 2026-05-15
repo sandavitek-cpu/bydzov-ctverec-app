@@ -11,7 +11,7 @@ import cz.previt.bydzovctverec.domain.EditionRepository;
 import cz.previt.bydzovctverec.domain.RacerRegistration;
 import cz.previt.bydzovctverec.domain.RacerRegistrationRepository;
 import cz.previt.bydzovctverec.domain.CheckpointRepository;
-import cz.previt.bydzovctverec.domain.Role;
+import cz.previt.bydzovctverec.domain.UserRole;
 import cz.previt.bydzovctverec.domain.ScheduleItemRepository;
 import cz.previt.bydzovctverec.domain.ScoreRepository;
 import cz.previt.bydzovctverec.domain.User;
@@ -79,7 +79,7 @@ class BydzovCtverecApplicationTests {
 
   @Test
   void adminCanLogin() throws Exception {
-    userRepository.save(new User("admin@test.cz", passwordEncoder.encode("pass"), Role.ADMIN, "Admin", Instant.now()));
+    userRepository.save(new User("admin@test.cz", passwordEncoder.encode("pass"), UserRole.ADMIN, "Admin", Instant.now()));
     mockMvc
         .perform(post("/api/auth/login")
             .contentType(MediaType.APPLICATION_JSON)
@@ -91,7 +91,7 @@ class BydzovCtverecApplicationTests {
 
   @Test
   void loginWithWrongPasswordReturns401() throws Exception {
-    userRepository.save(new User("admin@test.cz", passwordEncoder.encode("pass"), Role.ADMIN, "Admin", Instant.now()));
+    userRepository.save(new User("admin@test.cz", passwordEncoder.encode("pass"), UserRole.ADMIN, "Admin", Instant.now()));
     mockMvc
         .perform(post("/api/auth/login")
             .contentType(MediaType.APPLICATION_JSON)
@@ -101,7 +101,7 @@ class BydzovCtverecApplicationTests {
 
   @Test
   void judgeCanCreateScore() throws Exception {
-    User judge = userRepository.save(new User("judge@test.cz", passwordEncoder.encode("pass"), Role.JUDGE, "Judge", Instant.now()));
+    User judge = userRepository.save(new User("judge@test.cz", passwordEncoder.encode("pass"), UserRole.JUDGE, "Judge", Instant.now()));
     Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElseThrow();
     RacerRegistration racer = racerRegistrationRepository.save(new RacerRegistration(edition, "John", "Doe", "john@test.cz", "Kart", Instant.now()));
 
@@ -127,7 +127,7 @@ class BydzovCtverecApplicationTests {
 
   @Test
   void racerCanViewOwnRegistration() throws Exception {
-    userRepository.save(new User("racer@test.cz", passwordEncoder.encode("pass"), Role.RACER, "Racer", Instant.now()));
+    userRepository.save(new User("racer@test.cz", passwordEncoder.encode("pass"), UserRole.RACER, "Racer", Instant.now()));
     Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElseThrow();
     racerRegistrationRepository.save(new RacerRegistration(edition, "Tým test", "racer@test.cz", "+420111", "OSOBNI", "ABC", 2000, 2, 42, 1000, Instant.now()));
 
@@ -172,7 +172,7 @@ class BydzovCtverecApplicationTests {
 
   @Test
   void adminCanListRegistrations() throws Exception {
-    userRepository.save(new User("admin@test.cz", passwordEncoder.encode("pass"), Role.ADMIN, "Admin", Instant.now()));
+    userRepository.save(new User("admin@test.cz", passwordEncoder.encode("pass"), UserRole.ADMIN, "Admin", Instant.now()));
     Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElseThrow();
     racerRegistrationRepository.save(new RacerRegistration(edition, "TeamA", "a@t.cz", "111", "OSOBNI", "ABC", 2000, 2, 1, 1000, Instant.now()));
 

@@ -1,6 +1,6 @@
 package cz.previt.bydzovctverec.domain;
 
-public enum Role {
+public enum UserRole {
   ADMIN,
   RACER,
   JUDGE

@@ -3,6 +3,14 @@ set -e
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 
+# Ukončit předchozí proces(y) na portu 8080
+PREV_PIDS=$(lsof -ti:8080 2>/dev/null || true)
+if [ -n "$PREV_PIDS" ]; then
+  echo "=== Ukončuji předchozí proces(y) na portu 8080 ==="
+  echo "$PREV_PIDS" | xargs -r kill -9 2>/dev/null || true
+  sleep 1
+fi
+
 echo "=== Spouštím backend (Spring Boot, dev profil — H2) ==="
 (cd "$ROOT/backend" && mvn spring-boot:run -s .mvn/settings.xml -q -Dspring-boot.run.profiles=dev) &
 BACKEND_PID=$!

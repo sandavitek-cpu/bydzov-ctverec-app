@@ -124,6 +124,18 @@ const categoryLabel: Record<string, string> = {
         >
           Logování
         </RouterLink>
+        <RouterLink
+          to="/admin/role"
+          class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-800"
+        >
+          Role
+        </RouterLink>
+        <RouterLink
+          to="/admin/uzivatele"
+          class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-800"
+        >
+          Uživatelé
+        </RouterLink>
         <button
           @click="logout(); router.push('/admin/login')"
           class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-500 transition hover:bg-slate-800"

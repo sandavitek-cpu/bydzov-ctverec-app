@@ -1,18 +1,21 @@
 package cz.previt.bydzovctverec.config;
 
+import cz.previt.bydzovctverec.domain.AppRole;
+import cz.previt.bydzovctverec.domain.AppRoleRepository;
 import cz.previt.bydzovctverec.domain.ArchiveEntry;
 import cz.previt.bydzovctverec.domain.ArchiveEntryRepository;
 import cz.previt.bydzovctverec.domain.Checkpoint;
 import cz.previt.bydzovctverec.domain.CheckpointRepository;
 import cz.previt.bydzovctverec.domain.Edition;
 import cz.previt.bydzovctverec.domain.EditionRepository;
-import cz.previt.bydzovctverec.domain.Role;
 import cz.previt.bydzovctverec.domain.ScheduleItem;
 import cz.previt.bydzovctverec.domain.ScheduleItemRepository;
 import cz.previt.bydzovctverec.domain.User;
 import cz.previt.bydzovctverec.domain.UserRepository;
+import cz.previt.bydzovctverec.domain.UserRole;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -26,46 +29,92 @@ public class DataSeeder {
   private static final Logger log = LoggerFactory.getLogger(DataSeeder.class);
 
   @Bean
-  CommandLineRunner seedAdmin(UserRepository userRepository, PasswordEncoder encoder) {
+  CommandLineRunner seedRoles(AppRoleRepository appRoleRepository) {
     return args -> {
-      if (userRepository.findByEmail("admin@bydzov-ctverec.cz").isEmpty()) {
-        userRepository.save(new User(
-            "admin@bydzov-ctverec.cz",
-            encoder.encode("admin123"),
-            Role.ADMIN,
-            "Správce",
-            Instant.now()));
-        log.info("Admin user created (admin@bydzov-ctverec.cz / admin123)");
+      try {
+        if (appRoleRepository.count() > 0) return;
+        appRoleRepository.saveAll(List.of(
+            new AppRole("ADMIN", "Administrátor", Instant.now()),
+            new AppRole("JUDGE", "Rozhodčí", Instant.now()),
+            new AppRole("RACER", "Závodník", Instant.now())));
+        log.info("Roles seeded");
+      } catch (Exception e) {
+        log.error("seedRoles failed: {}", e.getMessage());
       }
     };
   }
 
   @Bean
-  CommandLineRunner seedJudge(UserRepository userRepository, PasswordEncoder encoder) {
+  CommandLineRunner seedAdmin(UserRepository userRepository, AppRoleRepository appRoleRepository, PasswordEncoder encoder) {
     return args -> {
-      if (userRepository.findByEmail("judge@bydzov-ctverec.cz").isEmpty()) {
-        userRepository.save(new User(
-            "judge@bydzov-ctverec.cz",
-            encoder.encode("judge123"),
-            Role.JUDGE,
-            "Rozhodčí",
-            Instant.now()));
-        log.info("Judge user created (judge@bydzov-ctverec.cz / judge123)");
+      try {
+        if (userRepository.findByEmail("admin@bydzov-ctverec.cz").isEmpty()) {
+          var adminRole = appRoleRepository.findByName("ADMIN").orElse(null);
+          var judgeRole = appRoleRepository.findByName("JUDGE").orElse(null);
+          var racerRole = appRoleRepository.findByName("RACER").orElse(null);
+          Set<AppRole> roles = new java.util.HashSet<>();
+          if (adminRole != null) roles.add(adminRole);
+          if (judgeRole != null) roles.add(judgeRole);
+          User user = new User(
+              "admin@bydzov-ctverec.cz",
+              encoder.encode("admin123"),
+              UserRole.ADMIN,
+              "Správce",
+              Instant.now());
+          user.getAppRoles().addAll(roles);
+          userRepository.save(user);
+          log.info("Admin user created (admin@bydzov-ctverec.cz / admin123)");
+        }
+      } catch (Exception e) {
+        log.error("seedAdmin failed: {}", e.getMessage());
       }
     };
   }
 
   @Bean
-  CommandLineRunner seedRacer(UserRepository userRepository, PasswordEncoder encoder) {
+  CommandLineRunner seedJudge(UserRepository userRepository, AppRoleRepository appRoleRepository, PasswordEncoder encoder) {
     return args -> {
-      if (userRepository.findByEmail("racer@bydzov-ctverec.cz").isEmpty()) {
-        userRepository.save(new User(
-            "racer@bydzov-ctverec.cz",
-            encoder.encode("racer123"),
-            Role.RACER,
-            "Testovací jezdec",
-            Instant.now()));
-        log.info("Racer user created (racer@bydzov-ctverec.cz / racer123)");
+      try {
+        if (userRepository.findByEmail("judge@bydzov-ctverec.cz").isEmpty()) {
+          var judgeRole = appRoleRepository.findByName("JUDGE").orElse(null);
+          Set<AppRole> roles = new java.util.HashSet<>();
+          if (judgeRole != null) roles.add(judgeRole);
+          User user = new User(
+              "judge@bydzov-ctverec.cz",
+              encoder.encode("judge123"),
+              UserRole.JUDGE,
+              "Rozhodčí",
+              Instant.now());
+          user.getAppRoles().addAll(roles);
+          userRepository.save(user);
+          log.info("Judge user created (judge@bydzov-ctverec.cz / judge123)");
+        }
+      } catch (Exception e) {
+        log.error("seedJudge failed: {}", e.getMessage());
+      }
+    };
+  }
+
+  @Bean
+  CommandLineRunner seedRacer(UserRepository userRepository, AppRoleRepository appRoleRepository, PasswordEncoder encoder) {
+    return args -> {
+      try {
+        if (userRepository.findByEmail("racer@bydzov-ctverec.cz").isEmpty()) {
+          var racerRole = appRoleRepository.findByName("RACER").orElse(null);
+          Set<AppRole> roles = new java.util.HashSet<>();
+          if (racerRole != null) roles.add(racerRole);
+          User user = new User(
+              "racer@bydzov-ctverec.cz",
+              encoder.encode("racer123"),
+              UserRole.RACER,
+              "Testovací jezdec",
+              Instant.now());
+          user.getAppRoles().addAll(roles);
+          userRepository.save(user);
+          log.info("Racer user created (racer@bydzov-ctverec.cz / racer123)");
+        }
+      } catch (Exception e) {
+        log.error("seedRacer failed: {}", e.getMessage());
       }
     };
   }

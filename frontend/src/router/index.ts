@@ -6,6 +6,8 @@ import AdminDashboardView from '../views/admin/AdminDashboardView.vue'
 import AdminCheckpointsView from '../views/admin/AdminCheckpointsView.vue'
 import AdminCommunicationsView from '../views/admin/AdminCommunicationsView.vue'
 import AdminLoggingView from '../views/admin/AdminLoggingView.vue'
+import AdminRolesView from '../views/admin/AdminRolesView.vue'
+import AdminUsersView from '../views/admin/AdminUsersView.vue'
 import JudgeScoringView from '../views/JudgeScoringView.vue'
 import ResultsView from '../views/ResultsView.vue'
 import ArchiveView from '../views/ArchiveView.vue'
@@ -23,6 +25,8 @@ const router = createRouter({
     { path: '/admin/stanoviste', name: 'admin-checkpoints', component: AdminCheckpointsView },
     { path: '/admin/komunikace', name: 'admin-communications', component: AdminCommunicationsView },
     { path: '/admin/logovani', name: 'admin-logging', component: AdminLoggingView },
+    { path: '/admin/role', name: 'admin-roles', component: AdminRolesView },
+    { path: '/admin/uzivatele', name: 'admin-users', component: AdminUsersView },
     { path: '/rozhodci', name: 'judge-scoring', component: JudgeScoringView },
     { path: '/vysledky/:rok', name: 'results', component: ResultsView },
     { path: '/archiv', name: 'archive', component: ArchiveView },

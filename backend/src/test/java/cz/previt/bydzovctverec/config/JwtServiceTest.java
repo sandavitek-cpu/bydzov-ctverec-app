@@ -2,7 +2,7 @@ package cz.previt.bydzovctverec.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import cz.previt.bydzovctverec.domain.Role;
+import cz.previt.bydzovctverec.domain.UserRole;
 import cz.previt.bydzovctverec.domain.User;
 import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,7 +16,7 @@ class JwtServiceTest {
   @BeforeEach
   void setUp() {
     jwtService = new JwtService("test-secret-key-that-is-at-least-64-characters-long-for-hmac-sha-test");
-    user = new User(42L, "test@test.cz", "pass", Role.ADMIN, "Test", Instant.now());
+    user = new User(42L, "test@test.cz", "pass", UserRole.ADMIN, "Test", Instant.now());
   }
 
   @Test
