@@ -29,7 +29,7 @@ public class PublicEditionController {
   public ResponseEntity<EditionResponse> current() {
     Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
     if (edition == null) {
-      edition = editionRepository.save(new Edition(2026, "30. ročník Novobydžovského čtverce"));
+      edition = editionRepository.save(new Edition(2026, "30. ročník Novobydžovského čtverce – Memoriál Elišky Junkové"));
       seedCheckpoints(edition);
     }
 

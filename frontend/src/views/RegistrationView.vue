@@ -2,12 +2,28 @@
 import { ref, computed } from 'vue'
 import { submitRegistration, type RegistrationResult } from '@/api'
 
-const CATEGORIES = [
-  { value: 'MOTOCYKL', label: 'Motocykl', fee: 300 },
-  { value: 'OSOBNI', label: 'Osobní automobil', fee: 500 },
-  { value: 'CLASSIC', label: 'Historické vozidlo', fee: 400 },
-  { value: 'NAKLADNI', label: 'Nákladní automobil', fee: 800 },
+const VARIANTS = [
+  { value: 'JEDNODENNI', label: 'Jednodenní závod', deadline: '6. 6. 2026' },
+  { value: 'DVODENNI_UZAVRENO', label: 'Dvoudenní závod – UZAVŘENO', deadline: '30. 4. 2026' },
+  { value: 'DVODENNI_BEZ_UBYTOVANI', label: 'Dvoudenní závod bez ubytování', deadline: '30. 4. 2026' },
 ]
+
+const VEHICLE_TYPES = [
+  { value: 'AUTO', label: 'Automobil' },
+  { value: 'MOTO', label: 'Motocykl' },
+]
+
+interface FeeRow {
+  baseDo1945: number
+  baseOd1946: number
+  extraPerson: number
+}
+
+const FEE: Record<string, FeeRow> = {
+  JEDNODENNI: { baseDo1945: 500, baseOd1946: 800, extraPerson: 500 },
+  DVODENNI_UZAVRENO: { baseDo1945: 1000, baseOd1946: 1200, extraPerson: 1000 },
+  DVODENNI_BEZ_UBYTOVANI: { baseDo1945: 600, baseOd1946: 900, extraPerson: 600 },
+}
 
 const form = ref({
   teamName: '',
@@ -17,6 +33,11 @@ const form = ref({
   vehiclePlate: '',
   vehicleYear: new Date().getFullYear(),
   crewCount: 1,
+  variant: '',
+  firstName: '',
+  lastName: '',
+  vehicleMake: '',
+  consent: false,
 })
 
 const submitted = ref(false)
@@ -24,12 +45,23 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 const result = ref<RegistrationResult | null>(null)
 
-const perPersonFee = computed(() => {
-  const cat = CATEGORIES.find(c => c.value === form.value.vehicleCategory)
-  return cat?.fee ?? 0
+const selectedVariant = computed(() => VARIANTS.find(v => v.value === form.value.variant))
+
+const feeConfig = computed(() => FEE[form.value.variant])
+
+const isVintage = computed(() => form.value.vehicleYear < 1945)
+
+const totalFee = computed(() => {
+  if (!feeConfig.value) return 0
+  const base = isVintage.value ? feeConfig.value.baseDo1945 : feeConfig.value.baseOd1946
+  return base + feeConfig.value.extraPerson * Math.max(0, form.value.crewCount - 1)
 })
 
-const totalFee = computed(() => perPersonFee.value * form.value.crewCount)
+const feeBreakdown = computed(() => {
+  if (!feeConfig.value) return null
+  const base = isVintage.value ? feeConfig.value.baseDo1945 : feeConfig.value.baseOd1946
+  return { base, extra: form.value.crewCount > 1 ? feeConfig.value.extraPerson * (form.value.crewCount - 1) : 0 }
+})
 
 async function handleSubmit() {
   error.value = null
@@ -43,6 +75,7 @@ async function handleSubmit() {
       vehiclePlate: form.value.vehiclePlate,
       vehicleYear: form.value.vehicleYear,
       crewCount: form.value.crewCount,
+      variant: form.value.variant,
     })
     submitted.value = true
   } catch (e) {
@@ -62,7 +95,7 @@ const qrUrl = computed(() => {
 <template>
   <div>
     <h1 class="text-page-title text-text">Přihláška do soutěže</h1>
-    <p class="mt-2 text-body-lg text-text-muted">Vyplňte údaje o posádce a vozidle</p>
+    <p class="mt-2 text-body-lg text-text-muted">30. ročník Novobydžovského čtverce – Memoriál Elišky Junkové</p>
 
     <!-- Success -->
     <div v-if="submitted && result" class="mt-8 space-y-6 max-w-form">
@@ -76,9 +109,9 @@ const qrUrl = computed(() => {
         <h2 class="text-subsection text-text">Platební údaje</h2>
         <div class="mt-4 space-y-2">
           <p class="text-body text-text-muted">Částka: <strong class="text-text">{{ result.startFee }} Kč</strong></p>
-          <p class="text-body text-text-muted">Bankovní účet: <span class="font-mono font-semibold text-text">2802609342/2010</span></p>
+          <p class="text-body text-text-muted">Bankovní účet: <span class="font-mono font-semibold text-text">1086360369/0800</span></p>
           <p class="text-body text-text-muted">Variabilní symbol: <span class="font-mono font-semibold text-text">{{ result.startNumber }}</span></p>
-          <p class="text-meta text-text-soft mt-2">Do zprávy pro příjemce uveďte název posádky.</p>
+          <p class="text-meta text-text-soft mt-2">Splatnost startovného je 14 dnů od vyplnění přihlášky, nejpozději však do uzávěrky přihlášky.</p>
         </div>
       </div>
 
@@ -91,11 +124,42 @@ const qrUrl = computed(() => {
 
     <!-- Form -->
     <form v-else @submit.prevent="handleSubmit" class="mt-6 space-y-5 max-w-form">
+      <!-- Variant -->
+      <div>
+        <label class="input-label">Varianta závodu</label>
+        <div class="space-y-2">
+          <label v-for="v in VARIANTS" :key="v.value"
+            class="flex items-start gap-3 rounded-lg border border-border p-4 cursor-pointer transition-colors"
+            :class="form.variant === v.value ? 'border-primary bg-primary/5' : 'hover:bg-bg-alt'"
+          >
+            <input type="radio" :value="v.value" v-model="form.variant" class="mt-0.5 accent-primary" />
+            <div>
+              <span class="font-medium text-text">{{ v.label }}</span>
+              <p class="text-meta text-text-soft">Uzávěrka přihlášek: {{ v.deadline }}</p>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Team name -->
       <div>
         <label class="input-label">Název posádky</label>
         <input v-model="form.teamName" required class="input-field" placeholder="např. Tým Pardubice" />
       </div>
 
+      <!-- Driver name -->
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="input-label">Jméno řidiče</label>
+          <input v-model="form.firstName" required class="input-field" placeholder="Jan" />
+        </div>
+        <div>
+          <label class="input-label">Příjmení</label>
+          <input v-model="form.lastName" required class="input-field" placeholder="Novák" />
+        </div>
+      </div>
+
+      <!-- Contact -->
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="input-label">E-mail</label>
@@ -107,43 +171,80 @@ const qrUrl = computed(() => {
         </div>
       </div>
 
+      <!-- Vehicle -->
       <div>
-        <label class="input-label">Kategorie vozidla</label>
-        <select v-model="form.vehicleCategory" required class="input-field">
-          <option value="" disabled>Vyberte kategorii</option>
-          <option v-for="cat in CATEGORIES" :key="cat.value" :value="cat.value">
-            {{ cat.label }} ({{ cat.fee }} Kč/osoba)
-          </option>
-        </select>
+        <label class="input-label">Typ vozidla</label>
+        <div class="flex gap-3">
+          <label v-for="t in VEHICLE_TYPES" :key="t.value"
+            class="flex-1 flex items-center justify-center gap-2 rounded-lg border border-border p-3 cursor-pointer transition-colors"
+            :class="form.vehicleCategory === t.value ? 'border-primary bg-primary/5 text-primary' : 'hover:bg-bg-alt'"
+          >
+            <input type="radio" :value="t.value" v-model="form.vehicleCategory" required class="accent-primary" />
+            <span class="font-medium">{{ t.label }}</span>
+          </label>
+        </div>
       </div>
 
       <div class="grid grid-cols-2 gap-4">
         <div>
+          <label class="input-label">Značka a typ vozidla</label>
+          <input v-model="form.vehicleMake" required class="input-field" placeholder="Škoda 1000 MB" />
+        </div>
+        <div>
           <label class="input-label">SPZ</label>
           <input v-model="form.vehiclePlate" required class="input-field" placeholder="5H1 2345" />
         </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
         <div>
-          <label class="input-label">Ročník</label>
-          <input v-model="form.vehicleYear" type="number" required min="1900" :max="new Date().getFullYear() + 1" class="input-field" />
+          <label class="input-label">Rok výroby</label>
+          <input v-model.number="form.vehicleYear" type="number" required min="1900" max="1989" class="input-field" />
+          <p class="text-meta text-text-soft mt-1">Vozidlo musí být do roku 1989</p>
+        </div>
+        <div>
+          <label class="input-label">Počet členů posádky</label>
+          <input v-model.number="form.crewCount" type="number" required min="1" max="10" class="input-field" />
         </div>
       </div>
 
-      <div>
-        <label class="input-label">Počet členů posádky</label>
-        <input v-model.number="form.crewCount" type="number" required min="1" max="10" class="input-field" />
+      <!-- Fee breakdown -->
+      <div v-if="selectedVariant && form.vehicleCategory && form.vehicleYear" class="rounded-lg border border-border bg-bg-alt p-4 space-y-1 text-body-sm">
+        <div class="flex items-center justify-between">
+          <span class="text-text-soft">Varianta:</span>
+          <span class="text-text font-medium">{{ selectedVariant.label }}</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-text-soft">Vozidlo:</span>
+          <span class="text-text" :class="isVintage ? 'text-accent-gold font-semibold' : ''">{{ isVintage ? 'do 1945 (veterán)' : 'od 1946' }}</span>
+        </div>
+        <hr class="border-border my-1" />
+        <div class="flex items-center justify-between">
+          <span class="text-text-soft">Základ (řidič):</span>
+          <span class="text-text font-mono">{{ feeBreakdown?.base }} Kč</span>
+        </div>
+        <div v-if="feeBreakdown?.extra" class="flex items-center justify-between">
+          <span class="text-text-soft">{{ form.crewCount - 1 }} osoba/y navíc:</span>
+          <span class="text-text font-mono">+ {{ feeBreakdown.extra }} Kč</span>
+        </div>
+        <hr class="border-border my-1" />
+        <div class="flex items-center justify-between">
+          <span class="font-semibold text-text">Celkem:</span>
+          <span class="text-kpi text-primary">{{ totalFee }} Kč</span>
+        </div>
       </div>
 
-      <div v-if="form.vehicleCategory" class="card !p-4 text-body-sm">
-        <p class="text-text-muted">
-          Startovné: <span class="font-semibold text-text">{{ perPersonFee }} Kč</span> ×
-          {{ form.crewCount }} osoba/y =
-          <strong class="text-primary">{{ totalFee }} Kč</strong>
-        </p>
-      </div>
+      <!-- Consent -->
+      <label class="flex items-start gap-3 cursor-pointer">
+        <input type="checkbox" v-model="form.consent" required class="mt-1 accent-primary" />
+        <span class="text-body-sm text-text-muted">
+          Souhlasím se zpracováním osobních údajů pro účely organizace závodu.
+        </span>
+      </label>
 
       <p v-if="error" class="text-body-sm text-error">{{ error }}</p>
 
-      <button type="submit" :disabled="loading" class="btn-primary w-full">
+      <button type="submit" :disabled="loading || !form.consent" class="btn-primary w-full">
         {{ loading ? 'Odesílám…' : 'Odeslat přihlášku' }}
       </button>
     </form>

@@ -22,11 +22,12 @@ public class RegistrationController {
   private final EditionRepository editionRepository;
   private final RacerRegistrationRepository racerRegistrationRepository;
 
-  private static final Map<String, Integer> FEE_PER_PERSON = Map.of(
-      "MOTOCYKL", 300,
-      "OSOBNI", 500,
-      "CLASSIC", 400,
-      "NAKLADNI", 800);
+  private record FeeConfig(int baseDo1945, int baseOd1946, int extraPerson) {}
+
+  private static final Map<String, FeeConfig> FEE = Map.of(
+      "JEDNODENNI", new FeeConfig(500, 800, 500),
+      "DVODENNI_UZAVRENO", new FeeConfig(1000, 1200, 1000),
+      "DVODENNI_BEZ_UBYTOVANI", new FeeConfig(600, 900, 600));
 
   public RegistrationController(EditionRepository editionRepository, RacerRegistrationRepository racerRegistrationRepository) {
     this.editionRepository = editionRepository;
@@ -37,24 +38,25 @@ public class RegistrationController {
   public ResponseEntity<?> register(@Valid @RequestBody RegistrationRequest request) {
     Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
     if (edition == null) {
-      edition = editionRepository.save(new Edition(2026, "30. ročník Novobydžovského čtverce"));
+      edition = editionRepository.save(new Edition(2026, "30. ročník Novobydžovského čtverce – Memoriál Elišky Junkové"));
     }
 
     int startNumber = generateStartNumber(edition);
-    Integer perPersonFee = FEE_PER_PERSON.getOrDefault(request.vehicleCategory(), 500);
-    int startFee = perPersonFee * request.crewCount();
+    int startFee = calculateFee(request.variant(), request.vehicleYear(), request.crewCount());
 
     RacerRegistration reg = new RacerRegistration(
         edition, request.teamName(), request.email(), request.phone(),
         request.vehicleCategory(), request.vehiclePlate(), request.vehicleYear(),
         request.crewCount(), startNumber, startFee, Instant.now());
+    reg.setVariant(request.variant());
 
     racerRegistrationRepository.save(reg);
 
     return ResponseEntity.ok(new RegistrationResponse(
         reg.getId(), reg.getTeamName(), reg.getEmail(), reg.getPhone(),
         reg.getVehicleCategory(), reg.getVehiclePlate(), reg.getVehicleYear(),
-        reg.getCrewCount(), reg.getStartNumber(), reg.getStartFee(), reg.getStatus()));
+        reg.getCrewCount(), reg.getStartNumber(), reg.getStartFee(),
+        reg.getStatus(), reg.getVariant()));
   }
 
   @GetMapping("/lookup/{startNumber}")
@@ -72,6 +74,12 @@ public class RegistrationController {
             "vehicleCategory", r.getVehicleCategory(),
             "vehiclePlate", r.getVehiclePlate())))
         .orElse(ResponseEntity.notFound().build());
+  }
+
+  public static int calculateFee(String variant, int vehicleYear, int crewCount) {
+    FeeConfig cfg = FEE.getOrDefault(variant, new FeeConfig(0, 0, 0));
+    int baseFee = vehicleYear < 1945 ? cfg.baseDo1945 : cfg.baseOd1946;
+    return baseFee + cfg.extraPerson * Math.max(0, crewCount - 1);
   }
 
   private int generateStartNumber(Edition edition) {

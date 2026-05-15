@@ -128,7 +128,7 @@ public class DataSeeder {
       try {
         var existing = editionRepository.findByEditionYear(2026);
         if (existing.isEmpty()) {
-          editionRepository.save(new Edition(2026, "30. ročník Novobydžovského čtverce"));
+          editionRepository.save(new Edition(2026, "30. ročník Novobydžovského čtverce – Memoriál Elišky Junkové"));
           log.info("Edition 2026 seeded");
         } else {
           log.info("Edition 2026 exists (id={})", existing.get().getId());
@@ -149,13 +149,16 @@ public class DataSeeder {
         var existing = scheduleItemRepository.findByEditionOrderBySortOrder(edition);
         if (!existing.isEmpty()) return;
         scheduleItemRepository.saveAll(List.of(
-            new ScheduleItem(edition, "08:00", "Prezence", "Kontrola dokladů, převzetí startovního balíčku", 1),
-            new ScheduleItem(edition, "09:00", "Briefing", "Povinná schůzka jezdců", 2),
-            new ScheduleItem(edition, "09:15", "1. kolo", "Start prvního měřeného úseku", 3),
-            new ScheduleItem(edition, "12:00", "Oběd", "Přestávka na občerstvení", 4),
-            new ScheduleItem(edition, "13:00", "2. kolo", "Start druhého měřeného úseku", 5),
-            new ScheduleItem(edition, "16:00", "Dojezd", "Ukončení závodu, odevzdání karet", 6),
-            new ScheduleItem(edition, "17:00", "Vyhlášení výsledků", "Slavnostní ceremoniál", 7)));
+            new ScheduleItem(edition, "8:30", "Prezence", "Prezence účastníků závodu v průchodu radnice", 1),
+            new ScheduleItem(edition, "9:00", "Výstava", "Začátek výstavy historických vozidel na náměstí", 2),
+            new ScheduleItem(edition, "11:00", "Start Moto", "Start závodu – kategorie motocyklů", 3),
+            new ScheduleItem(edition, "—", "Start Auto", "Start závodu – kategorie automobilů (hned po motocyklech)", 4),
+            new ScheduleItem(edition, "—", "Oběd na trase", "Občerstvení v průběhu trasy", 5),
+            new ScheduleItem(edition, "16:30", "Večeře", "Večeře po dojezdu (jednodenní varianta)", 6),
+            new ScheduleItem(edition, "od 14:00", "Kemp", "Dojezd do kempu, ubytování a večeře (dvoudenní varianta)", 7),
+            new ScheduleItem(edition, "8:00", "Snídaně", "Snídaně v kempu (2. den – dvoudenní varianta)", 8),
+            new ScheduleItem(edition, "9:00", "Start 2. den", "Start druhého dne (dvoudenní varianta)", 9),
+            new ScheduleItem(edition, "13:00", "Vyhlášení", "Vyhlášení vítězů (neděle)", 10)));
         log.info("Schedule for 2026 seeded");
       } catch (Exception e) {
         log.error("seedSchedule failed: {}", e.getMessage());

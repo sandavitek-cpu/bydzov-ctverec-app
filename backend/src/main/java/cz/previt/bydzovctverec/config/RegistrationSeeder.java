@@ -4,6 +4,7 @@ import cz.previt.bydzovctverec.domain.Edition;
 import cz.previt.bydzovctverec.domain.EditionRepository;
 import cz.previt.bydzovctverec.domain.RacerRegistration;
 import cz.previt.bydzovctverec.domain.RacerRegistrationRepository;
+import cz.previt.bydzovctverec.web.RegistrationController;
 import java.time.Instant;
 import java.util.List;
 import org.slf4j.Logger;
@@ -104,7 +105,8 @@ public class RegistrationSeeder {
         sn++;
         repo.save(new RacerRegistration(
             edition, "Zapůjčené vozidlo", "zapujceno@test.cz", "777111401",
-            "OSOBNI", "Citroën 2CV", "5H0 0050", 1968, 2, sn, 1000,
+            "OSOBNI", "Citroën 2CV", "5H0 0050", 1968, 2, sn,
+            RegistrationController.calculateFee("JEDNODENNI", 1968, 2),
             null, "Testovací", "Řidič", false, "M", 33, null, null,
             null, null, null, null, null, null, null, false, true, false, true, Instant.now()));
 
@@ -129,18 +131,15 @@ public class RegistrationSeeder {
   }
 
   private static RacerRegistration create(Edition edition, int startNumber, Object[] a) {
-    int fee = switch ((String) a[3]) {
-      case "MOTOCYKL" -> 300;
-      case "OSOBNI", "CLASSIC" -> 500;
-      case "NAKLADNI" -> 800;
-      default -> 500;
-    };
+    String variant = (String) a[8];
+    int vehicleYear = (int) a[6];
     int crewCount = (int) a[7];
+    int fee = RegistrationController.calculateFee(variant, vehicleYear, crewCount);
     return new RacerRegistration(
         edition, (String) a[0], (String) a[1], (String) a[2],
         (String) a[3], (String) a[4], (String) a[5],
-        (int) a[6], crewCount, startNumber, fee * crewCount,
-        (String) a[8], (String) a[9], (String) a[10],
+        vehicleYear, crewCount, startNumber, fee,
+        variant, (String) a[9], (String) a[10],
         (boolean) a[11], (String) a[12], (int) a[13],
         (String) a[14], null,
         (Integer) a[15], (String) a[16],

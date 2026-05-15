@@ -11,4 +11,5 @@ public record RegistrationResponse(
     Integer crewCount,
     Integer startNumber,
     Integer startFee,
-    String status) {}
+    String status,
+    String variant) {}

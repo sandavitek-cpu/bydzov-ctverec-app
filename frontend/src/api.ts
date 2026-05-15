@@ -17,6 +17,7 @@ export interface RegistrationData {
   vehiclePlate: string
   vehicleYear: number
   crewCount: number
+  variant: string
 }
 
 export interface RegistrationResult {
@@ -31,6 +32,7 @@ export interface RegistrationResult {
   startNumber: number
   startFee: number
   status: string
+  variant: string
 }
 
 export async function submitRegistration(data: RegistrationData) {

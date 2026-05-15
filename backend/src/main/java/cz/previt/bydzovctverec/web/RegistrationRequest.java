@@ -12,4 +12,5 @@ public record RegistrationRequest(
     @NotBlank String vehicleCategory,
     @NotBlank String vehiclePlate,
     @NotNull Integer vehicleYear,
-    @NotNull @Min(1) Integer crewCount) {}
+    @NotNull @Min(1) Integer crewCount,
+    @NotBlank String variant) {}

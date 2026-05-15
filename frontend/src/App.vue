@@ -58,6 +58,7 @@ async function toggleInfo() {
           <div class="flex flex-col leading-tight">
             <span class="font-display text-2xl tracking-[0.04em] text-text">Novobydžovský</span>
             <span class="font-display text-2xl tracking-[0.04em] text-primary -mt-1">Čtverec</span>
+            <span class="text-meta text-accent-gold -mt-0.5">Memoriál Elišky Junkové</span>
           </div>
         </RouterLink>
         <nav class="flex items-center gap-1">
@@ -183,6 +184,7 @@ async function toggleInfo() {
             <div class="flex items-center gap-2 mb-3">
               <img :src="logoCtverec" alt="" class="h-7 w-auto object-contain opacity-60" />
               <span class="font-display text-lg tracking-[0.04em] text-text">Novobydžovský<br />Čtverec</span>
+            <span class="text-meta text-accent-gold/60">Memoriál Elišky Junkové</span>
             </div>
             <p class="text-body-sm text-text-muted leading-relaxed">
               Klub přátel historických vozidel, z.s.
