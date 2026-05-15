@@ -18,6 +18,8 @@ export interface RegistrationData {
   vehicleYear: number
   crewCount: number
   variant: string
+  firstName: string
+  lastName: string
 }
 
 export interface RegistrationResult {

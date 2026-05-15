@@ -76,6 +76,8 @@ async function handleSubmit() {
       vehicleYear: form.value.vehicleYear,
       crewCount: form.value.crewCount,
       variant: form.value.variant,
+      firstName: form.value.firstName,
+      lastName: form.value.lastName,
     })
     submitted.value = true
   } catch (e) {

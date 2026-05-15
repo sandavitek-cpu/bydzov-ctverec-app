@@ -28,4 +28,6 @@ public record RegistrationRequest(
     String vehicleNotes,
     String notes,
     Boolean consent,
-    String recaptchaToken) {}
+    String recaptchaToken,
+    String firstName,
+    String lastName) {}

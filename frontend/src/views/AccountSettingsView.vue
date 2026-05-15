@@ -42,23 +42,31 @@ onMounted(async () => {
 })
 
 async function save() {
-  saving.value = true
-  error.value = null
-  success.value = false
-  try {
-    const res = await fetch(`${apiBaseUrl}/api/account`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify({ firstName: form.value.firstName, lastName: form.value.lastName, email: form.value.email, phone: form.value.phone }),
-    })
-    const data = await res.json()
-    if (!res.ok) throw new Error(data.error ?? 'Chyba uložení')
-    success.value = true
-  } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Chyba uložení'
-  } finally {
-    saving.value = false
-  }
+    saving.value = true
+    error.value = null
+    success.value = false
+    try {
+        const res = await fetch(`${apiBaseUrl}/api/account`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', ...authHeaders() },
+            body: JSON.stringify({ firstName: form.value.firstName, lastName: form.value.lastName, email: form.value.email, phone: form.value.phone }),
+        })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error ?? 'Chyba uložení')
+        success.value = true
+        form.value = { 
+            username: data.username, 
+            firstName: data.firstName, 
+            lastName: data.lastName ?? '', 
+            email: data.email, 
+            phone: data.phone ?? '', 
+            memberSince: data.memberSince ?? '' 
+        }
+    } catch (e) {
+        error.value = e instanceof Error ? e.message : 'Chyba uložení'
+    } finally {
+        saving.value = false
+    }
 }
 
 async function changePassword() {

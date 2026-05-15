@@ -44,22 +44,24 @@ public class RegistrationController {
     int startNumber = generateStartNumber(edition);
     int startFee = calculateFee(request.variant(), request.vehicleYear(), request.crewCount());
 
-    RacerRegistration reg = new RacerRegistration(
-        edition, request.teamName(), request.email(), request.phone(),
-        request.vehicleCategory(), request.vehicleMake() != null ? request.vehicleMake() : "",
-        request.vehiclePlate(), request.vehicleYear(),
-        request.crewCount(), startNumber, startFee,
-        request.variant(), "", "",
-        request.firstTime() != null ? request.firstTime() : false,
-        request.gender(), request.driverAge(),
-        request.club(), request.address(),
-        request.youngestAge(), request.youngestName(),
-        request.engineDisplacement(), request.power(), request.maxSpeed(),
-        request.vehicleNotes(), request.notes(),
-        false, false, false,
-        request.consent() != null ? request.consent() : false,
-        false,
-        Instant.now());
+     String firstName = request.firstName() != null ? request.firstName().trim() : "";
+     String lastName = request.lastName() != null ? request.lastName().trim() : "";
+     RacerRegistration reg = new RacerRegistration(
+         edition, request.teamName(), request.email(), request.phone(),
+         request.vehicleCategory(), request.vehicleMake() != null ? request.vehicleMake() : "",
+         request.vehiclePlate(), request.vehicleYear(),
+         request.crewCount(), startNumber, startFee,
+         request.variant(), firstName, lastName,
+         request.firstTime() != null ? request.firstTime() : false,
+         request.gender(), request.driverAge(),
+         request.club(), request.address(),
+         request.youngestAge(), request.youngestName(),
+         request.engineDisplacement(), request.power(), request.maxSpeed(),
+         request.vehicleNotes(), request.notes(),
+         false, false, false,
+         request.consent() != null ? request.consent() : false,
+         false,
+         Instant.now());
 
     racerRegistrationRepository.save(reg);
 

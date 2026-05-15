@@ -145,15 +145,25 @@ public class AdminController {
     var roles = new HashSet<AppRole>();
     if (racerRole != null) roles.add(racerRole);
 
+    String firstName = reg.getFirstName() != null && !reg.getFirstName().isBlank()
+        ? reg.getFirstName()
+        : reg.getTeamName();
+    String lastName = reg.getLastName() != null && !reg.getLastName().isBlank()
+        ? reg.getLastName()
+        : "";
+    String personName = (firstName + " " + lastName).trim();
+    if (personName.isEmpty()) {
+        personName = reg.getTeamName();
+    }
     User user = new User(email, email, passwordEncoder.encode(rawPassword),
-        UserRole.RACER, reg.getTeamName(), "", Instant.now());
+        UserRole.RACER, firstName, lastName, Instant.now());
     user.getAppRoles().addAll(roles);
     userRepository.save(user);
 
     reg.setApproved(true);
     racerRegistrationRepository.save(reg);
 
-    emailService.sendCredentials(email, reg.getTeamName(), email, rawPassword,
+    emailService.sendCredentials(email, personName, email, rawPassword,
         reg.getStartNumber(), reg.getStartFee());
 
     log.info("Registration {} approved, user {} created", id, email);
