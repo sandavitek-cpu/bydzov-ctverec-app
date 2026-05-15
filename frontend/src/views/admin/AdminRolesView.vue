@@ -2,7 +2,6 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
-import AdminNav from '@/components/admin/AdminNav.vue'
 import { apiBaseUrl } from '@/api'
 
 const router = useRouter()
@@ -115,7 +114,6 @@ onMounted(() => { load() })
   <div>
     <div class="flex items-center justify-between gap-4">
       <h1 class="text-2xl font-bold text-white">Role</h1>
-      <AdminNav />
     </div>
 
     <div v-if="error" class="mt-4 rounded-lg border border-red-800 bg-red-900/30 p-3 text-sm text-red-400">{{ error }}</div>

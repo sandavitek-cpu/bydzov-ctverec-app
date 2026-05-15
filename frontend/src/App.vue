@@ -1,23 +1,18 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import { RouterLink, RouterView, useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
 const { isLoggedIn, name, hasAdmin, hasJudge, hasRacer, logout } = useAuth()
-const menuOpen = ref(false)
-
-function close() { menuOpen.value = false }
 
 function onLogout() {
-  close()
   logout()
   router.push('/')
 }
 </script>
 
 <template>
-  <div class="min-h-screen" @click="close">
+  <div class="min-h-screen">
     <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur">
       <div class="mx-auto flex max-w-3xl items-center justify-between gap-4 px-4 py-4">
         <RouterLink to="/" class="text-lg font-semibold tracking-tight text-amber-400">
@@ -45,8 +40,7 @@ function onLogout() {
           </RouterLink>
           <div
             v-else
-            class="relative"
-            @click.stop="menuOpen = !menuOpen"
+            class="group relative"
           >
             <button
               class="flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-1.5 text-slate-300 transition hover:bg-slate-800"
@@ -57,41 +51,40 @@ function onLogout() {
               {{ name }}
             </button>
             <div
-              v-if="menuOpen"
-              class="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-slate-700 bg-slate-900 py-1 shadow-xl"
+              class="absolute right-0 top-full z-50 mt-1 hidden w-48 rounded-lg border border-slate-700 bg-slate-900 py-1 shadow-xl group-hover:block"
             >
               <template v-if="hasAdmin">
-                <RouterLink to="/admin/prihlaseni" @click="close" class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-800">
+                <RouterLink to="/admin/prihlaseni" class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-800">
                   Přihlášky
                 </RouterLink>
-                <RouterLink to="/admin/stanoviste" @click="close" class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-800">
+                <RouterLink to="/admin/stanoviste" class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-800">
                   Stanoviště
                 </RouterLink>
-                <RouterLink to="/admin/komunikace" @click="close" class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-800">
+                <RouterLink to="/admin/komunikace" class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-800">
                   Komunikace
                 </RouterLink>
-                <RouterLink to="/admin/logovani" @click="close" class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-800">
+                <RouterLink to="/admin/logovani" class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-800">
                   Logování
                 </RouterLink>
-                <RouterLink to="/admin/role" @click="close" class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-800">
+                <RouterLink to="/admin/role" class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-800">
                   Role
                 </RouterLink>
-                <RouterLink to="/admin/uzivatele" @click="close" class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-800">
+                <RouterLink to="/admin/uzivatele" class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-800">
                   Uživatelé
                 </RouterLink>
                 <hr class="my-1 border-slate-700" />
               </template>
-              <RouterLink v-if="hasJudge" to="/rozhodci" @click="close" class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-800">
+              <RouterLink v-if="hasJudge" to="/rozhodci" class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-800">
                 Rozhodčí
               </RouterLink>
               <template v-if="hasRacer">
-                <RouterLink to="/zavodnik/itinerar" @click="close" class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-800">
+                <RouterLink to="/zavodnik/itinerar" class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-800">
                   Itinerář
                 </RouterLink>
-                <RouterLink to="/zavodnik/mapa" @click="close" class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-800">
+                <RouterLink to="/zavodnik/mapa" class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-800">
                   Mapa
                 </RouterLink>
-                <RouterLink to="/zavodnik/stav" @click="close" class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-800">
+                <RouterLink to="/zavodnik/stav" class="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-800">
                   Můj stav
                 </RouterLink>
               </template>

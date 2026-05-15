@@ -2,7 +2,6 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
-import AdminNav from '@/components/admin/AdminNav.vue'
 import { fetchLogLevel, setLogLevel, downloadLog } from '@/api'
 
 const router = useRouter()
@@ -68,7 +67,6 @@ onMounted(loadLevel)
   <div>
     <div class="flex items-center justify-between gap-4">
       <h1 class="text-2xl font-bold text-white">Logování</h1>
-      <AdminNav />
     </div>
 
     <div v-if="loading" class="mt-8 text-slate-500">Načítám…</div>

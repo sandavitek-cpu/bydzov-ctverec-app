@@ -2,7 +2,6 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
-import AdminNav from '@/components/admin/AdminNav.vue'
 import { apiBaseUrl, createAdminCheckpoint, updateAdminCheckpoint, deleteAdminCheckpoint, type CheckpointData } from '@/api'
 
 const router = useRouter()
@@ -106,7 +105,6 @@ onMounted(load)
         <h1 class="text-2xl font-bold text-white">Kontrolní stanoviště</h1>
         <p class="text-sm text-slate-400">{{ checkpoints.length }} stanovišť</p>
       </div>
-      <AdminNav />
     </div>
 
     <div class="mt-6 grid gap-6 lg:grid-cols-2">

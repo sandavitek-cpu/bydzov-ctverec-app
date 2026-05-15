@@ -2,7 +2,6 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
-import AdminNav from '@/components/admin/AdminNav.vue'
 import { apiBaseUrl, type RegistrationResult } from '@/api'
 
 const router = useRouter()
@@ -108,7 +107,6 @@ const categoryLabel: Record<string, string> = {
           Upomínka
         </button>
       </div>
-      <AdminNav />
     </div>
 
     <p v-if="loading" class="mt-8 text-slate-500">Načítám…</p>

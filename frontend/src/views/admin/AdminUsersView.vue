@@ -2,7 +2,6 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
-import AdminNav from '@/components/admin/AdminNav.vue'
 import { apiBaseUrl } from '@/api'
 
 const router = useRouter()
@@ -134,7 +133,6 @@ onMounted(async () => {
   <div>
     <div class="flex items-center justify-between gap-4">
       <h1 class="text-2xl font-bold text-white">Uživatelé</h1>
-      <AdminNav />
     </div>
 
     <div class="mt-6">
