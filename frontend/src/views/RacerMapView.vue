@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { apiBaseUrl } from '@/api'
@@ -43,7 +43,7 @@ onMounted(async () => {
     checkpoints.value = data.areas ?? []
   } catch {}
 
-  await nextTick()
+  await new Promise(r => setTimeout(r, 100))
 
   map = L.map('race-map', {
     center: [50.2415, 15.49],
@@ -81,8 +81,8 @@ onMounted(async () => {
         } else {
           marker = L.marker(latlng, {
             icon: L.divIcon({
-              className: '',
-              html: '<div style="width:20px;height:20px;background:#3b82f6;border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 2px #3b82f6"></div>',
+              className: 'gps-marker',
+              html: '<div></div>',
               iconSize: [20, 20],
               iconAnchor: [10, 10],
             }),
@@ -106,10 +106,10 @@ if (!isLoggedIn.value) router.push('/admin/login')
 </script>
 
 <template>
-  <div class="flex h-full flex-col">
-    <div class="flex items-center justify-between px-1 pb-2 pt-1">
-      <h1 class="text-base font-bold text-white">Mapa trasy</h1>
-      <div class="flex items-center gap-3 text-xs text-slate-500">
+  <div>
+    <div class="flex items-center justify-between">
+      <h1 class="text-lg font-bold text-white">Mapa trasy</h1>
+      <div class="flex items-center gap-2 text-xs text-slate-500">
         <span class="flex items-center gap-1">
           <span class="inline-block h-2 w-2 rounded-full" :class="gpsActive ? 'bg-emerald-500' : 'bg-slate-600'"></span>
           GPS
@@ -118,13 +118,27 @@ if (!isLoggedIn.value) router.push('/admin/login')
       </div>
     </div>
 
-    <div id="race-map" class="flex-1 rounded-xl border border-slate-800 shadow-lg" :class="{ 'opacity-0': loading }"></div>
+    <div v-if="loading" class="mt-2 flex h-[60vh] items-center justify-center rounded-xl border border-slate-800 text-sm text-slate-500">Načítám mapu…</div>
+    <div v-show="!loading" id="race-map" class="mt-2 h-[60vh] rounded-xl border border-slate-800 shadow-lg"></div>
 
-    <div v-if="loading" class="flex flex-1 items-center justify-center text-sm text-slate-500">Načítám mapu…</div>
-
-    <div class="flex flex-wrap gap-3 pt-2 text-xs text-slate-500">
+    <div class="mt-2 flex flex-wrap gap-3 text-xs text-slate-500">
       <span class="flex items-center gap-1"><span class="text-amber-400">●</span> Stanoviště</span>
       <span class="flex items-center gap-1"><span class="text-blue-500">●</span> GPS poloha</span>
     </div>
   </div>
 </template>
+
+<style>
+.gps-marker {
+  background: none !important;
+  border: none !important;
+}
+.gps-marker div {
+  width: 20px;
+  height: 20px;
+  background: #3b82f6;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px #3b82f6, 0 0 12px rgba(59,130,246,0.5);
+}
+</style>
