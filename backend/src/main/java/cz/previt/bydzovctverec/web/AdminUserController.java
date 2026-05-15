@@ -1,5 +1,6 @@
 package cz.previt.bydzovctverec.web;
 
+import cz.previt.bydzovctverec.config.JwtService;
 import cz.previt.bydzovctverec.domain.AppRole;
 import cz.previt.bydzovctverec.domain.AppRoleRepository;
 import cz.previt.bydzovctverec.domain.User;
@@ -29,11 +30,13 @@ public class AdminUserController {
   private final UserRepository userRepository;
   private final AppRoleRepository appRoleRepository;
   private final PasswordEncoder passwordEncoder;
+  private final JwtService jwtService;
 
-  public AdminUserController(UserRepository userRepository, AppRoleRepository appRoleRepository, PasswordEncoder passwordEncoder) {
+  public AdminUserController(UserRepository userRepository, AppRoleRepository appRoleRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
     this.userRepository = userRepository;
     this.appRoleRepository = appRoleRepository;
     this.passwordEncoder = passwordEncoder;
+    this.jwtService = jwtService;
   }
 
   @GetMapping
@@ -216,5 +219,17 @@ public class AdminUserController {
     user.getAppRoles().removeIf(r -> r.getId().equals(roleId));
     userRepository.save(user);
     return ResponseEntity.noContent().build();
+  }
+
+  @PostMapping("/{id}/impersonate")
+  public ResponseEntity<?> impersonate(@PathVariable Long id) {
+    var userOpt = userRepository.findById(id);
+    if (userOpt.isEmpty()) return ResponseEntity.badRequest().body(Map.of("error", "Uživatel nenalezen"));
+    var user = userOpt.get();
+    String accessToken = jwtService.generateAccessToken(user);
+    String roleStr = user.getAppRoles().isEmpty()
+        ? user.getRole().name()
+        : user.getAppRoles().stream().map(AppRole::getName).collect(Collectors.joining(","));
+    return ResponseEntity.ok(Map.of("accessToken", accessToken, "username", user.getUsername(), "name", user.getName(), "role", roleStr));
   }
 }

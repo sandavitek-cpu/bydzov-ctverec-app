@@ -47,7 +47,7 @@ public class Checkpoint {
   @Column(name = "max_points")
   private Integer maxPoints;
 
-  @ElementCollection
+  @ElementCollection(fetch = FetchType.EAGER)
   @CollectionTable(name = "checkpoint_volunteers", joinColumns = @JoinColumn(name = "checkpoint_id"))
   @Column(name = "volunteer_name", length = 200)
   private List<String> volunteers = new ArrayList<>();

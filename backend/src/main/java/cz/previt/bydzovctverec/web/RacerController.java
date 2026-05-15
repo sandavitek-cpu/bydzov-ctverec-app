@@ -1,5 +1,7 @@
 package cz.previt.bydzovctverec.web;
 
+import cz.previt.bydzovctverec.domain.Checkpoint;
+import cz.previt.bydzovctverec.domain.CheckpointRepository;
 import cz.previt.bydzovctverec.domain.Edition;
 import cz.previt.bydzovctverec.domain.EditionRepository;
 import cz.previt.bydzovctverec.domain.RacerRegistration;
@@ -27,12 +29,14 @@ public class RacerController {
   private final ScoreRepository scoreRepository;
   private final EditionRepository editionRepository;
   private final ScheduleItemRepository scheduleItemRepository;
+  private final CheckpointRepository checkpointRepository;
 
-  public RacerController(RacerRegistrationRepository racerRegistrationRepository, ScoreRepository scoreRepository, EditionRepository editionRepository, ScheduleItemRepository scheduleItemRepository) {
+  public RacerController(RacerRegistrationRepository racerRegistrationRepository, ScoreRepository scoreRepository, EditionRepository editionRepository, ScheduleItemRepository scheduleItemRepository, CheckpointRepository checkpointRepository) {
     this.racerRegistrationRepository = racerRegistrationRepository;
     this.scoreRepository = scoreRepository;
     this.editionRepository = editionRepository;
     this.scheduleItemRepository = scheduleItemRepository;
+    this.checkpointRepository = checkpointRepository;
   }
 
   @GetMapping("/registration")
@@ -65,6 +69,29 @@ public class RacerController {
         reg.getEmail(), reg.getVehiclePlate(), reg.getVehicleCategory()));
   }
 
+  @GetMapping("/status")
+  public ResponseEntity<?> myStatus(Authentication auth) {
+    User user = (User) auth.getPrincipal();
+    RacerRegistration reg = racerRegistrationRepository.findByEmail(user.getEmail()).orElse(null);
+    if (reg == null) {
+      return ResponseEntity.ok(Map.of("error", "Nejste přihlášen k závodu"));
+    }
+    var m = new java.util.LinkedHashMap<String, Object>();
+    m.put("id", reg.getId());
+    m.put("teamName", reg.getTeamName());
+    m.put("startNumber", reg.getStartNumber());
+    m.put("startFee", reg.getStartFee());
+    m.put("status", reg.getStatus());
+    m.put("variant", reg.getVariant() != null ? reg.getVariant() : "");
+    m.put("vehicleCategory", reg.getVehicleCategory());
+    m.put("vehiclePlate", reg.getVehiclePlate());
+    m.put("vehicleYear", reg.getVehicleYear());
+    m.put("vehicleMake", reg.getVehicleMake() != null ? reg.getVehicleMake() : "");
+    m.put("crewCount", reg.getCrewCount());
+    m.put("approved", reg.getApproved() != null ? reg.getApproved() : false);
+    return ResponseEntity.ok(m);
+  }
+
   @GetMapping("/schedule")
   public ResponseEntity<?> mySchedule() {
     Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
@@ -75,7 +102,22 @@ public class RacerController {
     return ResponseEntity.ok(items.stream().map(i -> new ScheduleItemResponse(i.getTime(), i.getLabel(), i.getDescription())).toList());
   }
 
+  @GetMapping("/checkpoints")
+  @Transactional(readOnly = true)
+  public ResponseEntity<?> myCheckpoints() {
+    Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
+    if (edition == null) {
+      return ResponseEntity.ok(List.of());
+    }
+    List<Checkpoint> items = checkpointRepository.findByEditionOrderBySortOrder(edition);
+    return ResponseEntity.ok(items.stream().map(c -> new CheckpointResponse(
+        c.getName(), c.getLat(), c.getLng(), c.getRadius(),
+        c.getSortOrder(), c.getTaskDescription()
+    )).toList());
+  }
+
   public record ScoreResponse(Long id, Integer runNumber, Integer points, String note) {}
   public record ScheduleItemResponse(String time, String label, String description) {}
   public record StandingResponse(String teamName, Integer startNumber, int totalPoints, int rank, int totalRacers, List<ScoreResponse> scores, String email, String vehiclePlate, String vehicleCategory) {}
+  public record CheckpointResponse(String name, Double lat, Double lng, Integer radius, Integer sortOrder, String taskDescription) {}
 }

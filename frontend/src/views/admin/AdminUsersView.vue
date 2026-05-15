@@ -2,10 +2,10 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
-import { apiBaseUrl, fetchAdminUsers } from '@/api'
+import { apiBaseUrl, fetchAdminUsers, impersonateUser } from '@/api'
 
 const router = useRouter()
-const { isAdmin, authHeaders, logout } = useAuth()
+const { isAdmin, authHeaders, logout, impersonateAs } = useAuth()
 
 const users = ref<any[]>([])
 const roles = ref<any[]>([])
@@ -179,6 +179,17 @@ async function addRole(roleId: number) {
     await loadUsers()
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Chyba přidání role'
+  }
+}
+
+async function handleImpersonate() {
+  if (!selectedUser.value) return
+  try {
+    const result = await impersonateUser(selectedUser.value.id, authHeaders())
+    impersonateAs(result.accessToken, result.role, result.name, result.username)
+    router.push('/')
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Přepnutí selhalo'
   }
 }
 
@@ -400,9 +411,14 @@ onMounted(async () => {
 
         <p v-if="error" class="mb-4 text-body-sm text-error">{{ error }}</p>
 
-        <button @click="saveUser" :disabled="saving" class="btn-primary w-full">
-          {{ saving ? 'Ukládám…' : 'Uložit změny' }}
-        </button>
+        <div class="flex gap-3">
+          <button @click="saveUser" :disabled="saving" class="btn-primary flex-1">
+            {{ saving ? 'Ukládám…' : 'Uložit změny' }}
+          </button>
+          <button @click="handleImpersonate" class="btn-secondary btn-sm" title="Přihlásit jako tento uživatel">
+            Přihlásit jako
+          </button>
+        </div>
 
         <div v-if="deleteConfirm" class="mt-6 alert alert-error">
           <p class="font-semibold">Opravdu smazat tohoto uživatele?</p>

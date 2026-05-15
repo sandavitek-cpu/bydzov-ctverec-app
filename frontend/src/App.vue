@@ -5,12 +5,14 @@ import { useAuth } from '@/composables/useAuth'
 import { apiBaseUrl } from '@/api'
 import logoCtverec from '@/assets/logo_ctverec.png'
 import logoPrevit from '@/assets/logo_previt.png'
+import ImpersonateModal from '@/components/ImpersonateModal.vue'
 
 const route = useRoute()
-const { isLoggedIn, name, username, hasAdmin, hasJudge, hasRacer, logout } = useAuth()
+const { isLoggedIn, name, username, hasAdmin, hasJudge, hasRacer, impersonating, logout, restoreFromImpersonation } = useAuth()
 
 const appInfo = ref<{ version: string; deployedAt: string; changelog: { version: string; description: string; createdAt: string }[] } | null>(null)
 const showInfo = ref(false)
+const showImpersonateModal = ref(false)
 const infoRef = ref<HTMLElement | null>(null)
 
 const isLoginPage = computed(() => route.path === '/admin/login')
@@ -46,6 +48,11 @@ async function toggleInfo() {
 
 <template>
   <div class="min-h-screen bg-bg flex flex-col">
+    <!-- Impersonation bar -->
+    <div v-if="impersonating" class="bg-accent-gold/20 border-b border-accent-gold/30 px-4 py-2 text-center text-body-sm text-text">
+      <span class="font-semibold">Impersonace:</span> {{ name }} (@{{ username }})
+      <button @click="restoreFromImpersonation" class="ml-3 btn-primary btn-xs">Zpět</button>
+    </div>
     <!-- Top bar -->
     <header class="h-18 border-b border-border bg-surface shrink-0">
       <div class="mx-auto flex h-full max-w-wide items-center justify-between gap-4 px-4 lg:px-8">
@@ -105,6 +112,7 @@ async function toggleInfo() {
                   <RouterLink to="/admin/logovani" class="admin-sidebar-item">Logování</RouterLink>
                   <RouterLink to="/admin/role" class="admin-sidebar-item">Role</RouterLink>
                   <RouterLink to="/admin/uzivatele" class="admin-sidebar-item">Uživatelé</RouterLink>
+                  <button @click="showImpersonateModal = true" class="admin-sidebar-item w-full text-left">Přihlásit jako</button>
                   <hr class="my-1 mx-3 border-border" />
                 </template>
                 <template v-if="hasJudge">
@@ -237,5 +245,10 @@ async function toggleInfo() {
         </div>
       </div>
     </footer>
+
+    <ImpersonateModal
+      v-if="showImpersonateModal"
+      @close="showImpersonateModal = false"
+    />
   </div>
 </template>

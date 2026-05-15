@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { fetchCurrentEdition } from '@/api'
 import { RouterLink } from 'vue-router'
+import { useAuth } from '@/composables/useAuth'
+import { fetchCurrentEdition } from '@/api'
+import RoleDashboard from '@/components/RoleDashboard.vue'
+
+const { isLoggedIn, hasAdmin, hasJudge, hasRacer } = useAuth()
 
 const loading = ref(true)
 const error = ref<string | null>(null)
@@ -19,7 +23,8 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="space-y-16">
+  <RoleDashboard v-if="isLoggedIn && (hasAdmin || hasJudge || hasRacer)" />
+  <div v-else class="space-y-16">
     <!-- Hero -->
     <section class="relative overflow-hidden rounded-xl bg-surface-strong px-8 py-12 lg:py-20 mb-4 border-l-4 border-l-accent-gold">
       <div class="absolute inset-0 opacity-[0.03] pointer-events-none select-none" style="background-image: repeating-linear-gradient(45deg, transparent, transparent 40px, currentColor 40px, currentColor 41px);"></div>

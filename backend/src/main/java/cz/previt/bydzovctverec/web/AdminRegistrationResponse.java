@@ -35,6 +35,7 @@ public record AdminRegistrationResponse(
     Boolean properlyRegistered,
     Boolean arrived,
     Boolean consent,
+    Boolean approved,
     Instant createdAt) {
 
   public static AdminRegistrationResponse from(RacerRegistration r) {
@@ -48,6 +49,7 @@ public record AdminRegistrationResponse(
         r.getEngineDisplacement(), r.getPower(), r.getMaxSpeed(),
         r.getVehicleNotes(), r.getNotes(), r.getContacted(),
         r.getProperlyRegistered(), r.getArrived(), r.getConsent(),
+        r.getApproved(),
         r.getCreatedAt());
   }
 }

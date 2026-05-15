@@ -1,23 +1,36 @@
 package cz.previt.bydzovctverec.web;
 
+import cz.previt.bydzovctverec.config.EmailService;
+import cz.previt.bydzovctverec.config.JwtService;
+import cz.previt.bydzovctverec.domain.AppRole;
+import cz.previt.bydzovctverec.domain.AppRoleRepository;
 import cz.previt.bydzovctverec.domain.Edition;
 import cz.previt.bydzovctverec.domain.EditionRepository;
 import cz.previt.bydzovctverec.domain.RacerRegistration;
 import cz.previt.bydzovctverec.domain.RacerRegistrationRepository;
 import cz.previt.bydzovctverec.domain.Score;
 import cz.previt.bydzovctverec.domain.ScoreRepository;
+import cz.previt.bydzovctverec.domain.User;
+import cz.previt.bydzovctverec.domain.UserRepository;
+import cz.previt.bydzovctverec.domain.UserRole;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,14 +40,25 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/admin/registrations")
 public class AdminController {
 
+  private static final Logger log = LoggerFactory.getLogger(AdminController.class);
   private final EditionRepository editionRepository;
   private final RacerRegistrationRepository racerRegistrationRepository;
   private final ScoreRepository scoreRepository;
+  private final UserRepository userRepository;
+  private final AppRoleRepository appRoleRepository;
+  private final PasswordEncoder passwordEncoder;
+  private final JwtService jwtService;
+  private final EmailService emailService;
 
-  public AdminController(EditionRepository editionRepository, RacerRegistrationRepository racerRegistrationRepository, ScoreRepository scoreRepository) {
+  public AdminController(EditionRepository editionRepository, RacerRegistrationRepository racerRegistrationRepository, ScoreRepository scoreRepository, UserRepository userRepository, AppRoleRepository appRoleRepository, PasswordEncoder passwordEncoder, JwtService jwtService, EmailService emailService) {
     this.editionRepository = editionRepository;
     this.racerRegistrationRepository = racerRegistrationRepository;
     this.scoreRepository = scoreRepository;
+    this.userRepository = userRepository;
+    this.appRoleRepository = appRoleRepository;
+    this.passwordEncoder = passwordEncoder;
+    this.jwtService = jwtService;
+    this.emailService = emailService;
   }
 
   @GetMapping
@@ -100,6 +124,59 @@ public class AdminController {
     return ResponseEntity.ok(AdminRegistrationResponse.from(reg));
   }
 
+  @PostMapping("/{id}/approve")
+  @Transactional
+  public ResponseEntity<?> approve(@PathVariable Long id) {
+    RacerRegistration reg = racerRegistrationRepository.findById(id).orElse(null);
+    if (reg == null) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Přihláška nenalezena"));
+    }
+    if (Boolean.TRUE.equals(reg.getApproved())) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Přihláška již schválena"));
+    }
+
+    String email = reg.getEmail();
+    if (userRepository.findByEmail(email).isPresent()) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Uživatel s tímto emailem již existuje"));
+    }
+
+    String rawPassword = generatePassword();
+    var racerRole = appRoleRepository.findByName("RACER").orElse(null);
+    var roles = new HashSet<AppRole>();
+    if (racerRole != null) roles.add(racerRole);
+
+    User user = new User(email, email, passwordEncoder.encode(rawPassword),
+        UserRole.RACER, reg.getTeamName(), "", Instant.now());
+    user.getAppRoles().addAll(roles);
+    userRepository.save(user);
+
+    reg.setApproved(true);
+    racerRegistrationRepository.save(reg);
+
+    emailService.sendCredentials(email, reg.getTeamName(), email, rawPassword,
+        reg.getStartNumber(), reg.getStartFee());
+
+    log.info("Registration {} approved, user {} created", id, email);
+    return ResponseEntity.ok(Map.of("approved", true, "email", email));
+  }
+
+  @PostMapping("/{id}/impersonate")
+  public ResponseEntity<?> impersonate(@PathVariable Long id) {
+    RacerRegistration reg = racerRegistrationRepository.findById(id).orElse(null);
+    if (reg == null) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Přihláška nenalezena"));
+    }
+    User user = userRepository.findByEmail(reg.getEmail()).orElse(null);
+    if (user == null) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Uživatel pro tuto přihlášku neexistuje (není schválena)"));
+    }
+    String accessToken = jwtService.generateAccessToken(user);
+    String roleStr = user.getAppRoles().isEmpty()
+        ? user.getRole().name()
+        : user.getAppRoles().stream().map(AppRole::getName).collect(java.util.stream.Collectors.joining(","));
+    return ResponseEntity.ok(Map.of("accessToken", accessToken, "username", user.getUsername(), "name", user.getName(), "role", roleStr));
+  }
+
   @GetMapping("/stats")
   public ResponseEntity<?> stats() {
     Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
@@ -138,6 +215,7 @@ public class AdminController {
     long jednodenni = all.stream().filter(r -> "JEDNODENNI".equals(r.getVariant())).count();
     long dvoudenni = all.stream().filter(r -> "DVODENNI".equals(r.getVariant())).count();
     long withoutAccommodation = all.stream().filter(r -> r.getVariant() == null || r.getVariant().isEmpty()).count();
+    long approved = all.stream().filter(r -> Boolean.TRUE.equals(r.getApproved())).count();
 
     int jednodenniMembers = all.stream()
         .filter(r -> "JEDNODENNI".equals(r.getVariant()))
@@ -167,6 +245,7 @@ public class AdminController {
     stats.put("withoutAccommodation", withoutAccommodation);
     stats.put("jednodenniMembers", jednodenniMembers);
     stats.put("dvoudenniMembers", dvoudenniMembers);
+    stats.put("approved", approved);
     return ResponseEntity.ok(stats);
   }
 
@@ -224,7 +303,7 @@ public class AdminController {
       return ResponseEntity.ok("Žádný aktivní ročník");
     }
     List<RacerRegistration> regs = racerRegistrationRepository.findByEditionOrderByStartNumber(edition);
-    String header = "Startovní číslo,Jméno posádky,E-mail,Telefon,Kategorie,SPZ,Ročník,Počet osob,Startovné,Stav\n";
+    String header = "Startovní číslo,Jméno posádky,E-mail,Telefon,Kategorie,SPZ,Ročník,Počet osob,Startovné,Stav,Schváleno\n";
     String body = regs.stream()
         .map(r -> String.join(",",
             String.valueOf(r.getStartNumber()),
@@ -236,7 +315,8 @@ public class AdminController {
             String.valueOf(r.getVehicleYear()),
             String.valueOf(r.getCrewCount()),
             String.valueOf(r.getStartFee()),
-            statusLabel(r.getStatus())))
+            statusLabel(r.getStatus()),
+            Boolean.TRUE.equals(r.getApproved()) ? "Ano" : "Ne"))
         .collect(Collectors.joining("\n"));
     return ResponseEntity.ok()
         .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=prihlasky.csv")
@@ -265,5 +345,14 @@ public class AdminController {
     if (v == null) return null;
     if (v instanceof Number n) return n.intValue();
     try { return Integer.parseInt(v.toString()); } catch (NumberFormatException e) { return null; }
+  }
+
+  private String generatePassword() {
+    String chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < 10; i++) {
+      sb.append(chars.charAt((int) (Math.random() * chars.length())));
+    }
+    return sb.toString();
   }
 }

@@ -18,7 +18,7 @@ public class Edition {
   @Column(name = "edition_year", nullable = false, unique = true)
   private Integer editionYear;
 
-  @Column(nullable = false)
+  @Column
   private String label;
 
   protected Edition() {}

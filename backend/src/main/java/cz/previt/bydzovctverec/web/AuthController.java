@@ -7,6 +7,8 @@ import cz.previt.bydzovctverec.domain.UserRepository;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/auth")
 public class AuthController {
 
+  private static final Logger log = LoggerFactory.getLogger(AuthController.class);
   private final UserDetailsService userDetailsService;
   private final PasswordEncoder passwordEncoder;
   private final JwtService jwtService;
@@ -33,27 +36,32 @@ public class AuthController {
 
   @PostMapping("/login")
   public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
-    String identity = request.login().trim();
     try {
+      String identity = request.login().trim();
       var userDetails = userDetailsService.loadUserByUsername(identity);
       if (!passwordEncoder.matches(request.password(), userDetails.getPassword())) {
-        return ResponseEntity.status(401).build();
+        return ResponseEntity.status(401).body(new ErrorResponse("Neplatné heslo"));
       }
+      User user = userRepository.findByUsername(identity)
+          .orElseGet(() -> userRepository.findByEmail(identity).orElse(null));
+      if (user == null) {
+        return ResponseEntity.status(401).body(new ErrorResponse("Uživatel nenalezen"));
+      }
+      String accessToken = jwtService.generateAccessToken(user);
+      String refreshToken = jwtService.generateRefreshToken(user);
+      var roleStr = user.getAppRoles().isEmpty()
+          ? user.getRole().name()
+          : user.getAppRoles().stream().map(AppRole::getName).collect(java.util.stream.Collectors.joining(","));
+      return ResponseEntity.ok(new LoginResponse(accessToken, refreshToken, roleStr, user.getName(), user.getUsername()));
     } catch (Exception e) {
-      return ResponseEntity.status(401).build();
+      log.warn("Login failed for {}: {}", request.login(), e.getMessage());
+      return ResponseEntity.status(401).body(new ErrorResponse("Přihlášení selhalo"));
     }
-    User user = userRepository.findByUsername(identity)
-        .orElseGet(() -> userRepository.findByEmail(identity).orElseThrow());
-    String accessToken = jwtService.generateAccessToken(user);
-    String refreshToken = jwtService.generateRefreshToken(user);
-    var roleStr = user.getAppRoles().isEmpty()
-        ? user.getRole().name()
-        : user.getAppRoles().stream().map(AppRole::getName).collect(java.util.stream.Collectors.joining(","));
-    return ResponseEntity.ok(new LoginResponse(accessToken, refreshToken, roleStr, user.getName(), user.getUsername()));
   }
 
   public record LoginRequest(@NotBlank String login, @NotBlank String password) {}
   public record LoginResponse(String accessToken, String refreshToken, String role, String name, String username) {}
   public record RefreshRequest(@NotBlank String refreshToken) {}
   public record RefreshResponse(String accessToken) {}
+  public record ErrorResponse(String error) {}
 }

@@ -119,6 +119,9 @@ public class RacerRegistration {
   @Column
   private Boolean consent;
 
+  @Column
+  private Boolean approved;
+
   protected RacerRegistration() {}
 
   public RacerRegistration(
@@ -165,7 +168,7 @@ public class RacerRegistration {
       String address, Integer youngestAge, String youngestName,
       Integer engineDisplacement, Integer power, Integer maxSpeed,
       String vehicleNotes, String notes, Boolean contacted,
-      Boolean properlyRegistered, Boolean arrived, Boolean consent,
+      Boolean properlyRegistered, Boolean arrived, Boolean consent, Boolean approved,
       Instant createdAt) {
     this.edition = edition;
     this.teamName = teamName;
@@ -197,6 +200,7 @@ public class RacerRegistration {
     this.properlyRegistered = properlyRegistered;
     this.arrived = arrived;
     this.consent = consent;
+    this.approved = approved;
     this.createdAt = createdAt;
     this.status = "PENDING";
   }
@@ -304,4 +308,7 @@ public class RacerRegistration {
   public void setArrived(Boolean arrived) { this.arrived = arrived; }
 
   public void setConsent(Boolean consent) { this.consent = consent; }
+
+  public Boolean getApproved() { return approved; }
+  public void setApproved(Boolean approved) { this.approved = approved; }
 }

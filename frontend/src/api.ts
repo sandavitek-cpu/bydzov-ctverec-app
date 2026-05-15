@@ -165,6 +165,36 @@ export async function updateAdminCheckpoint(id: number, data: Partial<Checkpoint
   return body as CheckpointData
 }
 
+export async function approveRegistration(id: number, headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/registrations/${id}/approve`, {
+    method: 'POST',
+    headers,
+  })
+  const body = await res.json()
+  if (!res.ok) throw new Error(body.error ?? `API ${res.status}`)
+  return body
+}
+
+export async function impersonateRegistration(id: number, headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/registrations/${id}/impersonate`, {
+    method: 'POST',
+    headers,
+  })
+  const body = await res.json()
+  if (!res.ok) throw new Error(body.error ?? `API ${res.status}`)
+  return body as { accessToken: string; username: string; name: string; role: string }
+}
+
+export async function impersonateUser(userId: number, headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/users/${userId}/impersonate`, {
+    method: 'POST',
+    headers,
+  })
+  const body = await res.json()
+  if (!res.ok) throw new Error(body.error ?? `API ${res.status}`)
+  return body as { accessToken: string; username: string; name: string; role: string }
+}
+
 export async function deleteAdminCheckpoint(id: number, headers: Record<string, string>) {
   const res = await fetch(`${apiBaseUrl}/api/admin/checkpoints/${id}`, {
     method: 'DELETE',
@@ -275,6 +305,16 @@ export async function fetchAccount(headers: Record<string, string>) {
   const res = await fetch(`${apiBaseUrl}/api/account`, { headers })
   if (!res.ok) throw new Error(`API ${res.status}`)
   return res.json() as Promise<AdminUser>
+}
+
+export async function fetchRacerStatus(headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/racer/status`, { headers })
+  if (!res.ok) throw new Error(`API ${res.status}`)
+  return res.json() as Promise<{
+    id: number; teamName: string; startNumber: number; startFee: number
+    status: string; variant: string; vehicleCategory: string; vehiclePlate: string
+    vehicleYear: number; vehicleMake: string; crewCount: number; approved: boolean
+  }>
 }
 
 export async function updateAccount(data: { name?: string; email?: string; phone?: string }, headers: Record<string, string>) {

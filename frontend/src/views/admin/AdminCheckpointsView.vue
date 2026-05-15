@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import CheckpointMap from '@/components/CheckpointMap.vue'
+import UserPickerModal from '@/components/UserPickerModal.vue'
 import { apiBaseUrl, createAdminCheckpoint, updateAdminCheckpoint, deleteAdminCheckpoint, fetchAdminUsers, type AdminUser, type CheckpointData } from '@/api'
 
 const router = useRouter()
@@ -13,6 +14,14 @@ const users = ref<AdminUser[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const editing = ref<CheckpointData | null>(null)
+const showUserPicker = ref(false)
+
+const commissionerUsers = computed(() =>
+  users.value.filter(u => {
+    const roleNames = u.appRoles.map(r => r.name)
+    return roleNames.includes('ADMIN') || roleNames.includes('JUDGE') || u.role === 'ADMIN' || u.role === 'JUDGE'
+  })
+)
 
 const form = ref({
   name: '',
@@ -155,12 +164,13 @@ onMounted(async () => {
               </div>
               <div>
                 <label class="input-label">Kontroloři</label>
-                <div class="max-h-32 overflow-y-auto rounded-md border border-border bg-surface p-2 space-y-1">
-                  <label v-for="u in users" :key="u.id" class="flex items-center gap-2 cursor-pointer text-body-sm text-text hover:text-primary">
-                    <input type="checkbox" :value="u.name" v-model="form.volunteers" class="accent-primary" />
-                    {{ u.name }}
-                  </label>
-                  <p v-if="users.length === 0" class="text-meta text-text-soft">Nejdříve vytvořte uživatele</p>
+                <button type="button" @click="showUserPicker = true" class="btn-secondary btn-sm mt-1">
+                  {{ form.volunteers.length > 0 ? `Vybráno ${form.volunteers.length} kontrolorů` : 'Vybrat kontrolory' }}
+                </button>
+                <div v-if="form.volunteers.length > 0" class="mt-2 flex flex-wrap gap-1">
+                  <span v-for="v in form.volunteers" :key="v"
+                    class="inline-flex items-center rounded-full bg-surface-strong px-2.5 py-0.5 text-meta text-text"
+                  >{{ v }}</span>
                 </div>
               </div>
             </div>
@@ -232,5 +242,12 @@ onMounted(async () => {
         </div>
       </div>
     </div>
+    <UserPickerModal
+      v-if="showUserPicker"
+      :users="commissionerUsers"
+      :model-value="form.volunteers"
+      @update:model-value="(v: string[]) => form.volunteers = v"
+      @close="showUserPicker = false"
+    />
   </div>
 </template>

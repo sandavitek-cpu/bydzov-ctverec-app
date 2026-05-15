@@ -46,9 +46,20 @@ public class RegistrationController {
 
     RacerRegistration reg = new RacerRegistration(
         edition, request.teamName(), request.email(), request.phone(),
-        request.vehicleCategory(), request.vehiclePlate(), request.vehicleYear(),
-        request.crewCount(), startNumber, startFee, Instant.now());
-    reg.setVariant(request.variant());
+        request.vehicleCategory(), request.vehicleMake() != null ? request.vehicleMake() : "",
+        request.vehiclePlate(), request.vehicleYear(),
+        request.crewCount(), startNumber, startFee,
+        request.variant(), "", "",
+        request.firstTime() != null ? request.firstTime() : false,
+        request.gender(), request.driverAge(),
+        request.club(), request.address(),
+        request.youngestAge(), request.youngestName(),
+        request.engineDisplacement(), request.power(), request.maxSpeed(),
+        request.vehicleNotes(), request.notes(),
+        false, false, false,
+        request.consent() != null ? request.consent() : false,
+        false,
+        Instant.now());
 
     racerRegistrationRepository.save(reg);
 

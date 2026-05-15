@@ -2,10 +2,10 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
-import { apiBaseUrl } from '@/api'
+import { apiBaseUrl, approveRegistration, impersonateRegistration } from '@/api'
 
 const router = useRouter()
-const { isAdmin, authHeaders, logout } = useAuth()
+const { isAdmin, authHeaders, logout, impersonateAs } = useAuth()
 
 interface AdminReg {
   id: number; teamName: string; email: string; phone: string
@@ -18,7 +18,7 @@ interface AdminReg {
   engineDisplacement: number | null; power: number | null; maxSpeed: number | null
   vehicleNotes: string | null; notes: string | null; contacted: boolean
   properlyRegistered: boolean; arrived: boolean; consent: boolean
-  createdAt: string
+  approved: boolean; createdAt: string
 }
 
 interface AdminStats {
@@ -29,7 +29,7 @@ interface AdminStats {
   oldestVehicle: number; newestVehicle: number
   oldestDriver: number; youngestDriver: number
   jednodenni: number; dvoudenni: number; withoutAccommodation: number
-  jednodenniMembers: number; dvoudenniMembers: number
+  jednodenniMembers: number; dvoudenniMembers: number; approved: number
 }
 
 const registrations = ref<AdminReg[]>([])
@@ -37,6 +37,7 @@ const stats = ref<AdminStats | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
 const selected = ref<AdminReg | null>(null)
+const approvingId = ref<number | null>(null)
 
 if (!isAdmin.value) {
   router.push('/admin/login')
@@ -73,6 +74,29 @@ async function toggleStatus(reg: AdminReg) {
     await fetchAll()
   } catch {
     error.value = 'Nepodařilo se změnit stav'
+  }
+}
+
+async function handleApprove(reg: AdminReg) {
+  approvingId.value = reg.id
+  try {
+    const result = await approveRegistration(reg.id, authHeaders())
+    reg.approved = true
+    await fetchAll()
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Schválení selhalo'
+  } finally {
+    approvingId.value = null
+  }
+}
+
+async function handleImpersonate(reg: AdminReg) {
+  try {
+    const result = await impersonateRegistration(reg.id, authHeaders())
+    impersonateAs(result.accessToken, result.role, result.name, result.username)
+    router.push('/')
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : 'Přepnutí selhalo'
   }
 }
 
@@ -200,8 +224,8 @@ const variantLabel: Record<string, string> = {
             <th>Posádka</th>
             <th class="hidden sm:table-cell">Varianta</th>
             <th>Stav</th>
-            <th class="hidden md:table-cell">Kontakt</th>
-            <th class="text-right">Startovné</th>
+            <th class="hidden md:table-cell">Schválení</th>
+            <th class="text-right">Akce</th>
           </tr>
         </thead>
         <tbody>
@@ -229,10 +253,22 @@ const variantLabel: Record<string, string> = {
               </div>
             </td>
             <td class="hidden md:table-cell">
-              <div class="text-body-sm text-text">{{ r.email }}</div>
-              <div class="text-meta text-text-soft">{{ r.phone }}</div>
+              <div class="flex flex-wrap gap-1.5">
+                <span v-if="r.approved" class="badge !bg-success/10 !text-success">Schváleno</span>
+                <span v-else class="badge !bg-warning/10 !text-warning">Čeká</span>
+              </div>
             </td>
-            <td class="text-right font-mono text-text">{{ r.startFee }} Kč</td>
+            <td class="text-right">
+              <div class="flex gap-1.5 justify-end" @click.stop>
+                <button v-if="!r.approved" @click="handleApprove(r)" :disabled="approvingId === r.id"
+                  class="btn-primary btn-xs"
+                >{{ approvingId === r.id ? '…' : 'Schválit' }}</button>
+                <button v-if="r.approved" @click="handleImpersonate(r)"
+                  class="btn-ghost btn-xs"
+                  title="Přihlásit jako tento tým"
+                >👁</button>
+              </div>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -252,6 +288,8 @@ const variantLabel: Record<string, string> = {
             <span class="badge" :class="selected.status === 'PAID' ? '!bg-success/10 !text-success' : 'badge-admin'">
               {{ selected.status === 'PAID' ? 'Zaplaceno' : 'Čeká na platbu' }}
             </span>
+            <span v-if="selected.approved" class="badge !bg-success/10 !text-success">Schváleno</span>
+            <span v-else class="badge !bg-warning/10 !text-warning">Neschváleno</span>
             <span v-if="selected.arrived" class="badge !bg-accent-olive/10 !text-accent-olive">Přijel</span>
             <span v-if="selected.contacted" class="badge !bg-info/10 !text-info">Kontaktován</span>
             <span v-if="selected.firstTime" class="badge !bg-accent-gold/10 !text-accent-gold">Nováček</span>
