@@ -174,34 +174,64 @@ async function toggleInfo() {
     </div>
 
     <!-- Footer -->
-    <footer class="border-t-2 border-accent-gold/20 bg-surface mt-12 shrink-0" style="border-top-color: rgba(184,138,59,0.2)">
-      <div class="mx-auto max-w-wide px-4 lg:px-8 py-6">
-        <div class="flex flex-col sm:flex-row items-start justify-between gap-6">
-          <div class="text-meta text-text-soft space-y-1">
-            <p>&copy; {{ new Date().getFullYear() }} Novobydžovský čtverec</p>
-            <p>Novobydžovský čtverec – Klub přátel historických vozidel, z.s.</p>
-            <p>V. Kl. Klicpery 624, 504 01 Nový Bydžov</p>
-            <p>IČO: 26630061 &middot; Účet: 1086360369/0800</p>
-            <a
-              href="#"
-              class="block mt-2 text-meta text-text-soft hover:text-primary no-underline transition-colors"
-              title="Helpdesk – technická podpora"
-            >HELPDESK</a>
+    <footer class="bg-surface-strong mt-12 shrink-0">
+      <div class="h-0.5 w-full" style="background: linear-gradient(90deg, var(--accent-gold), var(--primary), var(--accent-gold))"></div>
+      <div class="mx-auto max-w-wide px-4 lg:px-8 py-10">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          <!-- Club info -->
+          <div>
+            <div class="flex items-center gap-2 mb-3">
+              <img :src="logoCtverec" alt="" class="h-7 w-auto object-contain opacity-60" />
+              <span class="font-display text-lg tracking-[0.04em] text-text">Novobydžovský<br />Čtverec</span>
+            </div>
+            <p class="text-body-sm text-text-muted leading-relaxed">
+              Klub přátel historických vozidel, z.s.
+            </p>
+            <p class="mt-2 text-body-sm text-text-soft leading-relaxed">
+              V. Kl. Klicpery 624<br />
+              504 01 Nový Bydžov
+            </p>
           </div>
-          <a
-            href="https://pre-vit.cz"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="flex items-center gap-2 no-underline text-meta text-text-soft hover:text-primary transition-colors group shrink-0"
-            title="Previt – vývojář a správce aplikace"
-          >
-            <span>vytvořil</span>
-            <img
-              :src="logoPrevit"
-              alt="Previt"
-              class="h-5 w-auto object-contain opacity-60 group-hover:opacity-100 transition-opacity"
-            />
-          </a>
+
+          <!-- Contact & bank -->
+          <div>
+            <h4 class="text-label text-text mb-3">Kontaktní údaje</h4>
+            <div class="space-y-2 text-body-sm text-text-muted">
+              <p><span class="text-text-soft">IČO:</span> 26630061</p>
+              <p><span class="text-text-soft">Bankovní účet:</span><br />
+                <span class="font-mono text-text">1086360369/0800</span>
+              </p>
+              <a
+                href="#"
+                class="inline-flex items-center gap-1.5 mt-2 rounded-md border border-accent-gold/30 px-3 py-1.5 text-meta text-accent-gold no-underline hover:bg-accent-gold/10 transition-colors"
+                title="Helpdesk – technická podpora"
+              >
+                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                HELPDESK
+              </a>
+            </div>
+          </div>
+
+          <!-- Built by -->
+          <div class="flex flex-col items-start sm:items-end justify-between">
+            <div>
+              <p class="text-meta text-text-soft mb-2">&copy; {{ new Date().getFullYear() }}</p>
+            </div>
+            <a
+              href="https://pre-vit.cz"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="flex items-center gap-2 no-underline text-body-sm text-text-muted hover:text-primary transition-colors group"
+              title="Previt – vývojář a správce aplikace"
+            >
+              <span>vytvořil</span>
+              <img
+                :src="logoPrevit"
+                alt="Previt"
+                class="h-6 w-auto object-contain opacity-60 group-hover:opacity-100 transition-opacity"
+              />
+            </a>
+          </div>
         </div>
       </div>
     </footer>
