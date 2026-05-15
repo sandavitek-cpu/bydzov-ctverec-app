@@ -2,32 +2,57 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
-import { apiBaseUrl, type RegistrationResult } from '@/api'
+import { apiBaseUrl } from '@/api'
 
 const router = useRouter()
 const { isAdmin, authHeaders, logout } = useAuth()
 
-const registrations = ref<RegistrationResult[]>([])
+interface AdminReg {
+  id: number; teamName: string; email: string; phone: string
+  vehicleCategory: string; vehicleMake: string; vehiclePlate: string
+  vehicleYear: number; crewCount: number; startNumber: number
+  startFee: number; status: string; variant: string | null
+  firstName: string | null; lastName: string | null; firstTime: boolean
+  gender: string | null; driverAge: number | null; club: string | null
+  address: string | null; youngestAge: number | null; youngestName: string | null
+  engineDisplacement: number | null; power: number | null; maxSpeed: number | null
+  vehicleNotes: string | null; notes: string | null; contacted: boolean
+  properlyRegistered: boolean; arrived: boolean; consent: boolean
+  createdAt: string
+}
+
+interface AdminStats {
+  totalCrews: number; totalMembers: number; paid: number
+  contacted: number; arrived: number; firstTimers: number
+  women: number; kidsUnder10: number; vehiclesBefore1945: number
+  cars: number; motos: number
+  oldestVehicle: number; newestVehicle: number
+  oldestDriver: number; youngestDriver: number
+  jednodenni: number; dvoudenni: number; withoutAccommodation: number
+  jednodenniMembers: number; dvoudenniMembers: number
+}
+
+const registrations = ref<AdminReg[]>([])
+const stats = ref<AdminStats | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
+const selected = ref<AdminReg | null>(null)
 
 if (!isAdmin.value) {
   router.push('/admin/login')
 }
 
-async function fetchRegistrations() {
+async function fetchAll() {
   loading.value = true
   error.value = null
   try {
-    const res = await fetch(`${apiBaseUrl}/api/admin/registrations`, {
-      headers: { ...authHeaders() },
-    })
-    if (res.status === 403) {
-      logout()
-      router.push('/admin/login')
-      return
-    }
-    registrations.value = await res.json()
+    const [regRes, statsRes] = await Promise.all([
+      fetch(`${apiBaseUrl}/api/admin/registrations`, { headers: authHeaders() }),
+      fetch(`${apiBaseUrl}/api/admin/registrations/stats`, { headers: authHeaders() }),
+    ])
+    if (regRes.status === 403) { logout(); router.push('/admin/login'); return }
+    registrations.value = await regRes.json()
+    stats.value = await statsRes.json()
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Chyba načítání'
   } finally {
@@ -35,7 +60,7 @@ async function fetchRegistrations() {
   }
 }
 
-async function toggleStatus(reg: RegistrationResult) {
+async function toggleStatus(reg: AdminReg) {
   const newStatus = reg.status === 'PAID' ? 'PENDING' : 'PAID'
   try {
     const res = await fetch(`${apiBaseUrl}/api/admin/registrations/${reg.id}/status`, {
@@ -45,6 +70,7 @@ async function toggleStatus(reg: RegistrationResult) {
     })
     if (!res.ok) throw new Error()
     reg.status = newStatus
+    await fetchAll()
   } catch {
     error.value = 'Nepodařilo se změnit stav'
   }
@@ -53,15 +79,13 @@ async function toggleStatus(reg: RegistrationResult) {
 async function downloadCsv() {
   try {
     const res = await fetch(`${apiBaseUrl}/api/admin/registrations/export`, {
-      headers: { ...authHeaders() },
+      headers: authHeaders(),
     })
     if (!res.ok) throw new Error()
     const blob = await res.blob()
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
-    a.href = url
-    a.download = 'prihlasky.csv'
-    a.click()
+    a.href = url; a.download = 'prihlasky.csv'; a.click()
     URL.revokeObjectURL(url)
   } catch {
     error.value = 'Nepodařilo se stáhnout CSV'
@@ -75,92 +99,221 @@ function mailtoUnpaid() {
   window.location.href = `mailto:${bcc}?subject=${encodeURIComponent('Novobydžovský čtverec 2026 – připomínka platby startovného')}&body=${encodeURIComponent('Dobrý den,\n\nrádi bychom Vás upozornili, že Vaše startovné za přihlášku do Novobydžovského čtverce 2026 dosud nebylo uhrazeno.\n\nProsíme o co nejdřívější úhradu na účet 2802609342/2010 s variabilním symbolem Vašeho startovního čísla.\n\nDěkujeme.\n\nTým Novobydžovského čtverce')}`
 }
 
-onMounted(fetchRegistrations)
+function selectReg(r: AdminReg) {
+  selected.value = r
+}
+
+function closeDetail() {
+  selected.value = null
+}
+
+onMounted(fetchAll)
 
 const categoryLabel: Record<string, string> = {
-  MOTOCYKL: 'Motocykl',
-  OSOBNI: 'Osobní',
-  CLASSIC: 'Historické',
-  NAKLADNI: 'Nákladní',
+  MOTOCYKL: 'Motocykl', OSOBNI: 'Osobní', CLASSIC: 'Historické', NAKLADNI: 'Nákladní',
+}
+
+const variantLabel: Record<string, string> = {
+  JEDNODENNI: 'Jednodenní', DVODENNI: 'Dvoudenní',
 }
 </script>
 
 <template>
   <div>
-    <div class="flex items-center justify-between gap-4">
+    <div class="flex items-center justify-between gap-4 mb-6">
       <div>
-        <h1 class="text-2xl font-bold text-white">Přehled přihlášek</h1>
-        <p class="text-sm text-slate-400">{{ registrations.length }} přihlášených</p>
+        <h1 class="text-page-title text-text">Přihlášky</h1>
+        <p class="text-body-sm text-text-soft">{{ registrations.length }} posádek</p>
       </div>
-      <div class="flex gap-2">
-        <button
-          @click="downloadCsv"
-          class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-800"
-        >
-          CSV
-        </button>
-        <button
-          v-if="registrations.some(r => r.status !== 'PAID')"
-          @click="mailtoUnpaid"
-          class="rounded-lg border border-amber-700 px-3 py-2 text-sm text-amber-400 transition hover:bg-amber-900/30"
-        >
-          Upomínka
-        </button>
+      <div class="flex gap-3">
+        <button @click="downloadCsv" class="btn-secondary btn-sm">CSV</button>
+        <button v-if="registrations.some(r => r.status !== 'PAID')" @click="mailtoUnpaid" class="btn-ghost btn-sm">Upomínka</button>
       </div>
     </div>
 
-    <p v-if="loading" class="mt-8 text-slate-500">Načítám…</p>
-    <p v-else-if="error" class="mt-8 text-red-400">{{ error }}</p>
-
-    <div v-else-if="registrations.length === 0" class="mt-8 text-slate-500">
-      Zatím žádné přihlášky.
+    <!-- Stats -->
+    <div v-if="stats" class="mb-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div class="card !p-4 text-center">
+        <p class="text-kpi text-primary">{{ stats.totalCrews }}</p>
+        <p class="text-meta text-text-soft mt-0.5">Posádek</p>
+      </div>
+      <div class="card !p-4 text-center">
+        <p class="text-kpi text-primary">{{ stats.totalMembers }}</p>
+        <p class="text-meta text-text-soft mt-0.5">Členů</p>
+      </div>
+      <div class="card !p-4 text-center">
+        <p class="text-kpi" :class="stats.paid === stats.totalCrews ? 'text-success' : 'text-accent-gold'">{{ stats.paid }}<span class="text-body-sm text-text-soft">/{{ stats.totalCrews }}</span></p>
+        <p class="text-meta text-text-soft mt-0.5">Zaplaceno</p>
+      </div>
+      <div class="card !p-4 text-center">
+        <p class="text-kpi" :class="stats.arrived === stats.totalCrews ? 'text-success' : 'text-text-muted'">{{ stats.arrived }}</p>
+        <p class="text-meta text-text-soft mt-0.5">Přijelo</p>
+      </div>
+      <div class="card !p-4 text-center">
+        <p class="text-kpi text-text-muted">{{ stats.cars }}</p>
+        <p class="text-meta text-text-soft mt-0.5">Automobilů</p>
+      </div>
+      <div class="card !p-4 text-center">
+        <p class="text-kpi text-text-muted">{{ stats.motos }}</p>
+        <p class="text-meta text-text-soft mt-0.5">Motocyklů</p>
+      </div>
+      <div class="card !p-4 text-center">
+        <p class="text-kpi text-text-muted">{{ stats.vehiclesBefore1945 }}</p>
+        <p class="text-meta text-text-soft mt-0.5">Do 1945</p>
+      </div>
+      <div class="card !p-4 text-center">
+        <p class="text-kpi text-text-muted">{{ stats.firstTimers }}</p>
+        <p class="text-meta text-text-soft mt-0.5">Nováčků</p>
+      </div>
+      <div class="card !p-4 text-center">
+        <p class="text-kpi text-accent-gold">{{ stats.oldestVehicle }}</p>
+        <p class="text-meta text-text-soft mt-0.5">Nejst. vozidlo</p>
+      </div>
+      <div class="card !p-4 text-center">
+        <p class="text-kpi text-accent-gold">{{ stats.oldestDriver }}<span class="text-body-sm text-text-soft"> let</span></p>
+        <p class="text-meta text-text-soft mt-0.5">Nejst. řidič</p>
+      </div>
+      <div class="card !p-4 text-center">
+        <p class="text-kpi text-text-muted">{{ stats.jednodenni }} / {{ stats.dvoudenni }} / {{ stats.withoutAccommodation }}</p>
+        <p class="text-meta text-text-soft mt-0.5">1den / 2den / bez</p>
+      </div>
+      <div class="card !p-4 text-center">
+        <p class="text-kpi text-text-muted">{{ stats.kidsUnder10 }}</p>
+        <p class="text-meta text-text-soft mt-0.5">Dětí do 10 let</p>
+      </div>
     </div>
 
-    <div v-else class="mt-6 overflow-x-auto">
-      <table class="w-full text-left text-sm">
-        <thead>
-          <tr class="border-b border-slate-800 text-slate-500">
-            <th class="py-2 pr-4 font-medium">#</th>
-            <th class="py-2 pr-4 font-medium">Posádka</th>
-            <th class="py-2 pr-4 font-medium">Kategorie</th>
-            <th class="py-2 pr-4 font-medium">Vozidlo</th>
-            <th class="py-2 pr-4 font-medium">Kontakt</th>
-            <th class="py-2 pr-4 font-medium">Startovné</th>
-            <th class="py-2 pr-2 font-medium">Stav</th>
+    <p v-if="loading" class="text-body text-text-soft py-12 text-center">Načítám…</p>
+    <p v-else-if="error" class="alert alert-error mb-4">{{ error }}</p>
+
+    <div v-else-if="registrations.length === 0" class="py-12 text-center">
+      <p class="text-section-title text-text-soft">Zatím žádné přihlášky</p>
+      <p class="text-body text-text-soft mt-2">Jakmile se někdo přihlásí, uvidíte ho zde.</p>
+    </div>
+
+    <!-- Table -->
+    <div v-else class="overflow-x-auto rounded-xl border border-border">
+      <table class="w-full">
+        <thead class="table-header">
+          <tr>
+            <th class="w-8 text-center">#</th>
+            <th>Posádka</th>
+            <th class="hidden sm:table-cell">Varianta</th>
+            <th>Stav</th>
+            <th class="hidden md:table-cell">Kontakt</th>
+            <th class="text-right">Startovné</th>
           </tr>
         </thead>
         <tbody>
-          <tr
-            v-for="r in registrations"
-            :key="r.id"
-            class="border-b border-slate-800/50 transition hover:bg-slate-900/40"
+          <tr v-for="r in registrations" :key="r.id"
+            @click="selectReg(r)"
+            class="table-row cursor-pointer"
           >
-            <td class="py-3 pr-4 font-mono text-amber-400">{{ r.startNumber }}</td>
-            <td class="py-3 pr-4">
-              <div class="font-medium text-white">{{ r.teamName }}</div>
-              <div class="text-xs text-slate-500">{{ r.vehiclePlate }} ({{ r.vehicleYear }})</div>
+            <td class="text-center font-mono font-bold text-primary">{{ r.startNumber }}</td>
+            <td>
+              <div class="font-medium text-text">{{ r.teamName }}</div>
+              <div class="text-meta text-text-soft">{{ r.vehicleCategory ? categoryLabel[r.vehicleCategory] ?? r.vehicleCategory : '' }}{{ r.vehicleMake ? ' · ' + r.vehicleMake : '' }}</div>
             </td>
-            <td class="py-3 pr-4 text-slate-300">{{ categoryLabel[r.vehicleCategory] ?? r.vehicleCategory }}</td>
-            <td class="py-3 pr-4 text-slate-300">{{ r.crewCount }} os.</td>
-            <td class="py-3 pr-4">
-              <div class="text-slate-300">{{ r.email }}</div>
-              <div class="text-xs text-slate-500">{{ r.phone }}</div>
+            <td class="hidden sm:table-cell">
+              <span v-if="r.variant" class="text-body-sm text-text-muted">{{ variantLabel[r.variant] ?? r.variant }}</span>
+              <span v-else class="text-body-sm text-text-soft">—</span>
             </td>
-            <td class="py-3 pr-4 font-mono text-slate-300">{{ r.startFee }} Kč</td>
-            <td class="py-3 pr-2">
-              <button
-                @click="toggleStatus(r)"
-                class="rounded-full px-2.5 py-0.5 text-xs font-medium transition"
-                :class="r.status === 'PAID'
-                  ? 'bg-emerald-900/50 text-emerald-400 hover:bg-emerald-800/50'
-                  : 'bg-amber-900/30 text-amber-400 hover:bg-amber-800/30'"
-              >
-                {{ r.status === 'PAID' ? 'Zaplaceno' : 'Čeká' }}
-              </button>
+            <td>
+              <div class="flex flex-wrap gap-1.5">
+                <button @click.stop="toggleStatus(r)"
+                  class="badge cursor-pointer transition-colors"
+                  :class="r.status === 'PAID' ? '!bg-success/10 !text-success' : 'badge-admin'"
+                >{{ r.status === 'PAID' ? 'Zaplaceno' : 'Čeká' }}</button>
+                <span v-if="r.arrived" class="badge !bg-accent-olive/10 !text-accent-olive">Přijel</span>
+                <span v-if="r.firstTime" class="badge !bg-accent-gold/10 !text-accent-gold">Nový</span>
+              </div>
             </td>
+            <td class="hidden md:table-cell">
+              <div class="text-body-sm text-text">{{ r.email }}</div>
+              <div class="text-meta text-text-soft">{{ r.phone }}</div>
+            </td>
+            <td class="text-right font-mono text-text">{{ r.startFee }} Kč</td>
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <!-- Detail modal -->
+    <div v-if="selected" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 py-8" @click.self="closeDetail">
+      <div class="mx-4 w-full max-w-lg rounded-xl border border-border bg-surface p-6 shadow-lg">
+        <div class="flex items-center justify-between mb-5">
+          <h2 class="text-subsection text-text">#{{ selected.startNumber }} – {{ selected.teamName }}</h2>
+          <button @click="closeDetail" class="text-text-soft hover:text-text text-xl leading-none">&times;</button>
+        </div>
+
+        <div class="space-y-4">
+          <!-- Status badges -->
+          <div class="flex flex-wrap gap-2">
+            <span class="badge" :class="selected.status === 'PAID' ? '!bg-success/10 !text-success' : 'badge-admin'">
+              {{ selected.status === 'PAID' ? 'Zaplaceno' : 'Čeká na platbu' }}
+            </span>
+            <span v-if="selected.arrived" class="badge !bg-accent-olive/10 !text-accent-olive">Přijel</span>
+            <span v-if="selected.contacted" class="badge !bg-info/10 !text-info">Kontaktován</span>
+            <span v-if="selected.firstTime" class="badge !bg-accent-gold/10 !text-accent-gold">Nováček</span>
+            <span v-if="selected.properlyRegistered" class="badge !bg-success/10 !text-success">Přihlášeno</span>
+          </div>
+
+          <!-- Vehicle info -->
+          <div class="rounded-lg border border-border bg-bg-alt p-4">
+            <div class="grid grid-cols-2 gap-x-6 gap-y-2 text-body-sm">
+              <div><span class="text-text-soft">Kategorie:</span> <span class="text-text">{{ categoryLabel[selected.vehicleCategory] ?? selected.vehicleCategory }}</span></div>
+              <div><span class="text-text-soft">Varianta:</span> <span class="text-text">{{ variantLabel[selected.variant ?? ''] ?? selected.variant ?? '—' }}</span></div>
+              <div><span class="text-text-soft">Značka:</span> <span class="text-text">{{ selected.vehicleMake || '—' }}</span></div>
+              <div><span class="text-text-soft">SPZ:</span> <span class="text-text font-mono">{{ selected.vehiclePlate }}</span></div>
+              <div><span class="text-text-soft">Ročník:</span> <span class="text-text">{{ selected.vehicleYear }}</span></div>
+              <div><span class="text-text-soft">Posádka:</span> <span class="text-text">{{ selected.crewCount }} osob</span></div>
+              <div v-if="selected.engineDisplacement"><span class="text-text-soft">Obsah:</span> <span class="text-text">{{ selected.engineDisplacement }} ccm</span></div>
+              <div v-if="selected.power"><span class="text-text-soft">Výkon:</span> <span class="text-text">{{ selected.power }} kW</span></div>
+              <div v-if="selected.maxSpeed"><span class="text-text-soft">Max. rychlost:</span> <span class="text-text">{{ selected.maxSpeed }} km/h</span></div>
+            </div>
+            <p v-if="selected.vehicleNotes" class="mt-2 text-body-sm text-text-muted italic">{{ selected.vehicleNotes }}</p>
+          </div>
+
+          <!-- Driver info -->
+          <div class="rounded-lg border border-border bg-bg-alt p-4">
+            <h3 class="text-label text-text mb-2">Řidič</h3>
+            <div class="grid grid-cols-2 gap-x-6 gap-y-2 text-body-sm">
+              <div><span class="text-text-soft">Jméno:</span> <span class="text-text">{{ selected.firstName || selected.teamName }}{{ selected.lastName ? ' ' + selected.lastName : '' }}</span></div>
+              <div v-if="selected.driverAge"><span class="text-text-soft">Věk:</span> <span class="text-text">{{ selected.driverAge }} let</span></div>
+              <div v-if="selected.gender"><span class="text-text-soft">Pohlaví:</span> <span class="text-text">{{ selected.gender === 'M' ? 'Muž' : selected.gender === 'Z' ? 'Žena' : selected.gender }}</span></div>
+              <div v-if="selected.club"><span class="text-text-soft">Klub:</span> <span class="text-text">{{ selected.club }}</span></div>
+              <div v-if="selected.address" class="col-span-2"><span class="text-text-soft">Adresa:</span> <span class="text-text">{{ selected.address }}</span></div>
+            </div>
+          </div>
+
+          <!-- Youngest member -->
+          <div v-if="selected.youngestName || selected.youngestAge != null" class="rounded-lg border border-border bg-bg-alt p-4">
+            <h3 class="text-label text-text mb-2">Nejmladší člen</h3>
+            <p class="text-body-sm text-text-muted">
+              {{ selected.youngestName || '—' }}{{ selected.youngestAge != null ? ' (' + selected.youngestAge + ' let)' : '' }}
+            </p>
+          </div>
+
+          <!-- Notes -->
+          <p v-if="selected.notes" class="rounded-lg border border-border bg-bg-alt p-4 text-body-sm text-text-muted italic">
+            {{ selected.notes }}
+          </p>
+
+          <!-- Contact -->
+          <div class="grid grid-cols-2 gap-4 text-body-sm">
+            <div><span class="text-text-soft">Email:</span><br /><span class="text-text">{{ selected.email }}</span></div>
+            <div><span class="text-text-soft">Telefon:</span><br /><span class="text-text">{{ selected.phone }}</span></div>
+          </div>
+
+          <!-- Fee -->
+          <div class="rounded-lg border border-border bg-bg-alt p-4 flex items-center justify-between">
+            <span class="text-text-soft text-body-sm">Startovné</span>
+            <span class="text-kpi text-primary">{{ selected.startFee }} Kč</span>
+          </div>
+
+          <p class="text-meta text-text-soft text-center">Přihlášeno: {{ new Date(selected.createdAt).toLocaleString('cs') }}</p>
+        </div>
+      </div>
     </div>
   </div>
 </template>

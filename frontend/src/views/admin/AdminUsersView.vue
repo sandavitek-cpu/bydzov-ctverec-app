@@ -206,98 +206,109 @@ onMounted(async () => {
 
 <template>
   <div>
-    <div class="flex items-center justify-between gap-4">
-      <h1 class="text-2xl font-bold text-white">Uživatelé</h1>
-      <button @click="showCreate = true"
-        class="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-500">
+    <div class="flex items-center justify-between gap-4 mb-6">
+      <div>
+        <h1 class="text-page-title text-text">Uživatelé</h1>
+        <p class="text-body-sm text-text-soft">{{ users.length }} uživatelů</p>
+      </div>
+      <button @click="showCreate = true" class="btn-primary btn-sm">
         Nový uživatel
       </button>
     </div>
 
-    <div class="mt-6">
-      <div class="flex gap-2">
-        <input v-model="searchQuery" placeholder="Hledat podle jména nebo emailu…" @input="loadUsers"
-          class="flex-1 rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white placeholder-slate-500" />
+    <div class="mb-6">
+      <div class="flex gap-3 items-center">
+        <div class="relative flex-1 max-w-sm">
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-soft" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input v-model="searchQuery" @input="loadUsers" placeholder="Hledat podle jména nebo emailu…"
+            class="input-field pl-10" />
+        </div>
       </div>
-      <p v-if="error" class="mt-2 text-sm text-red-400">{{ error }}</p>
+      <p v-if="error" class="mt-2 text-body-sm text-error">{{ error }}</p>
     </div>
 
-    <p v-if="loading" class="mt-6 text-slate-500">Načítám…</p>
+    <p v-if="loading" class="text-body text-text-soft py-8 text-center">Načítám…</p>
 
-    <div v-else-if="users.length === 0" class="mt-6 text-slate-500">
-      Žádní uživatelé.
+    <div v-else-if="users.length === 0" class="py-12 text-center">
+      <p class="text-section-title text-text-soft">Žádní uživatelé</p>
     </div>
 
-    <div v-else class="mt-4 space-y-2">
+    <div v-else class="space-y-3">
       <div v-for="u in users" :key="u.id"
         @click="selectUser(u.id)"
-        class="cursor-pointer rounded-lg border border-slate-800 bg-slate-900/40 p-3 transition hover:bg-slate-900/60">
-        <div class="flex items-center justify-between">
-          <div>
-            <span class="font-medium text-white">{{ u.lastName ? u.firstName + ' ' + u.lastName : u.firstName }}</span>
-            <span class="ml-2 text-xs text-slate-500">{{ u.email }}</span>
-            <span class="ml-2 text-xs text-slate-600">{{ u.username }}</span>
-            <span v-if="u.phone" class="ml-2 text-xs text-slate-600">{{ u.phone }}</span>
-            <span v-if="u.memberSince" class="ml-2 text-xs text-slate-600">od {{ u.memberSince }}</span>
+        class="card cursor-pointer transition-all hover:shadow-md"
+      >
+        <div class="flex items-center justify-between gap-4">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-strong text-text-muted font-semibold text-body">
+              {{ (u.firstName?.[0] || '').toUpperCase() }}{{ (u.lastName?.[0] || '').toUpperCase() }}
+            </div>
+            <div class="min-w-0">
+              <span class="font-medium text-text">{{ u.lastName ? u.firstName + ' ' + u.lastName : u.firstName }}</span>
+              <div class="flex flex-wrap gap-x-3 gap-y-0.5 text-meta text-text-soft">
+                <span>{{ u.email }}</span>
+                <span>@{{ u.username }}</span>
+                <span v-if="u.phone">{{ u.phone }}</span>
+                <span v-if="u.memberSince">od {{ u.memberSince }}</span>
+              </div>
+            </div>
           </div>
-          <div class="flex gap-1">
+          <div class="flex gap-1.5 shrink-0">
             <span v-for="r in u.appRoles" :key="r.id"
-              class="rounded-full bg-amber-900/30 px-2 py-0.5 text-xs text-amber-400">
-              {{ r.displayName }}
-            </span>
+              class="badge"
+              :class="r.name === 'ADMIN' ? 'badge-admin' : r.name === 'JUDGE' ? 'badge-judge' : 'badge-racer'"
+            >{{ r.displayName }}</span>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Create user dialog -->
-    <div v-if="showCreate" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div class="mx-4 w-full max-w-sm rounded-lg border border-slate-800 bg-slate-900 p-6">
-        <div class="flex items-center justify-between">
-          <h2 class="text-lg font-semibold text-white">Nový uživatel</h2>
-          <button @click="showCreate = false" class="text-slate-500 hover:text-slate-300">✕</button>
+    <!-- Create dialog -->
+    <div v-if="showCreate" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" @click.self="showCreate = false">
+      <div class="mx-4 w-full max-w-form rounded-xl border border-border bg-surface p-6 shadow-lg">
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-subsection text-text">Nový uživatel</h2>
+          <button @click="showCreate = false" class="text-text-soft hover:text-text">&times;</button>
         </div>
-        <form @submit.prevent="createUser" class="mt-4 space-y-3">
+        <form @submit.prevent="createUser" class="space-y-4">
           <div>
-            <label class="block text-xs text-slate-500">Uživatelské jméno</label>
-            <input v-model="createForm.username" required
-              class="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white" />
+            <label class="input-label">Uživatelské jméno</label>
+            <input v-model="createForm.username" required class="input-field" />
           </div>
-          <div class="flex gap-2">
-            <div class="flex-1">
-              <label class="block text-xs text-slate-500">Jméno</label>
-              <input v-model="createForm.firstName" required
-                class="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white" />
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="input-label">Jméno</label>
+              <input v-model="createForm.firstName" required class="input-field" />
             </div>
-            <div class="flex-1">
-              <label class="block text-xs text-slate-500">Příjmení</label>
-              <input v-model="createForm.lastName"
-                class="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white" />
+            <div>
+              <label class="input-label">Příjmení</label>
+              <input v-model="createForm.lastName" class="input-field" />
             </div>
           </div>
-          <div>
-            <label class="block text-xs text-slate-500">Email</label>
-            <input v-model="createForm.email" type="email" required
-              class="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white" />
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="input-label">Email</label>
+              <input v-model="createForm.email" type="email" required class="input-field" />
+            </div>
+            <div>
+              <label class="input-label">Telefon</label>
+              <input v-model="createForm.phone" type="tel" class="input-field" />
+            </div>
           </div>
-          <div>
-            <label class="block text-xs text-slate-500">Telefon</label>
-            <input v-model="createForm.phone" type="tel"
-              class="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white" />
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="input-label">V klubu od</label>
+              <input v-model="createForm.memberSince" type="date" class="input-field" />
+            </div>
+            <div>
+              <label class="input-label">Heslo (min. 6 znaků)</label>
+              <input v-model="createForm.password" type="password" required minlength="6" class="input-field" />
+            </div>
           </div>
-          <div>
-            <label class="block text-xs text-slate-500">V klubu od</label>
-            <input v-model="createForm.memberSince" type="date"
-              class="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white" />
-          </div>
-          <div>
-            <label class="block text-xs text-slate-500">Heslo (min. 6 znaků)</label>
-            <input v-model="createForm.password" type="password" required minlength="6"
-              class="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white" />
-          </div>
-          <p v-if="error" class="text-sm text-red-400">{{ error }}</p>
-          <button type="submit" :disabled="saving"
-            class="w-full rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-500 disabled:opacity-50">
+          <p v-if="error" class="text-body-sm text-error">{{ error }}</p>
+          <button type="submit" :disabled="saving" class="btn-primary w-full">
             {{ saving ? 'Vytvářím…' : 'Vytvořit uživatele' }}
           </button>
         </form>
@@ -305,120 +316,107 @@ onMounted(async () => {
     </div>
 
     <!-- User detail dialog -->
-    <div v-if="selectedUser" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div class="mx-4 w-full max-w-lg rounded-lg border border-slate-800 bg-slate-900 p-6">
-        <div class="flex items-center justify-between">
-          <h2 class="text-lg font-semibold text-white">{{ selectedUser.lastName ? selectedUser.firstName + ' ' + selectedUser.lastName : selectedUser.firstName }}</h2>
-          <div class="flex gap-2">
-            <button @click="deleteConfirm = true" class="text-sm text-red-500 hover:text-red-400">Smazat</button>
-            <button @click="closeUser" class="text-slate-500 hover:text-slate-300">✕</button>
-          </div>
+    <div v-if="selectedUser" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 py-8" @click.self="closeUser">
+      <div class="mx-4 w-full max-w-form rounded-xl border border-border bg-surface p-6 shadow-lg">
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-subsection text-text">{{ selectedUser.lastName ? selectedUser.firstName + ' ' + selectedUser.lastName : selectedUser.firstName }}</h2>
+          <button @click="closeUser" class="text-text-soft hover:text-text">&times;</button>
         </div>
 
-        <div v-if="deleteConfirm" class="mt-4 rounded-lg border border-red-800 bg-red-900/30 p-4">
-          <p class="text-sm text-red-400">Opravdu smazat tohoto uživatele?</p>
-          <div class="mt-3 flex gap-2">
-            <button @click="deleteUser" :disabled="saving"
-              class="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-500 disabled:opacity-50">
-              {{ saving ? 'Mažu…' : 'Ano, smazat' }}
-            </button>
-            <button @click="deleteConfirm = false"
-              class="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-400 transition hover:bg-slate-800">
-              Zrušit
-            </button>
-          </div>
-        </div>
-
-        <div class="mt-4 space-y-3">
-          <div class="flex gap-2">
-            <div class="flex-1">
-              <label class="block text-xs text-slate-500">Jméno</label>
-              <input v-model="editFirstName"
-                class="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white" />
+        <div class="space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="input-label">Jméno</label>
+              <input v-model="editFirstName" class="input-field" />
             </div>
-            <div class="flex-1">
-              <label class="block text-xs text-slate-500">Příjmení</label>
-              <input v-model="editLastName"
-                class="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white" />
+            <div>
+              <label class="input-label">Příjmení</label>
+              <input v-model="editLastName" class="input-field" />
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="input-label">Email</label>
+              <input v-model="editEmail" type="email" class="input-field" />
+            </div>
+            <div>
+              <label class="input-label">Telefon</label>
+              <input v-model="editPhone" type="tel" class="input-field" />
             </div>
           </div>
           <div>
-            <label class="block text-xs text-slate-500">Email</label>
-            <input v-model="editEmail" type="email"
-              class="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white" />
+            <label class="input-label">V klubu od</label>
+            <input v-model="editMemberSince" type="date" class="input-field" />
           </div>
-          <div>
-            <label class="block text-xs text-slate-500">Telefon</label>
-            <input v-model="editPhone" type="tel"
-              class="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white" />
-          </div>
-          <div>
-            <label class="block text-xs text-slate-500">V klubu od</label>
-            <input v-model="editMemberSince" type="date"
-              class="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white" />
-          </div>
-          <div class="text-xs text-slate-600">
+          <div class="text-meta text-text-soft bg-bg-alt -mx-6 px-6 py-3">
             Uživatelské jméno: {{ selectedUser.username }} · Registrován: {{ new Date(selectedUser.createdAt).toLocaleString('cs') }}
           </div>
-          <button @click="saveUser" :disabled="saving"
-            class="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-500 disabled:opacity-50">
-            {{ saving ? 'Ukládám…' : 'Uložit změny' }}
-          </button>
         </div>
 
-        <hr class="my-4 border-slate-800" />
+        <hr class="my-6 border-border" />
 
         <div>
-          <h3 class="text-sm font-medium text-slate-400">Nové heslo</h3>
-          <div class="mt-2 flex gap-2">
-            <input v-model="pwNewPassword" type="password" placeholder="Nové heslo" minlength="6"
-              class="flex-1 rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white placeholder-slate-500" />
-            <button @click="setPassword" :disabled="pwSaving || !pwNewPassword"
-              class="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-500 disabled:opacity-50">
+          <h3 class="text-subsection text-text">Nové heslo</h3>
+          <div class="mt-3 flex gap-3">
+            <input v-model="pwNewPassword" type="password" placeholder="Nové heslo" minlength="6" class="input-field flex-1" />
+            <button @click="setPassword" :disabled="pwSaving || !pwNewPassword" class="btn-primary btn-sm">
               {{ pwSaving ? '…' : 'Nastavit' }}
             </button>
           </div>
-          <p v-if="pwError" class="mt-1 text-xs text-red-400">{{ pwError }}</p>
-          <p v-if="pwSuccess" class="mt-1 text-xs text-emerald-400">Heslo změněno</p>
+          <p v-if="pwError" class="mt-1 text-body-sm text-error">{{ pwError }}</p>
+          <p v-if="pwSuccess" class="mt-1 text-body-sm text-success">Heslo změněno</p>
         </div>
 
-        <hr class="my-4 border-slate-800" />
+        <hr class="my-6 border-border" />
 
         <div>
-          <h3 class="text-sm font-medium text-slate-400">Aktuální role</h3>
-          <div v-if="selectedUser.appRoles.length === 0" class="mt-2 text-xs text-slate-600">
-            Žádné role
-          </div>
-          <div v-else class="mt-2 space-y-1">
+          <h3 class="text-subsection text-text">Aktuální role</h3>
+          <div v-if="selectedUser.appRoles.length === 0" class="mt-3 text-body-sm text-text-soft">Žádné role</div>
+          <div v-else class="mt-3 space-y-2">
             <div v-for="r in selectedUser.appRoles" :key="r.id"
-              class="flex items-center justify-between rounded border border-slate-800 bg-slate-950/50 px-3 py-2">
-              <span class="text-sm text-white">{{ r.displayName }}</span>
-              <button @click="removeRole(r.id)"
-                class="text-xs text-red-500 hover:text-red-400">
-                Odebrat
-              </button>
+              class="flex items-center justify-between rounded-md border border-border bg-bg px-4 py-2.5"
+            >
+              <span class="text-body text-text">{{ r.displayName }}</span>
+              <button @click="removeRole(r.id)" class="text-body-sm text-error hover:text-error/80">Odebrat</button>
             </div>
           </div>
         </div>
 
-        <div class="mt-4">
-          <h3 class="text-sm font-medium text-slate-400">Přidat roli</h3>
-          <div class="mt-2 flex flex-wrap gap-2">
+        <div class="mt-6">
+          <h3 class="text-subsection text-text">Přidat roli</h3>
+          <div class="mt-3 flex flex-wrap gap-2">
             <template v-for="r in roles" :key="r.id">
               <button v-if="!selectedUser.appRoles.some((a: any) => a.id === r.id)"
                 @click="addRole(r.id)"
-                class="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 transition hover:bg-slate-800">
-                + {{ r.displayName }}
-              </button>
+                class="btn-secondary btn-sm"
+              >+ {{ r.displayName }}</button>
             </template>
             <span v-if="roles.every((r: any) => selectedUser.appRoles.some((a: any) => a.id === r.id))"
-              class="text-xs text-slate-600">
-              Uživatel má všechny role
-            </span>
+              class="text-body-sm text-text-soft">Uživatel má všechny role</span>
           </div>
         </div>
 
-        <p v-if="error" class="mt-3 text-sm text-red-400">{{ error }}</p>
+        <hr class="my-6 border-border" />
+
+        <p v-if="error" class="mb-4 text-body-sm text-error">{{ error }}</p>
+
+        <button @click="saveUser" :disabled="saving" class="btn-primary w-full">
+          {{ saving ? 'Ukládám…' : 'Uložit změny' }}
+        </button>
+
+        <div v-if="deleteConfirm" class="mt-6 alert alert-error">
+          <p class="font-semibold">Opravdu smazat tohoto uživatele?</p>
+          <div class="mt-3 flex gap-3">
+            <button @click="deleteUser" :disabled="saving" class="btn-danger btn-sm">
+              {{ saving ? 'Mažu…' : 'Ano, smazat' }}
+            </button>
+            <button @click="deleteConfirm = false" class="btn-secondary btn-sm">Zrušit</button>
+          </div>
+        </div>
+
+        <button v-else @click="deleteConfirm = true" class="mt-4 w-full btn-ghost btn-sm text-error">
+          Smazat uživatele
+        </button>
       </div>
     </div>
   </div>

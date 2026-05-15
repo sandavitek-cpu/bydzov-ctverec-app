@@ -5,7 +5,7 @@ import { useAuth } from '@/composables/useAuth'
 import { apiBaseUrl } from '@/api'
 
 const router = useRouter()
-const { isLoggedIn, authHeaders, logout } = useAuth()
+const { isLoggedIn, authHeaders } = useAuth()
 
 interface ScheduleItem {
   time: string
@@ -50,54 +50,40 @@ if (!isLoggedIn.value) {
 </script>
 
 <template>
-  <div class="mx-auto max-w-md">
-    <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold text-white">Itinerář</h1>
-      <button
-        @click="logout(); router.push('/admin/login')"
-        class="text-sm text-slate-500 hover:text-slate-300"
-      >
-        Odhlásit
-      </button>
+  <div class="max-w-form mx-auto">
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="text-page-title text-text">Itinerář</h1>
+        <p v-if="reg?.teamName" class="text-body text-text-muted">{{ reg.teamName }}</p>
+      </div>
     </div>
-    <p v-if="reg?.teamName" class="mt-1 text-sm text-slate-400">{{ reg.teamName }}</p>
 
-    <p v-if="loading" class="mt-8 text-slate-500">Načítám…</p>
-    <p v-else-if="error" class="mt-8 text-red-400">{{ error }}</p>
+    <p v-if="loading" class="text-body text-text-soft py-8 text-center">Načítám…</p>
+    <p v-else-if="error" class="alert alert-error">{{ error }}</p>
 
-    <div v-else class="mt-6 space-y-0">
-      <div
-        v-for="(item, i) in items"
-        :key="i"
-        class="flex gap-4 border-l-2 px-4 pb-6 pt-0"
-        :class="i < (currentIndex >= 0 ? currentIndex : items.length)
-          ? 'border-slate-700'
-          : i === currentIndex
-            ? 'border-amber-500'
-            : 'border-slate-700'"
-      >
-        <div class="flex flex-col items-center">
+    <div v-else class="relative">
+      <!-- Timeline line -->
+      <div class="absolute left-5 top-0 bottom-0 w-px bg-border"></div>
+
+      <div v-for="(item, i) in items" :key="i" class="relative flex gap-5 pb-8">
+        <!-- Time circle -->
+        <div class="relative z-10 flex flex-col items-center">
           <div
-            class="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold"
+            class="flex h-10 w-10 items-center justify-center rounded-full text-label font-bold border-2 transition-all"
             :class="i < (currentIndex >= 0 ? currentIndex : items.length)
-              ? 'bg-slate-800 text-slate-500'
+              ? 'bg-surface-strong border-border text-text-soft'
               : i === currentIndex
-                ? 'bg-amber-500/20 text-amber-400 ring-2 ring-amber-500'
-                : 'bg-slate-800 text-slate-400'"
-          >
-            {{ item.time }}
-          </div>
+                ? 'bg-surface border-primary text-primary shadow-md'
+                : 'bg-surface-2 border-border text-text-muted'"
+          >{{ item.time.replace(':', '') }}</div>
         </div>
+        <!-- Content -->
         <div class="flex-1 pt-1.5">
           <p
-            class="font-medium"
-            :class="i === currentIndex ? 'text-amber-400' : 'text-white'"
-          >
-            {{ item.label }}
-          </p>
-          <p v-if="item.description" class="mt-0.5 text-sm text-slate-500">
-            {{ item.description }}
-          </p>
+            class="font-semibold"
+            :class="i === currentIndex ? 'text-primary' : 'text-text'"
+          >{{ item.label }}</p>
+          <p v-if="item.description" class="mt-0.5 text-body-sm text-text-muted">{{ item.description }}</p>
         </div>
       </div>
     </div>

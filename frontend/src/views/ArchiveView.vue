@@ -40,72 +40,52 @@ onMounted(async () => {
 
 <template>
   <div>
-    <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold text-white">Archiv výsledků</h1>
-      <div class="text-xs text-slate-600">
+    <h1 class="text-page-title text-text">Archiv výsledků</h1>
+    <p class="mt-2 text-body-lg text-text-muted">Prohlédněte si historii všech ročníků</p>
+
+    <div class="mt-6 flex flex-wrap gap-3 items-center">
+      <select v-model="yearFilter" class="input-field w-auto">
+        <option :value="0">Všechny ročníky</option>
+        <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
+      </select>
+      <input v-model="nameFilter" placeholder="Jméno závodníka" class="input-field w-auto min-w-[200px]" />
+      <input v-model="vehicleFilter" placeholder="Vozidlo" class="input-field w-auto min-w-[180px]" />
+      <div class="text-meta text-text-soft">
         {{ allResults.length }} záznamů
       </div>
     </div>
 
-    <div class="mt-6 flex flex-wrap gap-3">
-      <select
-        v-model="yearFilter"
-        class="rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white"
-      >
-        <option :value="0">Všechny ročníky</option>
-        <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
-      </select>
-      <input
-        v-model="nameFilter"
-        placeholder="Jméno závodníka"
-        class="rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white placeholder-slate-500"
-      />
-      <input
-        v-model="vehicleFilter"
-        placeholder="Vozidlo"
-        class="rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white placeholder-slate-500"
-      />
+    <p v-if="loading" class="text-body text-text-soft py-12 text-center">Načítám…</p>
+    <p v-else-if="error" class="alert alert-error mt-6">{{ error }}</p>
+
+    <div v-else-if="filtered.length === 0" class="py-12 text-center">
+      <p class="text-section-title text-text-soft">Žádné výsledky</p>
+      <p class="text-body text-text-soft mt-2">Zkuste změnit filtry.</p>
     </div>
 
-    <p v-if="loading" class="mt-8 text-slate-500">Načítám…</p>
-    <p v-else-if="error" class="mt-8 text-red-400">{{ error }}</p>
-
-    <div v-else-if="filtered.length === 0" class="mt-8 text-slate-500">
-      Žádné výsledky neodpovídají filtrům.
-    </div>
-
-    <div v-else class="mt-6 overflow-x-auto">
-      <table class="w-full text-left text-sm">
-        <thead>
-          <tr class="border-b border-slate-800 text-slate-500">
-            <th class="py-2 pr-3 font-medium">Ročník</th>
-            <th class="py-2 pr-2 font-medium w-8">#</th>
-            <th class="py-2 pr-4 font-medium">Jméno</th>
-            <th class="py-2 pr-3 font-medium">Vozidlo</th>
-            <th class="py-2 pr-2 font-medium text-right">Body</th>
+    <div v-else class="mt-6 overflow-x-auto rounded-xl border border-border">
+      <table class="w-full">
+        <thead class="table-header">
+          <tr>
+            <th>Ročník</th>
+            <th class="w-10 text-center">#</th>
+            <th>Jméno</th>
+            <th>Vozidlo</th>
+            <th class="text-right">Body</th>
           </tr>
         </thead>
         <tbody>
-          <tr
-            v-for="(r, i) in filtered"
-            :key="r.editionYear + '-' + r.rank + '-' + i"
-            class="border-b border-slate-800/50 transition hover:bg-slate-900/40"
-          >
-            <td class="py-3 pr-3 font-mono text-amber-400">{{ r.editionYear }}</td>
-            <td class="py-3 pr-2 text-center">
+          <tr v-for="(r, i) in filtered" :key="r.editionYear + '-' + r.rank + '-' + i" class="table-row">
+            <td class="font-display text-2xl tracking-[0.04em] text-gold">{{ r.editionYear }}</td>
+            <td class="text-center">
               <span
-                class="inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold"
-                :class="r.rank === 1 ? 'bg-amber-500/20 text-amber-400' :
-                  r.rank === 2 ? 'bg-slate-400/20 text-slate-300' :
-                  r.rank === 3 ? 'bg-amber-700/20 text-amber-600' :
-                  'text-slate-500'"
-              >
-                {{ r.rank }}
-              </span>
+                class="inline-flex h-7 w-7 items-center justify-center rounded-full text-body-sm font-bold"
+                :class="r.rank === 1 ? 'rank-1' : r.rank === 2 ? 'rank-2' : r.rank === 3 ? 'rank-3' : 'text-text-soft'"
+              >{{ r.rank }}</span>
             </td>
-            <td class="py-3 pr-4 font-medium text-white">{{ r.racerName }}</td>
-            <td class="py-3 pr-3 text-slate-400">{{ r.vehicle || '—' }}</td>
-            <td class="py-3 pr-2 text-right font-mono font-bold text-white">{{ r.points }}</td>
+            <td class="font-medium text-text">{{ r.racerName }}</td>
+            <td class="text-text-muted">{{ r.vehicle || '—' }}</td>
+            <td class="text-right font-mono font-bold text-text">{{ r.points }}</td>
           </tr>
         </tbody>
       </table>

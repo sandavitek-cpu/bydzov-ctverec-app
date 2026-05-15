@@ -34,7 +34,7 @@ function initMap() {
   }).addTo(map)
 
   const icon = L.divIcon({
-    html: '<div style="width:16px;height:16px;background:#f59e0b;border:3px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.4)"></div>',
+    html: '<div style="width:16px;height:16px;background:#09097B;border:3px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.3)"></div>',
     iconSize: [16, 16],
     iconAnchor: [8, 8],
     className: '',
@@ -67,7 +67,7 @@ function updateCpMarkers() {
   cpMarkers = []
 
   const icon = L.divIcon({
-    html: '<div style="width:12px;height:12px;background:#3b82f6;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,0.4)"></div>',
+    html: '<div style="width:12px;height:12px;background:#6F7750;border:2px solid #fff;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,0.3)"></div>',
     iconSize: [12, 12],
     iconAnchor: [6, 6],
     className: '',
@@ -99,5 +99,5 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div ref="container" class="h-80 w-full rounded-lg border border-slate-800"></div>
+  <div ref="container" class="h-80 w-full rounded-lg border border-border"></div>
 </template>

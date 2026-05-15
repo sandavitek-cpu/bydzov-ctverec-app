@@ -132,7 +132,7 @@ export interface CheckpointData {
   sortOrder: number
   taskDescription: string | null
   maxPoints: number | null
-  volunteerName: string | null
+  volunteers: string[]
 }
 
 export async function fetchAdminCheckpoints(headers: Record<string, string>) {

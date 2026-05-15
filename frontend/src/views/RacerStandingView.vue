@@ -67,57 +67,49 @@ if (!isLoggedIn.value) {
 </script>
 
 <template>
-  <div class="mx-auto max-w-lg">
-    <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold text-white">Můj stav</h1>
-      <button
-        @click="logout(); router.push('/admin/login')"
-        class="text-sm text-slate-500 hover:text-slate-300"
-      >
-        Odhlásit
-      </button>
+  <div class="max-w-form mx-auto">
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="text-page-title text-text">Můj stav</h1>
     </div>
 
-    <p v-if="loading" class="mt-8 text-slate-500">Načítám…</p>
-    <p v-else-if="error" class="mt-8 text-red-400">{{ error }}</p>
+    <p v-if="loading" class="text-body text-text-soft py-8 text-center">Načítám…</p>
+    <p v-else-if="error" class="alert alert-error">{{ error }}</p>
 
     <template v-else-if="data">
-      <div class="mt-6 grid grid-cols-3 gap-3">
-        <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-4 text-center">
-          <p class="text-sm text-slate-500">Pořadí</p>
-          <p class="mt-1 text-3xl font-bold text-amber-400">
-            {{ data.rank }}<span class="text-lg text-slate-500">/{{ data.totalRacers }}</span>
+      <div class="grid grid-cols-3 gap-4 mb-6">
+        <div class="card text-center">
+          <p class="text-meta text-text-soft uppercase tracking-[0.05em]">Pořadí</p>
+          <p class="text-kpi text-primary mt-1">
+            {{ data.rank }}<span class="text-body text-text-soft">/{{ data.totalRacers }}</span>
           </p>
         </div>
-        <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-4 text-center">
-          <p class="text-sm text-slate-500">Body</p>
-          <p class="mt-1 text-3xl font-bold text-white">{{ data.totalPoints }}</p>
+        <div class="card text-center">
+          <p class="text-meta text-text-soft uppercase tracking-[0.05em]">Body</p>
+          <p class="text-kpi text-text mt-1">{{ data.totalPoints }}</p>
         </div>
-        <div class="rounded-xl border border-slate-800 bg-slate-900/60 p-4 text-center">
-          <p class="text-sm text-slate-500">#{{ data.startNumber }}</p>
-          <p class="mt-1 text-sm font-medium text-white truncate">{{ data.teamName }}</p>
+        <div class="card text-center">
+          <p class="text-meta text-text-soft uppercase tracking-[0.05em]">#{{ data.startNumber }}</p>
+          <p class="text-body font-medium text-text truncate mt-1">{{ data.teamName }}</p>
         </div>
       </div>
 
-      <div v-if="data.scores.length > 0" class="mt-6">
-        <h2 class="text-sm font-medium text-slate-400">Jízdy</h2>
-        <div class="mt-2 space-y-2">
-          <div
-            v-for="s in data.scores"
-            :key="s.runNumber"
-            class="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/40 px-4 py-3"
+      <div v-if="data.scores.length > 0">
+        <h2 class="text-subsection text-text mb-4">Jízdy</h2>
+        <div class="space-y-2">
+          <div v-for="s in data.scores" :key="s.runNumber"
+            class="card !p-4 flex items-center justify-between"
           >
-            <span class="text-slate-400">{{ s.runNumber }}. jízda</span>
-            <span class="font-mono text-lg font-bold text-white">{{ s.points }} b.</span>
+            <span class="text-text-muted">{{ s.runNumber }}. jízda</span>
+            <span class="font-mono font-bold text-text text-kpi">{{ s.points }} b.</span>
           </div>
         </div>
       </div>
-      <p v-else class="mt-6 text-sm text-slate-500">Zatím žádné body.</p>
+      <p v-else class="text-body text-text-soft text-center py-8">Zatím žádné body.</p>
     </template>
 
-    <div v-else-if="!registered" class="mt-8 rounded-xl border border-amber-800 bg-amber-900/20 p-6 text-center">
-      <p class="text-amber-400">Nejste přihlášen k závodu.</p>
-      <p class="mt-1 text-sm text-slate-500">Zaregistrujte se přes formulář.</p>
+    <div v-else-if="!registered" class="card text-center">
+      <p class="text-subsection text-warning">Nejste přihlášen k závodu</p>
+      <p class="text-body text-text-muted mt-2">Zaregistrujte se přes formulář.</p>
     </div>
   </div>
 </template>

@@ -59,7 +59,7 @@ public class AdminCheckpointController {
         body.get("sortOrder") instanceof Number n ? n.intValue() : 0);
     cp.setTaskDescription((String) body.get("taskDescription"));
     cp.setMaxPoints(body.get("maxPoints") instanceof Number n ? n.intValue() : null);
-    cp.setVolunteerName((String) body.get("volunteerName"));
+    cp.setVolunteers(toStringList(body.get("volunteers")));
     checkpointRepository.save(cp);
     return ResponseEntity.ok(cp);
   }
@@ -78,9 +78,17 @@ public class AdminCheckpointController {
     if (body.containsKey("sortOrder")) cp.setSortOrder(((Number) body.get("sortOrder")).intValue());
     if (body.containsKey("taskDescription")) cp.setTaskDescription((String) body.get("taskDescription"));
     if (body.containsKey("maxPoints")) cp.setMaxPoints(((Number) body.get("maxPoints")).intValue());
-    if (body.containsKey("volunteerName")) cp.setVolunteerName((String) body.get("volunteerName"));
+    if (body.containsKey("volunteers")) cp.setVolunteers(toStringList(body.get("volunteers")));
     checkpointRepository.save(cp);
     return ResponseEntity.ok(cp);
+  }
+
+  @SuppressWarnings("unchecked")
+  private List<String> toStringList(Object v) {
+    if (v instanceof List<?> list) {
+      return list.stream().map(Object::toString).toList();
+    }
+    return List.of();
   }
 
   @DeleteMapping("/{id}")

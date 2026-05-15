@@ -5,7 +5,7 @@ import { useAuth } from '@/composables/useAuth'
 import { fetchLogLevel, setLogLevel, downloadLog } from '@/api'
 
 const router = useRouter()
-const { isAdmin, authHeaders, logout } = useAuth()
+const { isAdmin, authHeaders } = useAuth()
 
 const currentLevel = ref('INFO')
 const loading = ref(true)
@@ -65,45 +65,35 @@ onMounted(loadLevel)
 
 <template>
   <div>
-    <div class="flex items-center justify-between gap-4">
-      <h1 class="text-2xl font-bold text-white">Logování</h1>
+    <div class="flex items-center justify-between gap-4 mb-6">
+      <h1 class="text-page-title text-text">Logování</h1>
     </div>
 
-    <div v-if="loading" class="mt-8 text-slate-500">Načítám…</div>
+    <p v-if="loading" class="text-body text-text-soft py-8 text-center">Načítám…</p>
 
-    <div v-else class="mt-6 grid gap-6 lg:grid-cols-2">
-      <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
-        <h2 class="mb-4 text-lg font-semibold text-white">Úroveň logování</h2>
+    <div v-else class="grid gap-6 lg:grid-cols-2">
+      <div class="card">
+        <h2 class="text-subsection text-text mb-4">Úroveň logování</h2>
         <div class="flex items-center gap-4">
-          <span class="text-sm text-slate-400">Aktuální: 
-            <span
-              class="ml-1 rounded-full px-2.5 py-0.5 text-xs font-medium"
-              :class="currentLevel === 'DEBUG' ? 'bg-amber-900/30 text-amber-400' : 'bg-emerald-900/30 text-emerald-400'"
-            >
+          <span class="text-body text-text-muted">
+            Aktuální:
+            <span class="badge ml-2" :class="currentLevel === 'DEBUG' ? 'badge-admin' : 'badge-racer'">
               {{ currentLevel }}
             </span>
           </span>
-          <button
-            @click="toggleLevel"
-            :disabled="setting"
-            class="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-500 disabled:opacity-50"
-          >
+          <button @click="toggleLevel" :disabled="setting" class="btn-primary btn-sm">
             {{ setting ? 'Nastavuji…' : `Přepnout na ${currentLevel === 'INFO' ? 'DEBUG' : 'INFO'}` }}
           </button>
         </div>
-        <p v-if="error" class="mt-3 text-sm text-red-400">{{ error }}</p>
+        <p v-if="error" class="mt-3 text-body-sm text-error">{{ error }}</p>
       </div>
 
-      <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
-        <h2 class="mb-4 text-lg font-semibold text-white">Stáhnout log</h2>
-        <p class="mb-4 text-sm text-slate-400">
+      <div class="card">
+        <h2 class="text-subsection text-text mb-4">Stáhnout log</h2>
+        <p class="text-body-sm text-text-muted mb-4">
           Stáhne záznamy z posledních 10 minut.
         </p>
-        <button
-          @click="handleDownload"
-          :disabled="downloading"
-          class="rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-600 disabled:opacity-50"
-        >
+        <button @click="handleDownload" :disabled="downloading" class="btn-secondary btn-sm">
           {{ downloading ? 'Stahuji…' : 'Stáhnout aktuální log' }}
         </button>
       </div>

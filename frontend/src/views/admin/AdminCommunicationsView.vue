@@ -73,75 +73,57 @@ onMounted(loadHistory)
 
 <template>
   <div>
-    <div class="flex items-center justify-between gap-4">
-      <h1 class="text-2xl font-bold text-white">Hromadná komunikace</h1>
+    <div class="flex items-center justify-between gap-4 mb-6">
+      <h1 class="text-page-title text-text">Hromadná komunikace</h1>
     </div>
 
-    <div class="mt-6 grid gap-6 lg:grid-cols-2">
+    <div class="grid gap-6 lg:grid-cols-2">
       <div>
-        <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
-          <h2 class="mb-4 text-lg font-semibold text-white">Nová zpráva</h2>
-          <form @submit.prevent="send" class="space-y-3">
+        <div class="card">
+          <h2 class="text-subsection text-text mb-4">Nová zpráva</h2>
+          <form @submit.prevent="send" class="space-y-4">
             <div>
-              <label class="block text-xs text-slate-500">Příjemci</label>
-              <select
-                v-model="recipientType"
-                class="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white"
-              >
+              <label class="input-label">Příjemci</label>
+              <select v-model="recipientType" class="input-field">
                 <option v-for="o in recipientOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
               </select>
             </div>
             <div>
-              <label class="block text-xs text-slate-500">Předmět</label>
-              <input
-                v-model="subject"
-                required
-                class="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white"
-              />
+              <label class="input-label">Předmět</label>
+              <input v-model="subject" required class="input-field" />
             </div>
             <div>
-              <label class="block text-xs text-slate-500">Zpráva</label>
-              <textarea
-                v-model="messageBody"
-                required
-                rows="6"
-                class="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white"
-              ></textarea>
+              <label class="input-label">Zpráva</label>
+              <textarea v-model="messageBody" required rows="6" class="input-field min-h-[140px] resize-y"></textarea>
             </div>
-            <button
-              type="submit"
-              :disabled="sending"
-              class="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-500 disabled:opacity-50"
-            >
+            <button type="submit" :disabled="sending" class="btn-primary w-full">
               {{ sending ? 'Odesílám…' : 'Odeslat' }}
             </button>
           </form>
 
-          <div v-if="result" class="mt-4 rounded bg-emerald-900/30 p-3 text-sm text-emerald-400">
+          <div v-if="result" class="mt-4 alert alert-success">
             Odesláno {{ result.sent }} / {{ result.total }} e-mailů
           </div>
-          <p v-if="error" class="mt-3 text-sm text-red-400">{{ error }}</p>
+          <p v-if="error" class="mt-3 text-body-sm text-error">{{ error }}</p>
         </div>
       </div>
 
       <div>
-        <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
-          <h2 class="mb-4 text-lg font-semibold text-white">Historie odeslaných zpráv</h2>
-          <p v-if="loadingHistory" class="text-sm text-slate-500">Načítám…</p>
-          <div v-else-if="history.length === 0" class="text-sm text-slate-500">Zatím žádné zprávy.</div>
+        <div class="card">
+          <h2 class="text-subsection text-text mb-4">Historie odeslaných zpráv</h2>
+          <p v-if="loadingHistory" class="text-body-sm text-text-soft">Načítám…</p>
+          <div v-else-if="history.length === 0" class="text-body-sm text-text-soft">Zatím žádné zprávy.</div>
           <div v-else class="space-y-3 max-h-96 overflow-y-auto">
-            <div
-              v-for="entry in history"
-              :key="entry.id"
-              class="rounded border border-slate-800 bg-slate-950/50 p-3"
+            <div v-for="entry in history" :key="entry.id"
+              class="rounded-md border border-border bg-bg p-3"
             >
               <div class="flex items-center justify-between gap-2">
-                <span class="text-xs font-medium text-amber-400">{{ recipientLabel[entry.recipientType] ?? entry.recipientType }}</span>
-                <span class="text-xs text-slate-600">{{ new Date(entry.createdAt).toLocaleString('cs') }}</span>
+                <span class="badge badge-judge text-meta">{{ recipientLabel[entry.recipientType] ?? entry.recipientType }}</span>
+                <span class="text-meta text-text-soft">{{ new Date(entry.createdAt).toLocaleString('cs') }}</span>
               </div>
-              <div class="mt-1 text-sm font-medium text-white">{{ entry.subject }}</div>
-              <div class="mt-1 text-xs text-slate-500 line-clamp-2">{{ entry.body }}</div>
-              <div class="mt-1 text-xs text-slate-600">{{ entry.recipientCount }} příjemců</div>
+              <div class="mt-1.5 text-body font-medium text-text">{{ entry.subject }}</div>
+              <div class="mt-0.5 text-body-sm text-text-muted line-clamp-2">{{ entry.body }}</div>
+              <div class="mt-1 text-meta text-text-soft">{{ entry.recipientCount }} příjemců</div>
             </div>
           </div>
         </div>

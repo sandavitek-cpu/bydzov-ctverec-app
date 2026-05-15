@@ -59,8 +59,8 @@ onMounted(async () => {
   for (const cp of checkpoints.value) {
     L.circle([cp.lat, cp.lng], {
       radius: cp.radius,
-      color: '#f59e0b',
-      fillColor: '#f59e0b',
+      color: '#09097B',
+      fillColor: '#09097B',
       fillOpacity: 0.08,
       weight: 2,
     }).addTo(map)
@@ -107,23 +107,31 @@ if (!isLoggedIn.value) router.push('/admin/login')
 
 <template>
   <div>
-    <div class="flex items-center justify-between">
-      <h1 class="text-lg font-bold text-white">Mapa trasy</h1>
-      <div class="flex items-center gap-2 text-xs text-slate-500">
+    <div class="flex items-center justify-between mb-4">
+      <h1 class="text-page-title text-text">Mapa trasy</h1>
+      <div class="flex items-center gap-2 text-meta text-text-soft">
         <span class="flex items-center gap-1">
-          <span class="inline-block h-2 w-2 rounded-full" :class="gpsActive ? 'bg-emerald-500' : 'bg-slate-600'"></span>
+          <span class="inline-block h-2 w-2 rounded-full" :class="gpsActive ? 'bg-success' : 'bg-border-strong'"></span>
           GPS
         </span>
-        <span v-if="gpsError" class="text-amber-400">{{ gpsError }}</span>
+        <span v-if="gpsError" class="text-warning">{{ gpsError }}</span>
       </div>
     </div>
 
-    <div v-if="loading" class="mt-2 flex h-[60vh] items-center justify-center rounded-xl border border-slate-800 text-sm text-slate-500">Načítám mapu…</div>
-    <div v-show="!loading" id="race-map" class="mt-2 h-[60vh] rounded-xl border border-slate-800 shadow-lg"></div>
+    <div v-if="loading" class="flex h-[60vh] items-center justify-center rounded-xl border border-border text-body-sm text-text-soft">
+      Načítám mapu…
+    </div>
+    <div v-show="!loading" id="race-map" class="h-[60vh] rounded-xl border border-border shadow-sm"></div>
 
-    <div class="mt-2 flex flex-wrap gap-3 text-xs text-slate-500">
-      <span class="flex items-center gap-1"><span class="text-amber-400">●</span> Stanoviště</span>
-      <span class="flex items-center gap-1"><span class="text-blue-500">●</span> GPS poloha</span>
+    <div class="mt-3 flex flex-wrap gap-4 text-meta text-text-soft">
+      <span class="flex items-center gap-1.5">
+        <span class="inline-block h-3 w-3 rounded-full border-2 border-primary bg-primary/10"></span>
+        Stanoviště
+      </span>
+      <span class="flex items-center gap-1.5">
+        <span class="inline-block h-3 w-3 rounded-full border-2 border-blue-600 bg-blue-500"></span>
+        GPS poloha
+      </span>
     </div>
   </div>
 </template>

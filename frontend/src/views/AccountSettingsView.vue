@@ -5,7 +5,7 @@ import { useAuth } from '@/composables/useAuth'
 import { apiBaseUrl, fetchAccount } from '@/api'
 
 const router = useRouter()
-const { isLoggedIn, logout, authHeaders } = useAuth()
+const { isLoggedIn, authHeaders } = useAuth()
 
 const form = ref({ username: '', firstName: '', lastName: '', email: '', phone: '', memberSince: '' })
 const loading = ref(true)
@@ -88,74 +88,71 @@ async function changePassword() {
 </script>
 
 <template>
-  <div class="mx-auto max-w-sm">
-    <h1 class="text-2xl font-bold text-white">Nastavení účtu</h1>
-    <p class="mt-1 text-sm text-slate-400">Upravte své základní údaje</p>
+  <div class="max-w-form">
+    <h1 class="text-page-title text-text">Nastavení účtu</h1>
+    <p class="mt-2 text-body-lg text-text-muted">Upravte své základní údaje</p>
 
-    <div v-if="loading" class="mt-8 text-slate-500">Načítám…</div>
+    <div v-if="loading" class="mt-8 text-body text-text-soft">Načítám…</div>
 
-    <form v-else @submit.prevent="save" class="mt-6 space-y-4">
+    <!-- Profile form -->
+    <form v-else @submit.prevent="save" class="mt-6 space-y-5">
       <div>
-        <label class="block text-xs text-slate-500">Uživatelské jméno</label>
-        <div class="mt-1 text-sm text-slate-400">{{ form.username }}</div>
+        <label class="input-label">Uživatelské jméno</label>
+        <p class="text-body text-text-muted border border-border rounded-md bg-bg-alt px-4 py-2.5">{{ form.username }}</p>
       </div>
-      <div class="flex gap-2">
-        <div class="flex-1">
-          <label class="block text-xs text-slate-500">Jméno</label>
-          <input v-model="form.firstName" required
-            class="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white" />
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="input-label">Jméno</label>
+          <input v-model="form.firstName" required class="input-field" />
         </div>
-        <div class="flex-1">
-          <label class="block text-xs text-slate-500">Příjmení</label>
-          <input v-model="form.lastName"
-            class="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white" />
+        <div>
+          <label class="input-label">Příjmení</label>
+          <input v-model="form.lastName" class="input-field" />
         </div>
       </div>
-      <div>
-        <label class="block text-xs text-slate-500">Email</label>
-        <input v-model="form.email" type="email" required
-          class="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white" />
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="input-label">Email</label>
+          <input v-model="form.email" type="email" required class="input-field" />
+        </div>
+        <div>
+          <label class="input-label">Telefon</label>
+          <input v-model="form.phone" type="tel" class="input-field" />
+        </div>
       </div>
-      <div>
-        <label class="block text-xs text-slate-500">Telefon</label>
-        <input v-model="form.phone" type="tel"
-          class="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white" />
+      <div v-if="form.memberSince" class="card !p-4">
+        <p class="text-meta text-text-soft uppercase tracking-[0.05em]">V klubu od</p>
+        <p class="text-body text-text mt-1">{{ form.memberSince }} <span class="text-text-soft">({{ memberDuration }} dní)</span></p>
       </div>
-      <div v-if="form.memberSince">
-        <label class="block text-xs text-slate-500">V klubu od</label>
-        <div class="mt-1 text-sm text-slate-400">{{ form.memberSince }} ({{ memberDuration }} dní)</div>
-      </div>
-      <p v-if="error" class="text-sm text-red-400">{{ error }}</p>
-      <p v-if="success" class="text-sm text-emerald-400">Údaje uloženy</p>
-      <button type="submit" :disabled="saving"
-        class="w-full rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-500 disabled:opacity-50">
+      <p v-if="error" class="text-body-sm text-error">{{ error }}</p>
+      <p v-if="success" class="text-body-sm text-success">Údaje uloženy</p>
+      <button type="submit" :disabled="saving" class="btn-primary w-full">
         {{ saving ? 'Ukládám…' : 'Uložit' }}
       </button>
     </form>
 
-    <hr class="my-8 border-slate-800" />
+    <hr class="my-10 border-border" />
 
-    <h2 class="text-lg font-semibold text-white">Změna hesla</h2>
-    <form @submit.prevent="changePassword" class="mt-4 space-y-4">
+    <!-- Password change -->
+    <h2 class="text-section-title text-text">Změna hesla</h2>
+    <form @submit.prevent="changePassword" class="mt-6 space-y-5 max-w-form">
       <div>
-        <label class="block text-xs text-slate-500">Současné heslo</label>
-        <input v-model="pwForm.currentPassword" type="password" required
-          class="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white" />
+        <label class="input-label">Současné heslo</label>
+        <input v-model="pwForm.currentPassword" type="password" required class="input-field" />
       </div>
-      <div>
-        <label class="block text-xs text-slate-500">Nové heslo</label>
-        <input v-model="pwForm.newPassword" type="password" required minlength="6"
-          class="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white" />
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="input-label">Nové heslo</label>
+          <input v-model="pwForm.newPassword" type="password" required minlength="6" class="input-field" />
+        </div>
+        <div>
+          <label class="input-label">Potvrzení nového hesla</label>
+          <input v-model="pwForm.confirmPassword" type="password" required class="input-field" />
+        </div>
       </div>
-      <div>
-        <label class="block text-xs text-slate-500">Potvrzení nového hesla</label>
-        <input v-model="pwForm.confirmPassword" type="password" required
-          class="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white" />
-      </div>
-      <p v-if="pwError" class="text-sm text-red-400">{{ pwError }}</p>
-      <p v-if="pwSuccess" class="text-sm text-emerald-400">Heslo změněno</p>
-      <button type="submit" :disabled="pwSaving"
-        class="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-500 disabled:opacity-50">
+      <p v-if="pwError" class="text-body-sm text-error">{{ pwError }}</p>
+      <p v-if="pwSuccess" class="text-body-sm text-success">Heslo změněno</p>
+      <button type="submit" :disabled="pwSaving" class="btn-primary">
         {{ pwSaving ? 'Měním…' : 'Změnit heslo' }}
       </button>
     </form>

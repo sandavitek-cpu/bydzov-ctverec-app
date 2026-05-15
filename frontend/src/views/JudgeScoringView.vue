@@ -5,7 +5,7 @@ import { useAuth } from '@/composables/useAuth'
 import { lookupRacerByStartNumber, submitScore, type RacerLookup } from '@/api'
 
 const router = useRouter()
-const { isLoggedIn, authHeaders, logout } = useAuth()
+const { isLoggedIn, authHeaders } = useAuth()
 
 const startNumber = ref<number | null>(null)
 const runNumber = ref(1)
@@ -68,74 +68,71 @@ if (!isLoggedIn.value) {
 </script>
 
 <template>
-  <div class="mx-auto max-w-md">
-    <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-bold text-white">Bodovací formulář</h1>
-      <button
-        @click="logout(); router.push('/admin/login')"
-        class="text-sm text-slate-500 hover:text-slate-300"
-      >
-        Odhlásit
-      </button>
+  <div class="max-w-form mx-auto">
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="text-page-title text-text">Bodovací formulář</h1>
+        <p class="text-body text-text-muted">Zadejte startovní číslo a body</p>
+      </div>
     </div>
-    <p class="mt-1 text-sm text-slate-400">Zadejte startovní číslo a body</p>
 
-    <div v-if="success" class="mt-8 space-y-6">
-      <div class="rounded-xl border border-emerald-800 bg-emerald-900/30 p-6 text-center">
-        <p class="text-3xl">✓</p>
-        <p class="mt-2 text-lg font-medium text-emerald-400">Body zapsány</p>
-        <p class="text-slate-300">
+    <!-- Success -->
+    <div v-if="success" class="space-y-6">
+      <div class="card text-center">
+        <div class="inline-flex h-16 w-16 items-center justify-center rounded-full bg-success/10 mb-4">
+          <svg class="h-8 w-8 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <h2 class="text-subsection text-success">Body zapsány</h2>
+        <p class="mt-2 text-body text-text-muted">
           {{ racer?.teamName }} — jízda {{ runNumber }}:
-          <strong class="text-white">{{ points }} b.</strong>
+          <strong class="text-primary">{{ points }} b.</strong>
         </p>
       </div>
-      <button
-        @click="handleNext"
-        class="w-full rounded-lg bg-amber-500 px-4 py-3 font-semibold text-black transition hover:bg-amber-400"
-      >
+      <button @click="handleNext" class="btn-primary w-full">
         Další závodník
       </button>
     </div>
 
-    <div v-else class="mt-6 space-y-5">
+    <!-- Form -->
+    <div v-else class="space-y-6">
       <div>
-        <label class="block text-sm font-medium text-slate-300">Startovní číslo</label>
-        <div class="mt-1 flex gap-2">
+        <label class="input-label">Startovní číslo</label>
+        <div class="flex gap-3">
           <input
             v-model.number="startNumber"
             type="number"
             min="1"
             placeholder="např. 7"
-            class="flex-1 rounded-lg border border-slate-700 bg-slate-800 px-3 py-3 text-center text-2xl text-white focus:border-amber-500 focus:outline-none"
+            class="input-field flex-1 text-center text-2xl font-bold"
             @keyup.enter="handleLookup"
           />
-          <button
-            @click="handleLookup"
-            :disabled="lookupLoading || !startNumber"
-            class="rounded-lg bg-amber-500 px-4 font-semibold text-black transition hover:bg-amber-400 disabled:opacity-50"
-          >
+          <button @click="handleLookup" :disabled="lookupLoading || !startNumber" class="btn-primary">
             {{ lookupLoading ? '…' : 'OK' }}
           </button>
         </div>
       </div>
 
-      <div v-if="racer" class="rounded-xl border border-emerald-800 bg-emerald-900/20 p-4">
-        <p class="text-sm text-emerald-400">Potvrzeno ✓</p>
-        <p class="mt-1 text-xl font-bold text-white">{{ racer.teamName }}</p>
-        <p class="text-sm text-slate-400">{{ racer.vehiclePlate }} · #{{ racer.startNumber }}</p>
+      <div v-if="racer" class="card !border-success/30 !bg-success/5">
+        <div class="flex items-center gap-2 text-success mb-1">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+          <span class="text-label">Potvrzeno</span>
+        </div>
+        <p class="text-subsection text-text">{{ racer.teamName }}</p>
+        <p class="text-body-sm text-text-muted">{{ racer.vehiclePlate }} · #{{ racer.startNumber }}</p>
       </div>
 
-      <p v-else-if="searched && !racer" class="text-center text-sm text-slate-500">
+      <p v-else-if="searched && !racer" class="text-body text-text-soft text-center">
         {{ lookupLoading ? 'Vyhledávám…' : error || 'Zadejte číslo a klikněte OK' }}
       </p>
 
-      <div v-if="racer" class="space-y-4">
+      <div v-if="racer" class="space-y-5">
         <div>
-          <label class="block text-sm font-medium text-slate-300">Jízda</label>
-          <select
-            v-model.number="runNumber"
-            class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-white focus:border-amber-500 focus:outline-none"
-          >
+          <label class="input-label">Jízda</label>
+          <select v-model.number="runNumber" class="input-field">
             <option :value="1">1. jízda</option>
             <option :value="2">2. jízda</option>
             <option :value="3">3. jízda</option>
@@ -143,27 +140,23 @@ if (!isLoggedIn.value) {
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-slate-300">Počet bodů</label>
+          <label class="input-label">Počet bodů</label>
           <input
             v-model.number="points"
             type="number"
             min="0"
             max="999"
             placeholder="0"
-            class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-3 text-center text-2xl text-white focus:border-amber-500 focus:outline-none"
+            class="input-field text-center text-2xl font-bold"
           />
         </div>
 
-        <button
-          @click="handleSubmit"
-          :disabled="loading || points === null"
-          class="w-full rounded-lg bg-amber-500 px-4 py-3 font-semibold text-black transition hover:bg-amber-400 disabled:opacity-50"
-        >
+        <button @click="handleSubmit" :disabled="loading || points === null" class="btn-primary w-full">
           {{ loading ? 'Odesílám…' : 'Odeslat body' }}
         </button>
       </div>
 
-      <p v-if="error" class="text-sm text-red-400">{{ error }}</p>
+      <p v-if="error" class="text-body-sm text-error">{{ error }}</p>
     </div>
   </div>
 </template>

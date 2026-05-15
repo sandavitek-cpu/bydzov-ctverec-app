@@ -188,6 +188,11 @@ public class DataSeeder {
         cps.get(3).setMaxPoints(10);
         cps.get(4).setTaskDescription("Cílová kontrola času");
         cps.get(4).setMaxPoints(0);
+        cps.get(0).setVolunteers(List.of("Správce"));
+        cps.get(1).setVolunteers(List.of("Komisař"));
+        cps.get(2).setVolunteers(List.of("Komisař"));
+        cps.get(3).setVolunteers(List.of("Komisař"));
+        cps.get(4).setVolunteers(List.of("Správce", "Komisař"));
         checkpointRepository.saveAll(cps);
         log.info("Checkpoints for 2026 seeded");
       } catch (Exception e) {

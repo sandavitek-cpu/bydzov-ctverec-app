@@ -1,6 +1,8 @@
 package cz.previt.bydzovctverec.domain;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -9,6 +11,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "checkpoint")
@@ -43,8 +47,10 @@ public class Checkpoint {
   @Column(name = "max_points")
   private Integer maxPoints;
 
+  @ElementCollection
+  @CollectionTable(name = "checkpoint_volunteers", joinColumns = @JoinColumn(name = "checkpoint_id"))
   @Column(name = "volunteer_name", length = 200)
-  private String volunteerName;
+  private List<String> volunteers = new ArrayList<>();
 
   protected Checkpoint() {}
 
@@ -66,7 +72,7 @@ public class Checkpoint {
   public Integer getSortOrder() { return sortOrder; }
   public String getTaskDescription() { return taskDescription; }
   public Integer getMaxPoints() { return maxPoints; }
-  public String getVolunteerName() { return volunteerName; }
+  public List<String> getVolunteers() { return volunteers; }
 
   public void setName(String name) { this.name = name; }
   public void setLat(Double lat) { this.lat = lat; }
@@ -75,5 +81,5 @@ public class Checkpoint {
   public void setSortOrder(Integer sortOrder) { this.sortOrder = sortOrder; }
   public void setTaskDescription(String taskDescription) { this.taskDescription = taskDescription; }
   public void setMaxPoints(Integer maxPoints) { this.maxPoints = maxPoints; }
-  public void setVolunteerName(String volunteerName) { this.volunteerName = volunteerName; }
+  public void setVolunteers(List<String> volunteers) { this.volunteers = volunteers; }
 }

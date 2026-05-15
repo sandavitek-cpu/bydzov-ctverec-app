@@ -22,7 +22,7 @@ const form = ref({
   sortOrder: 0,
   taskDescription: '',
   maxPoints: null as number | null,
-  volunteerName: '',
+  volunteers: [] as string[],
 })
 
 if (!isAdmin.value) {
@@ -55,13 +55,13 @@ function startEdit(cp: CheckpointData) {
     sortOrder: cp.sortOrder,
     taskDescription: cp.taskDescription ?? '',
     maxPoints: cp.maxPoints,
-    volunteerName: cp.volunteerName ?? '',
+    volunteers: cp.volunteers ?? [],
   }
 }
 
 function resetForm() {
   editing.value = null
-  form.value = { name: '', lat: 50.2415, lng: 15.4900, radius: 300, sortOrder: 0, taskDescription: '', maxPoints: null, volunteerName: '' }
+  form.value = { name: '', lat: 50.2415, lng: 15.4900, radius: 300, sortOrder: 0, taskDescription: '', maxPoints: null, volunteers: [] }
 }
 
 async function save() {
@@ -90,11 +90,6 @@ async function remove(id: number) {
   }
 }
 
-function centerMap(cp: CheckpointData) {
-  form.value.lat = cp.lat
-  form.value.lng = cp.lng
-}
-
 function onMapSelectCheckpoint(id: number) {
   const cp = checkpoints.value.find(c => c.id === id)
   if (cp) startEdit(cp)
@@ -110,141 +105,132 @@ onMounted(async () => {
 
 <template>
   <div>
-    <div class="flex items-center justify-between gap-4">
+    <div class="flex items-center justify-between gap-4 mb-6">
       <div>
-        <h1 class="text-2xl font-bold text-white">Kontrolní stanoviště</h1>
-        <p class="text-sm text-slate-400">{{ checkpoints.length }} stanovišť</p>
+        <h1 class="text-page-title text-text">Kontrolní stanoviště</h1>
+        <p class="text-body-sm text-text-soft">{{ checkpoints.length }} stanovišť</p>
       </div>
     </div>
 
-    <div class="mt-6 grid gap-6 lg:grid-cols-2">
+    <div class="grid gap-6 lg:grid-cols-2">
+      <!-- Form -->
       <div>
-        <div class="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
-          <h2 class="mb-4 text-lg font-semibold text-white">
+        <div class="card">
+          <h2 class="text-subsection text-text mb-4">
             {{ editing ? 'Upravit stanoviště' : 'Nové stanoviště' }}
           </h2>
-          <form @submit.prevent="save" class="space-y-3">
+          <form @submit.prevent="save" class="space-y-4">
             <div>
-              <label class="block text-xs text-slate-500">Název</label>
-              <input v-model="form.name" required class="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white" />
+              <label class="input-label">Název</label>
+              <input v-model="form.name" required class="input-field" />
             </div>
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="block text-xs text-slate-500">GPS lat</label>
-                <input v-model.number="form.lat" step="any" class="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white font-mono" />
+                <label class="input-label">GPS lat</label>
+                <input v-model.number="form.lat" step="any" class="input-field font-mono" />
               </div>
               <div>
-                <label class="block text-xs text-slate-500">GPS lng</label>
-                <input v-model.number="form.lng" step="any" class="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white font-mono" />
+                <label class="input-label">GPS lng</label>
+                <input v-model.number="form.lng" step="any" class="input-field font-mono" />
               </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="block text-xs text-slate-500">Rádius (m)</label>
-                <input v-model.number="form.radius" type="number" min="0" class="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white" />
+                <label class="input-label">Rádius (m)</label>
+                <input v-model.number="form.radius" type="number" min="0" class="input-field" />
               </div>
               <div>
-                <label class="block text-xs text-slate-500">Pořadí</label>
-                <input v-model.number="form.sortOrder" type="number" min="0" class="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white" />
+                <label class="input-label">Pořadí</label>
+                <input v-model.number="form.sortOrder" type="number" min="0" class="input-field" />
               </div>
             </div>
             <div>
-              <label class="block text-xs text-slate-500">Popis úkolu</label>
-              <textarea v-model="form.taskDescription" rows="2" class="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white placeholder-slate-500"></textarea>
+              <label class="input-label">Popis úkolu</label>
+              <textarea v-model="form.taskDescription" rows="2" class="input-field min-h-[80px] resize-y"></textarea>
             </div>
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="block text-xs text-slate-500">Max. body</label>
-                <input v-model.number="form.maxPoints" type="number" min="0" class="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white" />
+                <label class="input-label">Max. body</label>
+                <input v-model.number="form.maxPoints" type="number" min="0" class="input-field" />
               </div>
               <div>
-                <label class="block text-xs text-slate-500">Dobrovolník</label>
-                <select v-model="form.volunteerName" class="mt-1 w-full rounded border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-white">
-                  <option value="" class="bg-slate-800">– nevybrán –</option>
-                  <option v-for="u in users" :key="u.id" :value="u.name" class="bg-slate-800">{{ u.name }}</option>
-                </select>
+                <label class="input-label">Kontroloři</label>
+                <div class="max-h-32 overflow-y-auto rounded-md border border-border bg-surface p-2 space-y-1">
+                  <label v-for="u in users" :key="u.id" class="flex items-center gap-2 cursor-pointer text-body-sm text-text hover:text-primary">
+                    <input type="checkbox" :value="u.name" v-model="form.volunteers" class="accent-primary" />
+                    {{ u.name }}
+                  </label>
+                  <p v-if="users.length === 0" class="text-meta text-text-soft">Nejdříve vytvořte uživatele</p>
+                </div>
               </div>
             </div>
-            <div class="flex gap-2 pt-1">
-              <button
-                type="submit"
-                class="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-amber-500"
-              >
+            <div class="flex gap-3 pt-1">
+              <button type="submit" class="btn-primary btn-sm">
                 {{ editing ? 'Uložit' : 'Přidat' }}
               </button>
-              <button
-                v-if="editing"
-                type="button"
-                @click="resetForm"
-                class="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-400 transition hover:bg-slate-800"
-              >
+              <button v-if="editing" type="button" @click="resetForm" class="btn-secondary btn-sm">
                 Zrušit
               </button>
             </div>
           </form>
-          <p v-if="error" class="mt-3 text-sm text-red-400">{{ error }}</p>
+          <p v-if="error" class="mt-4 text-body-sm text-error">{{ error }}</p>
         </div>
       </div>
 
-      <div>
-        <p v-if="loading" class="text-slate-500">Načítám…</p>
+      <!-- List + Map -->
+      <div class="space-y-4">
+        <p v-if="loading" class="text-body text-text-soft py-8 text-center">Načítám…</p>
 
-        <div v-else-if="checkpoints.length === 0" class="text-slate-500">
-          Žádná stanoviště.
+        <div v-else-if="checkpoints.length === 0" class="card text-center text-text-soft py-8">
+          Žádná stanoviště
         </div>
 
-        <div v-else class="space-y-2">
-          <div
-            v-for="cp in checkpoints"
-            :key="cp.id"
-            class="rounded-lg border border-slate-800 bg-slate-900/40 p-3 transition hover:bg-slate-900/60"
+        <div v-else class="space-y-2 max-h-[400px] overflow-y-auto pr-1">
+          <div v-for="cp in checkpoints" :key="cp.id"
+            class="card !p-3 transition-all"
           >
-            <div class="flex items-start justify-between">
-              <div>
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
                 <div class="flex items-center gap-2">
-                  <span class="flex h-5 w-5 items-center justify-center rounded-full bg-slate-800 text-xs text-slate-400">{{ cp.sortOrder }}</span>
-                  <span class="font-medium text-white">{{ cp.name }}</span>
+                  <span class="flex h-6 w-6 items-center justify-center rounded-full bg-surface-strong text-meta font-semibold text-text-muted">{{ cp.sortOrder }}</span>
+                  <span class="font-medium text-text">{{ cp.name }}</span>
                 </div>
-                <div class="mt-1 text-xs text-slate-500">
+                <div class="mt-1 text-meta text-text-soft">
                   {{ cp.lat.toFixed(4) }}, {{ cp.lng.toFixed(4) }} · rádius {{ cp.radius }} m
                 </div>
-                <div v-if="cp.taskDescription" class="mt-1 text-xs text-slate-400">
-                  {{ cp.taskDescription }}
-                </div>
-                <div class="mt-1 flex gap-3 text-xs">
-                  <span v-if="cp.maxPoints != null" class="text-amber-500">max {{ cp.maxPoints }} bodů</span>
-                  <span v-if="cp.volunteerName" class="text-emerald-400">👤 {{ cp.volunteerName }}</span>
+                <div v-if="cp.taskDescription" class="mt-1 text-body-sm text-text-muted">{{ cp.taskDescription }}</div>
+                <div class="mt-1 flex gap-3 text-meta">
+                  <span v-if="cp.maxPoints != null" class="text-primary">max {{ cp.maxPoints }} bodů</span>
+                  <span v-if="cp.volunteers?.length" class="text-accent-olive">{{ cp.volunteers.join(', ') }}</span>
                 </div>
               </div>
-              <div class="flex gap-1">
-                <button
-                  @click="startEdit(cp)"
-                  class="rounded px-2 py-1 text-xs text-slate-500 transition hover:bg-slate-800 hover:text-slate-300"
-                >
-                  ✏️
+              <div class="flex gap-1 shrink-0">
+                <button @click="startEdit(cp)" class="btn-ghost btn-sm !h-7 !px-2">
+                  <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
                 </button>
-                <button
-                  @click="remove(cp.id!)"
-                  class="rounded px-2 py-1 text-xs text-red-500 transition hover:bg-red-900/30"
-                >
-                  🗑
+                <button @click="remove(cp.id!)" class="btn-ghost btn-sm !h-7 !px-2 !text-error">
+                  <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
                 </button>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
 
-    <div class="mt-6">
-      <div class="mb-2 text-sm text-slate-500">Klikni do mapy pro nastavení souřadnic</div>
-      <CheckpointMap
-        :lat="form.lat"
-        :lng="form.lng"
-        :checkpoints="checkpoints"
-        @click="(lat, lng) => { form.lat = lat; form.lng = lng }"
-        @select-checkpoint="onMapSelectCheckpoint"
-      />
+        <div>
+          <p class="text-meta text-text-soft mb-2">Klikni do mapy pro nastavení souřadnic</p>
+          <CheckpointMap
+            :lat="form.lat"
+            :lng="form.lng"
+            :checkpoints="checkpoints"
+            @click="(lat, lng) => { form.lat = lat; form.lng = lng }"
+            @select-checkpoint="onMapSelectCheckpoint"
+          />
+        </div>
+      </div>
     </div>
   </div>
 </template>

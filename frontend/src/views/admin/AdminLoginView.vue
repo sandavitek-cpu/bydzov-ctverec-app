@@ -30,36 +30,27 @@ if (isAdmin.value) {
 </script>
 
 <template>
-  <div class="mx-auto max-w-sm">
-    <h1 class="text-2xl font-bold text-white">Přihlášení pořadatele</h1>
-    <p class="mt-1 text-sm text-slate-400">Admin rozhraní – JWT autentizace</p>
+  <div>
+    <div class="card">
+      <div class="text-center mb-8">
+        <p class="text-meta text-text-soft uppercase tracking-[0.12em]">Administrace</p>
+        <h1 class="text-page-title text-text mt-1">Přihlášení</h1>
+      </div>
 
-    <form @submit.prevent="handleLogin" class="mt-6 space-y-4">
-      <div>
-        <label class="block text-sm font-medium text-slate-300">Uživatelské jméno</label>
-        <input
-          v-model="username"
-          required
-          class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-white focus:border-amber-500 focus:outline-none"
-        />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-slate-300">Heslo</label>
-        <input
-          v-model="password"
-          type="password"
-          required
-          class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-white focus:border-amber-500 focus:outline-none"
-        />
-      </div>
-      <p v-if="error" class="text-sm text-red-400">{{ error }}</p>
-      <button
-        type="submit"
-        :disabled="loading"
-        class="w-full rounded-lg bg-amber-500 px-4 py-3 font-semibold text-black transition hover:bg-amber-400 disabled:opacity-50"
-      >
-        {{ loading ? 'Přihlašuji…' : 'Přihlásit' }}
-      </button>
-    </form>
+      <form @submit.prevent="handleLogin" class="space-y-5">
+        <div>
+          <label class="input-label">Uživatelské jméno nebo e-mail</label>
+          <input v-model="username" required class="input-field" />
+        </div>
+        <div>
+          <label class="input-label">Heslo</label>
+          <input v-model="password" type="password" required class="input-field" />
+        </div>
+        <p v-if="error" class="text-body-sm text-error">{{ error }}</p>
+        <button type="submit" :disabled="loading" class="btn-primary w-full">
+          {{ loading ? 'Přihlašuji…' : 'Přihlásit' }}
+        </button>
+      </form>
+    </div>
   </div>
 </template>
