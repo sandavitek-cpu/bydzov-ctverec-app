@@ -4,7 +4,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.nio.charset.StandardCharsets;
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/admin/logging")
 public class AdminLoggingController {
 
+  private static final DateTimeFormatter LOG_TS = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
   private static final String LOG_DIR = "logs";
   private static final String LOG_FILE = LOG_DIR + "/application.log";
 
@@ -60,16 +62,15 @@ public class AdminLoggingController {
       return ResponseEntity.badRequest().body(Map.of("error", "Log soubor nenalezen"));
     }
 
-    OffsetDateTime cutoff = OffsetDateTime.now().minusMinutes(10);
+    LocalDateTime cutoff = LocalDateTime.now().minusMinutes(10);
     List<String> lines = new ArrayList<>();
 
     try (BufferedReader r = new BufferedReader(new FileReader(file, StandardCharsets.UTF_8))) {
       String line;
       while ((line = r.readLine()) != null) {
-        int sep = line.indexOf("  ");
-        if (sep > 0) {
+        if (line.length() >= 23) {
           try {
-            OffsetDateTime ts = OffsetDateTime.parse(line.substring(0, sep));
+            LocalDateTime ts = LocalDateTime.parse(line.substring(0, 23), LOG_TS);
             if (ts.isAfter(cutoff)) {
               lines.add(line);
             }
