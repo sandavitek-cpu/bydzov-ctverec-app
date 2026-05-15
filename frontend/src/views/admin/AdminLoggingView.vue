@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import AdminNav from '@/components/admin/AdminNav.vue'
 import { fetchLogLevel, setLogLevel, downloadLog } from '@/api'
 
 const router = useRouter()
@@ -67,44 +68,7 @@ onMounted(loadLevel)
   <div>
     <div class="flex items-center justify-between gap-4">
       <h1 class="text-2xl font-bold text-white">Logování</h1>
-      <div class="flex gap-2">
-        <RouterLink
-          to="/admin/prihlaseni"
-          class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-800"
-        >
-          Přihlášky
-        </RouterLink>
-        <RouterLink
-          to="/admin/stanoviste"
-          class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-800"
-        >
-          Stanoviště
-        </RouterLink>
-        <RouterLink
-          to="/admin/komunikace"
-          class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-800"
-        >
-          Komunikace
-        </RouterLink>
-        <RouterLink
-          to="/admin/role"
-          class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-800"
-        >
-          Role
-        </RouterLink>
-        <RouterLink
-          to="/admin/uzivatele"
-          class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-800"
-        >
-          Uživatelé
-        </RouterLink>
-        <button
-          @click="logout(); router.push('/admin/login')"
-          class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-500 transition hover:bg-slate-800"
-        >
-          Odhlásit
-        </button>
-      </div>
+      <AdminNav />
     </div>
 
     <div v-if="loading" class="mt-8 text-slate-500">Načítám…</div>

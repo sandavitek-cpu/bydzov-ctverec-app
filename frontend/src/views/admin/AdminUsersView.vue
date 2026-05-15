@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import AdminNav from '@/components/admin/AdminNav.vue'
 import { apiBaseUrl } from '@/api'
 
 const router = useRouter()
@@ -133,44 +134,7 @@ onMounted(async () => {
   <div>
     <div class="flex items-center justify-between gap-4">
       <h1 class="text-2xl font-bold text-white">Uživatelé</h1>
-      <div class="flex gap-2">
-        <RouterLink
-          to="/admin/prihlaseni"
-          class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-800"
-        >
-          Přihlášky
-        </RouterLink>
-        <RouterLink
-          to="/admin/stanoviste"
-          class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-800"
-        >
-          Stanoviště
-        </RouterLink>
-        <RouterLink
-          to="/admin/komunikace"
-          class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-800"
-        >
-          Komunikace
-        </RouterLink>
-        <RouterLink
-          to="/admin/logovani"
-          class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-800"
-        >
-          Logování
-        </RouterLink>
-        <RouterLink
-          to="/admin/role"
-          class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-800"
-        >
-          Role
-        </RouterLink>
-        <button
-          @click="logout(); router.push('/admin/login')"
-          class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-500 transition hover:bg-slate-800"
-        >
-          Odhlásit
-        </button>
-      </div>
+      <AdminNav />
     </div>
 
     <div class="mt-6">
@@ -195,6 +159,7 @@ onMounted(async () => {
           <div>
             <span class="font-medium text-white">{{ u.name }}</span>
             <span class="ml-2 text-xs text-slate-500">{{ u.email }}</span>
+            <span class="ml-2 text-xs text-slate-600">{{ u.username }}</span>
           </div>
           <div class="flex gap-1">
             <span v-for="r in u.appRoles" :key="r.id"

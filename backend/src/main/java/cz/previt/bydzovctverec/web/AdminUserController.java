@@ -44,6 +44,7 @@ public class AdminUserController {
     var result = users.stream().map(u -> Map.of(
         "id", u.getId(),
         "email", u.getEmail(),
+        "username", u.getUsername(),
         "name", u.getName(),
         "role", u.getRole().name(),
         "createdAt", u.getCreatedAt().toString(),
@@ -63,6 +64,7 @@ public class AdminUserController {
     return ResponseEntity.ok(Map.of(
         "id", u.getId(),
         "email", u.getEmail(),
+        "username", u.getUsername(),
         "name", u.getName(),
         "role", u.getRole().name(),
         "createdAt", u.getCreatedAt().toString(),
@@ -91,6 +93,7 @@ public class AdminUserController {
     return ResponseEntity.ok(Map.of(
         "id", user.getId(),
         "email", user.getEmail(),
+        "username", user.getUsername(),
         "name", user.getName()));
   }
 

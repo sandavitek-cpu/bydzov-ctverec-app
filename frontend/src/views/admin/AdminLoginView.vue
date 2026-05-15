@@ -6,7 +6,7 @@ import { useAuth } from '@/composables/useAuth'
 const router = useRouter()
 const { isAdmin, loginRequest } = useAuth()
 
-const email = ref('')
+const username = ref('')
 const password = ref('')
 const error = ref<string | null>(null)
 const loading = ref(false)
@@ -15,7 +15,7 @@ async function handleLogin() {
   error.value = null
   loading.value = true
   try {
-    await loginRequest(email.value, password.value)
+    await loginRequest(username.value, password.value)
     router.push('/admin/prihlaseni')
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Chyba přihlášení'
@@ -36,10 +36,9 @@ if (isAdmin.value) {
 
     <form @submit.prevent="handleLogin" class="mt-6 space-y-4">
       <div>
-        <label class="block text-sm font-medium text-slate-300">E-mail</label>
+        <label class="block text-sm font-medium text-slate-300">Uživatelské jméno</label>
         <input
-          v-model="email"
-          type="email"
+          v-model="username"
           required
           class="mt-1 w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-white focus:border-amber-500 focus:outline-none"
         />

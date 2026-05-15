@@ -27,6 +27,9 @@ public class User {
   @Column(nullable = false, unique = true)
   private String email;
 
+  @Column(nullable = false, unique = true)
+  private String username;
+
   @Column(nullable = false)
   private String password;
 
@@ -49,17 +52,19 @@ public class User {
 
   protected User() {}
 
-  public User(Long id, String email, String password, UserRole role, String name, Instant createdAt) {
+  public User(Long id, String email, String username, String password, UserRole role, String name, Instant createdAt) {
     this.id = id;
     this.email = email;
+    this.username = username;
     this.password = password;
     this.role = role;
     this.name = name;
     this.createdAt = createdAt;
   }
 
-  public User(String email, String password, UserRole role, String name, Instant createdAt) {
+  public User(String email, String username, String password, UserRole role, String name, Instant createdAt) {
     this.email = email;
+    this.username = username;
     this.password = password;
     this.role = role;
     this.name = name;
@@ -69,6 +74,7 @@ public class User {
   public Long getId() { return id; }
   public String getEmail() { return email; }
   public void setEmail(String email) { this.email = email; }
+  public String getUsername() { return username; }
   public String getPassword() { return password; }
   public UserRole getRole() { return role; }
   public void setRole(UserRole role) { this.role = role; }

@@ -16,7 +16,7 @@ class JwtServiceTest {
   @BeforeEach
   void setUp() {
     jwtService = new JwtService("test-secret-key-that-is-at-least-64-characters-long-for-hmac-sha-test");
-    user = new User(42L, "test@test.cz", "pass", UserRole.ADMIN, "Test", Instant.now());
+    user = new User(42L, "test@test.cz", "testuser", "pass", UserRole.ADMIN, "Test", Instant.now());
   }
 
   @Test

@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import AdminNav from '@/components/admin/AdminNav.vue'
 import { apiBaseUrl, createAdminCheckpoint, updateAdminCheckpoint, deleteAdminCheckpoint, type CheckpointData } from '@/api'
 
 const router = useRouter()
@@ -105,44 +106,7 @@ onMounted(load)
         <h1 class="text-2xl font-bold text-white">Kontrolní stanoviště</h1>
         <p class="text-sm text-slate-400">{{ checkpoints.length }} stanovišť</p>
       </div>
-      <div class="flex gap-2">
-        <RouterLink
-          to="/admin/prihlaseni"
-          class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-800"
-        >
-          Přihlášky
-        </RouterLink>
-        <RouterLink
-          to="/admin/komunikace"
-          class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-800"
-        >
-          Komunikace
-        </RouterLink>
-        <RouterLink
-          to="/admin/logovani"
-          class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-800"
-        >
-          Logování
-        </RouterLink>
-        <RouterLink
-          to="/admin/role"
-          class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-800"
-        >
-          Role
-        </RouterLink>
-        <RouterLink
-          to="/admin/uzivatele"
-          class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-800"
-        >
-          Uživatelé
-        </RouterLink>
-        <button
-          @click="logout(); router.push('/admin/login')"
-          class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-500 transition hover:bg-slate-800"
-        >
-          Odhlásit
-        </button>
-      </div>
+      <AdminNav />
     </div>
 
     <div class="mt-6 grid gap-6 lg:grid-cols-2">

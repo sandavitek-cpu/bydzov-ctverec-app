@@ -79,11 +79,11 @@ class BydzovCtverecApplicationTests {
 
   @Test
   void adminCanLogin() throws Exception {
-    userRepository.save(new User("admin@test.cz", passwordEncoder.encode("pass"), UserRole.ADMIN, "Admin", Instant.now()));
+    userRepository.save(new User("admin@test.cz", "admin", passwordEncoder.encode("pass"), UserRole.ADMIN, "Admin", Instant.now()));
     mockMvc
         .perform(post("/api/auth/login")
             .contentType(MediaType.APPLICATION_JSON)
-            .content("{\"email\":\"admin@test.cz\",\"password\":\"pass\"}"))
+            .content("{\"username\":\"admin\",\"password\":\"pass\"}"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.accessToken").isString())
         .andExpect(jsonPath("$.role").value("ADMIN"));
@@ -91,24 +91,24 @@ class BydzovCtverecApplicationTests {
 
   @Test
   void loginWithWrongPasswordReturns401() throws Exception {
-    userRepository.save(new User("admin@test.cz", passwordEncoder.encode("pass"), UserRole.ADMIN, "Admin", Instant.now()));
+    userRepository.save(new User("admin@test.cz", "admin", passwordEncoder.encode("pass"), UserRole.ADMIN, "Admin", Instant.now()));
     mockMvc
         .perform(post("/api/auth/login")
             .contentType(MediaType.APPLICATION_JSON)
-            .content("{\"email\":\"admin@test.cz\",\"password\":\"wrong\"}"))
+            .content("{\"username\":\"admin\",\"password\":\"wrong\"}"))
         .andExpect(status().isUnauthorized());
   }
 
   @Test
   void judgeCanCreateScore() throws Exception {
-    User judge = userRepository.save(new User("judge@test.cz", passwordEncoder.encode("pass"), UserRole.JUDGE, "Judge", Instant.now()));
+    User judge = userRepository.save(new User("judge@test.cz", "judge", passwordEncoder.encode("pass"), UserRole.JUDGE, "Judge", Instant.now()));
     Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElseThrow();
     RacerRegistration racer = racerRegistrationRepository.save(new RacerRegistration(edition, "John", "Doe", "john@test.cz", "Kart", Instant.now()));
 
     MvcResult loginResult = mockMvc
         .perform(post("/api/auth/login")
             .contentType(MediaType.APPLICATION_JSON)
-            .content("{\"email\":\"judge@test.cz\",\"password\":\"pass\"}"))
+            .content("{\"username\":\"judge\",\"password\":\"pass\"}"))
         .andExpect(status().isOk())
         .andReturn();
     String token = objectMapper.readTree(loginResult.getResponse().getContentAsString()).get("accessToken").asText();
@@ -127,14 +127,14 @@ class BydzovCtverecApplicationTests {
 
   @Test
   void racerCanViewOwnRegistration() throws Exception {
-    userRepository.save(new User("racer@test.cz", passwordEncoder.encode("pass"), UserRole.RACER, "Racer", Instant.now()));
+    userRepository.save(new User("racer@test.cz", "racer", passwordEncoder.encode("pass"), UserRole.RACER, "Racer", Instant.now()));
     Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElseThrow();
     racerRegistrationRepository.save(new RacerRegistration(edition, "Tým test", "racer@test.cz", "+420111", "OSOBNI", "ABC", 2000, 2, 42, 1000, Instant.now()));
 
     MvcResult loginResult = mockMvc
         .perform(post("/api/auth/login")
             .contentType(MediaType.APPLICATION_JSON)
-            .content("{\"email\":\"racer@test.cz\",\"password\":\"pass\"}"))
+            .content("{\"username\":\"racer\",\"password\":\"pass\"}"))
         .andExpect(status().isOk())
         .andReturn();
     String token = objectMapper.readTree(loginResult.getResponse().getContentAsString()).get("accessToken").asText();
@@ -172,14 +172,14 @@ class BydzovCtverecApplicationTests {
 
   @Test
   void adminCanListRegistrations() throws Exception {
-    userRepository.save(new User("admin@test.cz", passwordEncoder.encode("pass"), UserRole.ADMIN, "Admin", Instant.now()));
+    userRepository.save(new User("admin@test.cz", "admin", passwordEncoder.encode("pass"), UserRole.ADMIN, "Admin", Instant.now()));
     Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElseThrow();
     racerRegistrationRepository.save(new RacerRegistration(edition, "TeamA", "a@t.cz", "111", "OSOBNI", "ABC", 2000, 2, 1, 1000, Instant.now()));
 
     MvcResult loginResult = mockMvc
         .perform(post("/api/auth/login")
             .contentType(MediaType.APPLICATION_JSON)
-            .content("{\"email\":\"admin@test.cz\",\"password\":\"pass\"}"))
+            .content("{\"username\":\"admin\",\"password\":\"pass\"}"))
         .andExpect(status().isOk())
         .andReturn();
     String token = objectMapper.readTree(loginResult.getResponse().getContentAsString()).get("accessToken").asText();

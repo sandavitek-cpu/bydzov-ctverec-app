@@ -56,7 +56,7 @@ public class DataSeeder {
           if (adminRole != null) roles.add(adminRole);
           if (judgeRole != null) roles.add(judgeRole);
           User user = new User(
-              "admin@bydzov-ctverec.cz",
+              "admin@bydzov-ctverec.cz", "admin",
               encoder.encode("admin123"),
               UserRole.ADMIN,
               "Správce",
@@ -80,7 +80,7 @@ public class DataSeeder {
           Set<AppRole> roles = new java.util.HashSet<>();
           if (judgeRole != null) roles.add(judgeRole);
           User user = new User(
-              "judge@bydzov-ctverec.cz",
+              "judge@bydzov-ctverec.cz", "judge",
               encoder.encode("judge123"),
               UserRole.JUDGE,
               "Rozhodčí",
@@ -104,7 +104,7 @@ public class DataSeeder {
           Set<AppRole> roles = new java.util.HashSet<>();
           if (racerRole != null) roles.add(racerRole);
           User user = new User(
-              "racer@bydzov-ctverec.cz",
+              "racer@bydzov-ctverec.cz", "racer",
               encoder.encode("racer123"),
               UserRole.RACER,
               "Testovací jezdec",

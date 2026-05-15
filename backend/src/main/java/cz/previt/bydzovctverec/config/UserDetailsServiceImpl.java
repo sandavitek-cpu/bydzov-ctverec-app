@@ -2,6 +2,7 @@ package cz.previt.bydzovctverec.config;
 
 import cz.previt.bydzovctverec.domain.User;
 import cz.previt.bydzovctverec.domain.UserRepository;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import java.util.List;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,16 +22,16 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
   @Override
   @Transactional(readOnly = true)
-  public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+  public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
     User user = userRepository
-        .findByEmail(email)
-        .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
+        .findByUsername(username)
+        .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
     var authorities = user.getAppRoles().isEmpty()
         ? List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
         : user.getAppRoles().stream()
             .map(r -> new SimpleGrantedAuthority("ROLE_" + r.getName()))
             .toList();
     return new org.springframework.security.core.userdetails.User(
-        user.getEmail(), user.getPassword(), authorities);
+        user.getUsername(), user.getPassword(), authorities);
   }
 }
