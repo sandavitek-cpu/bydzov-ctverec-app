@@ -21,5 +21,10 @@ spring:
           starttls:
             enable: false
 
+management:
+  health:
+    mail:
+      enabled: false
+
 jwt:
   secret: dev-secret-key-change-in-production-at-least-64-characters-long-for-hmac!!
