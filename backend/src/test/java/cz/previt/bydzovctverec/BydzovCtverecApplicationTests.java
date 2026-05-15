@@ -126,7 +126,7 @@ class BydzovCtverecApplicationTests {
   void racerCanViewOwnRegistration() throws Exception {
     userRepository.save(new User("racer@test.cz", passwordEncoder.encode("pass"), Role.RACER, "Racer", Instant.now()));
     Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElseThrow();
-    racerRegistrationRepository.save(new RacerRegistration(edition, "Fast", "Racer", "racer@test.cz", "Super car", Instant.now()));
+    racerRegistrationRepository.save(new RacerRegistration(edition, "Tým test", "racer@test.cz", "+420111", "OSOBNI", "ABC", 2000, 2, 42, 1000, Instant.now()));
 
     MvcResult loginResult = mockMvc
         .perform(post("/api/auth/login")
@@ -140,8 +140,11 @@ class BydzovCtverecApplicationTests {
         .perform(get("/api/racer/registration")
             .header("Authorization", "Bearer " + token))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.firstName").value("Fast"))
-        .andExpect(jsonPath("$.email").value("racer@test.cz"));
+        .andExpect(jsonPath("$.teamName").value("Tým test"))
+        .andExpect(jsonPath("$.startNumber").value(42))
+        .andExpect(jsonPath("$.totalPoints").value(0))
+        .andExpect(jsonPath("$.rank").value(1))
+        .andExpect(jsonPath("$.scores").isEmpty());
   }
 
   @Test

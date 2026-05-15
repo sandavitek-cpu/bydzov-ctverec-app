@@ -12,6 +12,7 @@ import cz.previt.bydzovctverec.domain.User;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,27 +36,16 @@ public class RacerController {
   }
 
   @GetMapping("/registration")
+  @Transactional(readOnly = true)
   public ResponseEntity<?> myRegistration(Authentication auth) {
     User user = (User) auth.getPrincipal();
     RacerRegistration reg = racerRegistrationRepository.findByEmail(user.getEmail()).orElse(null);
     if (reg == null) {
-      return ResponseEntity.ok(new RacerRegistrationResponse(null, null, null, null, null));
+      return ResponseEntity.ok(Map.of("error", "Nejste přihlášen k závodu"));
     }
-    return ResponseEntity.ok(new RacerRegistrationResponse(
-        reg.getId(), reg.getFirstName(), reg.getLastName(),
-        reg.getEmail(), reg.getVehicleDescription()));
-  }
 
-  @GetMapping("/scores")
-  public ResponseEntity<?> myScores(Authentication auth) {
-    User user = (User) auth.getPrincipal();
-    RacerRegistration reg = racerRegistrationRepository.findByEmail(user.getEmail()).orElse(null);
-    if (reg == null) {
-      return ResponseEntity.ok(List.of());
-    }
     List<Score> scores = scoreRepository.findByRacerRegistrationIdOrderByRunNumber(reg.getId());
     int totalPoints = scores.stream().mapToInt(Score::getPoints).sum();
-
     Edition edition = reg.getEdition();
     List<Score> allScores = scoreRepository.findByEditionYearWithRacer(edition.getEditionYear());
     Map<Long, Integer> totals = allScores.stream()
@@ -68,7 +58,11 @@ public class RacerController {
     List<ScoreResponse> scoreList = scores.stream()
         .map(s -> new ScoreResponse(s.getId(), s.getRunNumber(), s.getPoints(), s.getNote()))
         .toList();
-    return ResponseEntity.ok(new ScoresWithStanding(reg.getTeamName(), reg.getStartNumber(), totalPoints, rank, totals.size(), scoreList));
+
+    return ResponseEntity.ok(new StandingResponse(
+        reg.getTeamName(), reg.getStartNumber(), totalPoints,
+        rank, totals.size(), scoreList,
+        reg.getEmail(), reg.getVehiclePlate(), reg.getVehicleCategory()));
   }
 
   @GetMapping("/schedule")
@@ -81,8 +75,7 @@ public class RacerController {
     return ResponseEntity.ok(items.stream().map(i -> new ScheduleItemResponse(i.getTime(), i.getLabel(), i.getDescription())).toList());
   }
 
-  public record RacerRegistrationResponse(Long id, String firstName, String lastName, String email, String vehicleDescription) {}
   public record ScoreResponse(Long id, Integer runNumber, Integer points, String note) {}
   public record ScheduleItemResponse(String time, String label, String description) {}
-  public record ScoresWithStanding(String teamName, Integer startNumber, int totalPoints, int rank, int totalRacers, List<ScoreResponse> scores) {}
+  public record StandingResponse(String teamName, Integer startNumber, int totalPoints, int rank, int totalRacers, List<ScoreResponse> scores, String email, String vehiclePlate, String vehicleCategory) {}
 }
