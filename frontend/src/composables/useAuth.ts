@@ -6,7 +6,7 @@ const role = ref(localStorage.getItem('admin_role') ?? '')
 const name = ref(localStorage.getItem('admin_name') ?? '')
 
 export function useAuth() {
-  function login(accessToken: string, userRole: string, userName: string) {
+  function saveTokens(accessToken: string, userRole: string, userName: string) {
     token.value = accessToken
     role.value = userRole
     name.value = userName
@@ -35,19 +35,19 @@ export function useAuth() {
   const isAdmin = hasAdmin
   const isLoggedIn = computed(() => !!token.value)
 
-  async function loginRequest(login: string, password: string) {
+  async function loginRequest(loginValue: string, password: string) {
     const res = await fetch(`${apiBaseUrl}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ login, password }),
+      body: JSON.stringify({ login: loginValue, password }),
     })
     const data = await res.json()
     if (!res.ok) {
       throw new Error(data.error ?? 'Přihlášení selhalo')
     }
-    login(data.accessToken, data.role, data.name)
+    saveTokens(data.accessToken, data.role, data.name)
     return data
   }
 
-  return { token, role, roles, name, login, logout, authHeaders, isAdmin, hasAdmin, hasJudge, hasRacer, isLoggedIn, loginRequest }
+  return { token, role, roles, name, logout, authHeaders, isAdmin, hasAdmin, hasJudge, hasRacer, isLoggedIn, loginRequest, saveTokens }
 }
