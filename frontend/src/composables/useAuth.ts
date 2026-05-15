@@ -28,7 +28,11 @@ export function useAuth() {
     return token.value ? { Authorization: `Bearer ${token.value}` } : {}
   }
 
-  const isAdmin = computed(() => role.value.split(',').includes('ADMIN'))
+  const roles = computed(() => role.value ? role.value.split(',') : [])
+  const hasAdmin = computed(() => roles.value.includes('ADMIN'))
+  const hasJudge = computed(() => roles.value.includes('JUDGE'))
+  const hasRacer = computed(() => roles.value.includes('RACER'))
+  const isAdmin = hasAdmin
   const isLoggedIn = computed(() => !!token.value)
 
   async function loginRequest(login: string, password: string) {
@@ -45,5 +49,5 @@ export function useAuth() {
     return data
   }
 
-  return { token, role, name, login, logout, authHeaders, isAdmin, isLoggedIn, loginRequest }
+  return { token, role, roles, name, login, logout, authHeaders, isAdmin, hasAdmin, hasJudge, hasRacer, isLoggedIn, loginRequest }
 }
