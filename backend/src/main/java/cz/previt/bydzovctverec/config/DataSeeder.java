@@ -92,19 +92,23 @@ public class DataSeeder {
   @org.springframework.core.annotation.Order(2)
   CommandLineRunner seedSchedule(EditionRepository editionRepository, ScheduleItemRepository scheduleItemRepository) {
     return args -> {
-      Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
-      if (edition == null) return;
-      var existing = scheduleItemRepository.findByEditionOrderBySortOrder(edition);
-      if (!existing.isEmpty()) return;
-      scheduleItemRepository.saveAll(List.of(
-          new ScheduleItem(edition, "08:00", "Prezence", "Kontrola dokladů, převzetí startovního balíčku", 1),
-          new ScheduleItem(edition, "09:00", "Briefing", "Povinná schůzka jezdců", 2),
-          new ScheduleItem(edition, "09:15", "1. kolo", "Start prvního měřeného úseku", 3),
-          new ScheduleItem(edition, "12:00", "Oběd", "Přestávka na občerstvení", 4),
-          new ScheduleItem(edition, "13:00", "2. kolo", "Start druhého měřeného úseku", 5),
-          new ScheduleItem(edition, "16:00", "Dojezd", "Ukončení závodu, odevzdání karet", 6),
-          new ScheduleItem(edition, "17:00", "Vyhlášení výsledků", "Slavnostní ceremoniál", 7)));
-      log.info("Schedule for 2026 seeded");
+      try {
+        Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
+        if (edition == null) return;
+        var existing = scheduleItemRepository.findByEditionOrderBySortOrder(edition);
+        if (!existing.isEmpty()) return;
+        scheduleItemRepository.saveAll(List.of(
+            new ScheduleItem(edition, "08:00", "Prezence", "Kontrola dokladů, převzetí startovního balíčku", 1),
+            new ScheduleItem(edition, "09:00", "Briefing", "Povinná schůzka jezdců", 2),
+            new ScheduleItem(edition, "09:15", "1. kolo", "Start prvního měřeného úseku", 3),
+            new ScheduleItem(edition, "12:00", "Oběd", "Přestávka na občerstvení", 4),
+            new ScheduleItem(edition, "13:00", "2. kolo", "Start druhého měřeného úseku", 5),
+            new ScheduleItem(edition, "16:00", "Dojezd", "Ukončení závodu, odevzdání karet", 6),
+            new ScheduleItem(edition, "17:00", "Vyhlášení výsledků", "Slavnostní ceremoniál", 7)));
+        log.info("Schedule for 2026 seeded");
+      } catch (Exception e) {
+        log.error("seedSchedule failed: {}", e.getMessage());
+      }
     };
   }
 
@@ -112,28 +116,32 @@ public class DataSeeder {
   @org.springframework.core.annotation.Order(3)
   CommandLineRunner seedCheckpoints(EditionRepository editionRepository, CheckpointRepository checkpointRepository) {
     return args -> {
-      Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
-      if (edition == null) return;
-      var existing = checkpointRepository.findByEditionOrderBySortOrder(edition);
-      if (!existing.isEmpty()) return;
-      List<Checkpoint> cps = List.of(
-          new Checkpoint(edition, "Prezence / Start", 50.2415, 15.4900, 300, 1),
-          new Checkpoint(edition, "Stanoviště 1 — Chlumec", 50.2280, 15.4750, 500, 2),
-          new Checkpoint(edition, "Stanoviště 2 — Hlušice", 50.2150, 15.4600, 500, 3),
-          new Checkpoint(edition, "Stanoviště 3 — Sloupno", 50.2520, 15.5050, 500, 4),
-          new Checkpoint(edition, "Dojezd / Cíl", 50.2415, 15.4900, 300, 5));
-      cps.get(0).setTaskDescription("Prezence závodníků, vydání startovních čísel");
-      cps.get(0).setMaxPoints(0);
-      cps.get(1).setTaskDescription("Přesný časový úsek – měřená zkouška");
-      cps.get(1).setMaxPoints(10);
-      cps.get(2).setTaskDescription("Přesnost v zatáčkách – slalom mezi kužely");
-      cps.get(2).setMaxPoints(15);
-      cps.get(3).setTaskDescription("Brzdná zkouška – zastavení na přesnost");
-      cps.get(3).setMaxPoints(10);
-      cps.get(4).setTaskDescription("Cílová kontrola času");
-      cps.get(4).setMaxPoints(0);
-      checkpointRepository.saveAll(cps);
-      log.info("Checkpoints for 2026 seeded");
+      try {
+        Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
+        if (edition == null) return;
+        var existing = checkpointRepository.findByEditionOrderBySortOrder(edition);
+        if (!existing.isEmpty()) return;
+        List<Checkpoint> cps = List.of(
+            new Checkpoint(edition, "Prezence / Start", 50.2415, 15.4900, 300, 1),
+            new Checkpoint(edition, "Stanoviště 1 — Chlumec", 50.2280, 15.4750, 500, 2),
+            new Checkpoint(edition, "Stanoviště 2 — Hlušice", 50.2150, 15.4600, 500, 3),
+            new Checkpoint(edition, "Stanoviště 3 — Sloupno", 50.2520, 15.5050, 500, 4),
+            new Checkpoint(edition, "Dojezd / Cíl", 50.2415, 15.4900, 300, 5));
+        cps.get(0).setTaskDescription("Prezence závodníků, vydání startovních čísel");
+        cps.get(0).setMaxPoints(0);
+        cps.get(1).setTaskDescription("Přesný časový úsek – měřená zkouška");
+        cps.get(1).setMaxPoints(10);
+        cps.get(2).setTaskDescription("Přesnost v zatáčkách – slalom mezi kužely");
+        cps.get(2).setMaxPoints(15);
+        cps.get(3).setTaskDescription("Brzdná zkouška – zastavení na přesnost");
+        cps.get(3).setMaxPoints(10);
+        cps.get(4).setTaskDescription("Cílová kontrola času");
+        cps.get(4).setMaxPoints(0);
+        checkpointRepository.saveAll(cps);
+        log.info("Checkpoints for 2026 seeded");
+      } catch (Exception e) {
+        log.error("seedCheckpoints failed: {}", e.getMessage());
+      }
     };
   }
 
@@ -141,24 +149,28 @@ public class DataSeeder {
   @org.springframework.core.annotation.Order(4)
   CommandLineRunner seedArchiveData(ArchiveEntryRepository archiveEntryRepository) {
     return args -> {
-      if (archiveEntryRepository.count() > 0) return;
-      archiveEntryRepository.saveAll(List.of(
-          new ArchiveEntry(2025, 1, "Jiří Svoboda", "Škoda Fabia R5", 50),
-          new ArchiveEntry(2025, 2, "Petr Novák", "Ford Fiesta Rally3", 48),
-          new ArchiveEntry(2025, 3, "Martin Černý", "Mitsubishi Lancer Evo IX", 45),
-          new ArchiveEntry(2025, 4, "Tomáš Procházka", "BMW M3 E30", 42),
-          new ArchiveEntry(2025, 5, "Jan Krejčí", "Subaru Impreza STI", 40),
-          new ArchiveEntry(2024, 1, "Petr Novák", "Ford Fiesta Rally3", 52),
-          new ArchiveEntry(2024, 2, "Jiří Svoboda", "Škoda Fabia R5", 49),
-          new ArchiveEntry(2024, 3, "Lukáš Horák", "Toyota Supra", 46),
-          new ArchiveEntry(2024, 4, "Ondřej Mareš", "Honda Civic Type R", 43),
-          new ArchiveEntry(2024, 5, "David Kolář", "Renault Clio RS", 41),
-          new ArchiveEntry(2023, 1, "Martin Černý", "Mitsubishi Lancer Evo IX", 47),
-          new ArchiveEntry(2023, 2, "Petr Novák", "Ford Fiesta Rally3", 45),
-          new ArchiveEntry(2023, 3, "Jiří Svoboda", "Škoda Fabia R5", 44),
-          new ArchiveEntry(2023, 4, "Tomáš Procházka", "BMW M3 E30", 40),
-          new ArchiveEntry(2023, 5, "Lukáš Horák", "Toyota Supra", 38)));
-      log.info("Archive data seeded (3 years)");
+      try {
+        if (archiveEntryRepository.count() > 0) return;
+        archiveEntryRepository.saveAll(List.of(
+            new ArchiveEntry(2025, 1, "Jiří Svoboda", "Škoda Fabia R5", 50),
+            new ArchiveEntry(2025, 2, "Petr Novák", "Ford Fiesta Rally3", 48),
+            new ArchiveEntry(2025, 3, "Martin Černý", "Mitsubishi Lancer Evo IX", 45),
+            new ArchiveEntry(2025, 4, "Tomáš Procházka", "BMW M3 E30", 42),
+            new ArchiveEntry(2025, 5, "Jan Krejčí", "Subaru Impreza STI", 40),
+            new ArchiveEntry(2024, 1, "Petr Novák", "Ford Fiesta Rally3", 52),
+            new ArchiveEntry(2024, 2, "Jiří Svoboda", "Škoda Fabia R5", 49),
+            new ArchiveEntry(2024, 3, "Lukáš Horák", "Toyota Supra", 46),
+            new ArchiveEntry(2024, 4, "Ondřej Mareš", "Honda Civic Type R", 43),
+            new ArchiveEntry(2024, 5, "David Kolář", "Renault Clio RS", 41),
+            new ArchiveEntry(2023, 1, "Martin Černý", "Mitsubishi Lancer Evo IX", 47),
+            new ArchiveEntry(2023, 2, "Petr Novák", "Ford Fiesta Rally3", 45),
+            new ArchiveEntry(2023, 3, "Jiří Svoboda", "Škoda Fabia R5", 44),
+            new ArchiveEntry(2023, 4, "Tomáš Procházka", "BMW M3 E30", 40),
+            new ArchiveEntry(2023, 5, "Lukáš Horák", "Toyota Supra", 38)));
+        log.info("Archive data seeded (3 years)");
+      } catch (Exception e) {
+        log.error("seedArchiveData failed: {}", e.getMessage());
+      }
     };
   }
 }
