@@ -28,7 +28,7 @@ let watchId: number | null = null
 
 onMounted(async () => {
   try {
-    const res = await fetch(`${apiBaseUrl}/api/public/checkpoints/2026`, {
+    const res = await fetch(`${apiBaseUrl}/api/public/areas/2026`, {
       headers: { Accept: 'application/json' },
     })
     if (!res.ok) throw new Error(`API ${res.status}`)

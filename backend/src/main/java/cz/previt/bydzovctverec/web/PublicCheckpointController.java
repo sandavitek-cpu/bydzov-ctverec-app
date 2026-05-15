@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/public/checkpoints")
+@RequestMapping("/api/public/areas")
 public class PublicCheckpointController {
 
   private final EditionRepository editionRepository;
