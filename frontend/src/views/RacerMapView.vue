@@ -28,11 +28,12 @@ let watchId: number | null = null
 
 onMounted(async () => {
   try {
-    const res = await fetch(`${apiBaseUrl}/api/public/areas/2026`, {
+    const res = await fetch(`${apiBaseUrl}/api/public/editions/current`, {
       headers: { Accept: 'application/json' },
     })
     if (!res.ok) throw new Error(`API ${res.status}`)
-    checkpoints.value = await res.json()
+    const data = await res.json()
+    checkpoints.value = data.areas ?? []
   } catch {
   }
 
