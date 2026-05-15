@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import CheckpointMap from '@/components/CheckpointMap.vue'
 import { apiBaseUrl, createAdminCheckpoint, updateAdminCheckpoint, deleteAdminCheckpoint, type CheckpointData } from '@/api'
 
 const router = useRouter()
@@ -11,7 +12,6 @@ const checkpoints = ref<CheckpointData[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const editing = ref<CheckpointData | null>(null)
-const mapLoaded = ref(false)
 
 const form = ref({
   name: '',
@@ -37,7 +37,6 @@ async function load() {
     })
     if (res.status === 403) { logout(); router.push('/admin/login'); return }
     checkpoints.value = await res.json()
-    setTimeout(() => { mapLoaded.value = true }, 100)
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Chyba načítání'
   } finally {
@@ -230,19 +229,14 @@ onMounted(load)
       </div>
     </div>
 
-    <div class="mt-6 overflow-hidden rounded-lg border border-slate-800">
-      <div class="bg-slate-900/60 px-4 py-2 text-sm text-slate-500">Náhled na mapě</div>
-      <div id="checkpoint-map" class="h-80 w-full bg-slate-950">
-        <div v-if="!mapLoaded" class="flex h-full items-center justify-center text-sm text-slate-600">
-          Načítám mapu…
-        </div>
-        <iframe
-          v-if="mapLoaded"
-          :src="`https://www.openstreetmap.org/export/embed.html?bbox=${form.lng - 0.01}%2C${form.lat - 0.01}%2C${form.lng + 0.01}%2C${form.lat + 0.01}&layer=mapnik&marker=${form.lat}%2C${form.lng}`"
-          class="h-full w-full"
-          title="Mapa stanovišť"
-        ></iframe>
-      </div>
+    <div class="mt-6">
+      <div class="mb-2 text-sm text-slate-500">Klikni do mapy pro nastavení souřadnic</div>
+      <CheckpointMap
+        :lat="form.lat"
+        :lng="form.lng"
+        :checkpoints="checkpoints"
+        @click="(lat, lng) => { form.lat = lat; form.lng = lng }"
+      />
     </div>
   </div>
 </template>
