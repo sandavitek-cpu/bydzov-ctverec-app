@@ -25,6 +25,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
   public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
     User user = userRepository
         .findByUsername(username)
+        .or(() -> userRepository.findByEmail(username))
         .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
     var authorities = user.getAppRoles().isEmpty()
         ? List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))

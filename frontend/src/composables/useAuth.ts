@@ -31,11 +31,11 @@ export function useAuth() {
   const isAdmin = computed(() => role.value.split(',').includes('ADMIN'))
   const isLoggedIn = computed(() => !!token.value)
 
-  async function loginRequest(username: string, password: string) {
+  async function loginRequest(login: string, password: string) {
     const res = await fetch(`${apiBaseUrl}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ login, password }),
     })
     const data = await res.json()
     if (!res.ok) {

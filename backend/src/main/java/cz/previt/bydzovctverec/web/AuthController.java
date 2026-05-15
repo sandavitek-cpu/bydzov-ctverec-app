@@ -33,15 +33,17 @@ public class AuthController {
 
   @PostMapping("/login")
   public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
+    String identity = request.login().trim();
     try {
-      var userDetails = userDetailsService.loadUserByUsername(request.username());
+      var userDetails = userDetailsService.loadUserByUsername(identity);
       if (!passwordEncoder.matches(request.password(), userDetails.getPassword())) {
         return ResponseEntity.status(401).build();
       }
     } catch (Exception e) {
       return ResponseEntity.status(401).build();
     }
-    User user = userRepository.findByUsername(request.username()).orElseThrow();
+    User user = userRepository.findByUsername(identity)
+        .orElseGet(() -> userRepository.findByEmail(identity).orElseThrow());
     String accessToken = jwtService.generateAccessToken(user);
     String refreshToken = jwtService.generateRefreshToken(user);
     var roleStr = user.getAppRoles().isEmpty()
@@ -50,7 +52,7 @@ public class AuthController {
     return ResponseEntity.ok(new LoginResponse(accessToken, refreshToken, roleStr, user.getName(), user.getUsername()));
   }
 
-  public record LoginRequest(@NotBlank String username, @NotBlank String password) {}
+  public record LoginRequest(@NotBlank String login, @NotBlank String password) {}
   public record LoginResponse(String accessToken, String refreshToken, String role, String name, String username) {}
   public record RefreshRequest(@NotBlank String refreshToken) {}
   public record RefreshResponse(String accessToken) {}
