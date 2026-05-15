@@ -35,7 +35,7 @@ jwt:
 
 logging:
   file:
-    path: ./logs
+    name: ${LOG_FILE:logs/application.log}
 
 server:
   port: ${PORT:8080}
