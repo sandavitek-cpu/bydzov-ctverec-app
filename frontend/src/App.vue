@@ -36,8 +36,15 @@ function onLogout() {
           <RouterLink to="/archiv" class="hover:text-slate-200" active-class="text-amber-300">
             Archiv
           </RouterLink>
+          <RouterLink
+            v-if="!isLoggedIn"
+            to="/admin/login"
+            class="rounded-lg border border-slate-700 px-3 py-1.5 text-slate-300 transition hover:bg-slate-800"
+          >
+            Přihlásit
+          </RouterLink>
           <div
-            v-if="isLoggedIn"
+            v-else
             class="relative"
             @click.stop="menuOpen = !menuOpen"
           >
