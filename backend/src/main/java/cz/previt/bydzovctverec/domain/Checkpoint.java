@@ -37,6 +37,15 @@ public class Checkpoint {
   @Column(name = "sort_order")
   private Integer sortOrder;
 
+  @Column(name = "task_description", length = 1000)
+  private String taskDescription;
+
+  @Column(name = "max_points")
+  private Integer maxPoints;
+
+  @Column(name = "volunteer_name", length = 200)
+  private String volunteerName;
+
   protected Checkpoint() {}
 
   public Checkpoint(Edition edition, String name, Double lat, Double lng, Integer radius, Integer sortOrder) {
@@ -55,4 +64,16 @@ public class Checkpoint {
   public Double getLng() { return lng; }
   public Integer getRadius() { return radius; }
   public Integer getSortOrder() { return sortOrder; }
+  public String getTaskDescription() { return taskDescription; }
+  public Integer getMaxPoints() { return maxPoints; }
+  public String getVolunteerName() { return volunteerName; }
+
+  public void setName(String name) { this.name = name; }
+  public void setLat(Double lat) { this.lat = lat; }
+  public void setLng(Double lng) { this.lng = lng; }
+  public void setRadius(Integer radius) { this.radius = radius; }
+  public void setSortOrder(Integer sortOrder) { this.sortOrder = sortOrder; }
+  public void setTaskDescription(String taskDescription) { this.taskDescription = taskDescription; }
+  public void setMaxPoints(Integer maxPoints) { this.maxPoints = maxPoints; }
+  public void setVolunteerName(String volunteerName) { this.volunteerName = volunteerName; }
 }

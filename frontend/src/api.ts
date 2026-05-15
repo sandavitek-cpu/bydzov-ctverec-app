@@ -93,6 +93,149 @@ export async function fetchResults(year: number) {
   return res.json() as Promise<ResultsResponse>
 }
 
+export interface ArchiveRow {
+  editionYear: number
+  rank: number
+  racerName: string
+  vehicle: string | null
+  points: number
+}
+
+export interface ArchiveResponse {
+  results: ArchiveRow[]
+}
+
+export async function fetchArchive(params?: { year?: number; name?: string; vehicle?: string }) {
+  const q = new URLSearchParams()
+  if (params?.year) q.set('year', String(params.year))
+  if (params?.name) q.set('name', params.name)
+  if (params?.vehicle) q.set('vehicle', params.vehicle)
+  const qs = q.toString()
+  const url = `${apiBaseUrl}/api/public/archive${qs ? '?' + qs : ''}`
+  const res = await fetch(url)
+  if (!res.ok) throw new Error(`API ${res.status}`)
+  return res.json() as Promise<ArchiveResponse>
+}
+
+export async function fetchArchiveByYear(year: number) {
+  const res = await fetch(`${apiBaseUrl}/api/public/archive/${year}`)
+  if (!res.ok) throw new Error(`API ${res.status}`)
+  return res.json() as Promise<ArchiveResponse>
+}
+
+export interface CheckpointData {
+  id?: number
+  name: string
+  lat: number
+  lng: number
+  radius: number
+  sortOrder: number
+  taskDescription: string | null
+  maxPoints: number | null
+  volunteerName: string | null
+}
+
+export async function fetchAdminCheckpoints(headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/checkpoints`, { headers })
+  if (!res.ok) throw new Error(`API ${res.status}`)
+  return res.json() as Promise<CheckpointData[]>
+}
+
+export async function createAdminCheckpoint(data: Partial<CheckpointData>, headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/checkpoints`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...headers },
+    body: JSON.stringify(data),
+  })
+  const body = await res.json()
+  if (!res.ok) throw new Error(body.error ?? `API ${res.status}`)
+  return body as CheckpointData
+}
+
+export async function updateAdminCheckpoint(id: number, data: Partial<CheckpointData>, headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/checkpoints/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...headers },
+    body: JSON.stringify(data),
+  })
+  const body = await res.json()
+  if (!res.ok) throw new Error(body.error ?? `API ${res.status}`)
+  return body as CheckpointData
+}
+
+export async function deleteAdminCheckpoint(id: number, headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/checkpoints/${id}`, {
+    method: 'DELETE',
+    headers,
+  })
+  if (!res.ok) throw new Error(`API ${res.status}`)
+}
+
+export interface NotifyRequest {
+  recipientType: string
+  subject: string
+  body: string
+}
+
+export interface NotifyResult {
+  sent: number
+  total: number
+  recipientType: string
+}
+
+export interface MessageLogEntry {
+  id: number
+  recipientType: string
+  subject: string
+  body: string
+  recipientCount: number
+  createdAt: string
+}
+
+export async function sendNotify(data: NotifyRequest, headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/notify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...headers },
+    body: JSON.stringify(data),
+  })
+  const body = await res.json()
+  if (!res.ok) throw new Error(body.error ?? `API ${res.status}`)
+  return body as NotifyResult
+}
+
+export async function fetchNotifyHistory(headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/notify`, { headers })
+  if (!res.ok) throw new Error(`API ${res.status}`)
+  return res.json() as Promise<MessageLogEntry[]>
+}
+
+export interface LogLevelResponse {
+  level: string
+}
+
+export async function fetchLogLevel(headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/logging/level`, { headers })
+  if (!res.ok) throw new Error(`API ${res.status}`)
+  return res.json() as Promise<LogLevelResponse>
+}
+
+export async function setLogLevel(level: string, headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/logging/level`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...headers },
+    body: JSON.stringify({ level }),
+  })
+  const body = await res.json()
+  if (!res.ok) throw new Error(body.error ?? `API ${res.status}`)
+  return body as LogLevelResponse
+}
+
+export async function downloadLog(headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/logging/download`, { headers })
+  if (!res.ok) throw new Error(`API ${res.status}`)
+  return res.blob()
+}
+
 export async function submitScore(data: ScoreSubmit, headers: Record<string, string>) {
   const res = await fetch(`${apiBaseUrl}/api/scores`, {
     method: 'POST',

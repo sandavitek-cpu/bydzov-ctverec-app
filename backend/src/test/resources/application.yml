@@ -1,3 +1,8 @@
+management:
+  health:
+    mail:
+      enabled: false
+
 spring:
   datasource:
     url: jdbc:h2:mem:test;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
@@ -14,6 +19,10 @@ spring:
           time_zone: UTC
   flyway:
     enabled: false
+  mail:
+    host: localhost
+    port: 2525
+    test-connection: false
 
 jwt:
   secret: test-secret-key-that-is-at-least-64-characters-long-for-hmac-sha-test
