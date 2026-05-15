@@ -1,5 +1,7 @@
 package cz.previt.bydzovctverec.config;
 
+import cz.previt.bydzovctverec.domain.Checkpoint;
+import cz.previt.bydzovctverec.domain.CheckpointRepository;
 import cz.previt.bydzovctverec.domain.Edition;
 import cz.previt.bydzovctverec.domain.EditionRepository;
 import cz.previt.bydzovctverec.domain.Role;
@@ -101,6 +103,24 @@ public class DataSeeder {
           new ScheduleItem(edition, "16:00", "Dojezd", "Ukončení závodu, odevzdání karet", 6),
           new ScheduleItem(edition, "17:00", "Vyhlášení výsledků", "Slavnostní ceremoniál", 7)));
       log.info("Schedule for 2026 seeded");
+    };
+  }
+
+  @Bean
+  @org.springframework.core.annotation.Order(3)
+  CommandLineRunner seedCheckpoints(EditionRepository editionRepository, CheckpointRepository checkpointRepository) {
+    return args -> {
+      Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
+      if (edition == null) return;
+      var existing = checkpointRepository.findByEditionOrderBySortOrder(edition);
+      if (!existing.isEmpty()) return;
+      checkpointRepository.saveAll(List.of(
+          new Checkpoint(edition, "Prezence / Start", 50.2415, 15.4900, 300, 1),
+          new Checkpoint(edition, "Stanoviště 1 — Chlumec", 50.2280, 15.4750, 500, 2),
+          new Checkpoint(edition, "Stanoviště 2 — Hlušice", 50.2150, 15.4600, 500, 3),
+          new Checkpoint(edition, "Stanoviště 3 — Sloupno", 50.2520, 15.5050, 500, 4),
+          new Checkpoint(edition, "Dojezd / Cíl", 50.2415, 15.4900, 300, 5)));
+      log.info("Checkpoints for 2026 seeded");
     };
   }
 }

@@ -10,6 +10,7 @@ import cz.previt.bydzovctverec.domain.Edition;
 import cz.previt.bydzovctverec.domain.EditionRepository;
 import cz.previt.bydzovctverec.domain.RacerRegistration;
 import cz.previt.bydzovctverec.domain.RacerRegistrationRepository;
+import cz.previt.bydzovctverec.domain.CheckpointRepository;
 import cz.previt.bydzovctverec.domain.Role;
 import cz.previt.bydzovctverec.domain.ScheduleItemRepository;
 import cz.previt.bydzovctverec.domain.ScoreRepository;
@@ -40,12 +41,14 @@ class BydzovCtverecApplicationTests {
   @Autowired private RacerRegistrationRepository racerRegistrationRepository;
   @Autowired private ScoreRepository scoreRepository;
   @Autowired private ScheduleItemRepository scheduleItemRepository;
+  @Autowired private CheckpointRepository checkpointRepository;
   @Autowired private PasswordEncoder passwordEncoder;
 
   @BeforeEach
   void seed() {
     scoreRepository.deleteAll();
     scheduleItemRepository.deleteAll();
+    checkpointRepository.deleteAll();
     racerRegistrationRepository.deleteAll();
     editionRepository.deleteAll();
     userRepository.deleteAll();
