@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { apiBaseUrl } from '@/api'
 import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 
 const router = useRouter()
 const { isLoggedIn } = useAuth()
@@ -18,13 +19,19 @@ interface CheckpointData {
 const checkpoints = ref<CheckpointData[]>([])
 const loading = ref(true)
 const gpsActive = ref(false)
-const gpsLat = ref(0)
-const gpsLng = ref(0)
 const gpsError = ref<string | null>(null)
-const mapReady = ref(false)
 let map: L.Map | null = null
 let marker: L.Marker | null = null
 let watchId: number | null = null
+
+const icon = L.icon({
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+})
 
 onMounted(async () => {
   try {
@@ -34,8 +41,7 @@ onMounted(async () => {
     if (!res.ok) throw new Error(`API ${res.status}`)
     const data = await res.json()
     checkpoints.value = data.areas ?? []
-  } catch {
-  }
+  } catch {}
 
   await nextTick()
 
@@ -46,7 +52,7 @@ onMounted(async () => {
   })
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://openstreetmap.org">OSM</a>',
+    attribution: '&copy; <a href="https://openstreetmap.org/copyright">OSM</a>',
     maxZoom: 18,
   }).addTo(map)
 
@@ -55,49 +61,39 @@ onMounted(async () => {
       radius: cp.radius,
       color: '#f59e0b',
       fillColor: '#f59e0b',
-      fillOpacity: 0.1,
+      fillOpacity: 0.08,
       weight: 2,
-    }).addTo(map).bindPopup(cp.name)
-    L.marker([cp.lat, cp.lng], {
-      icon: L.divIcon({
-        className: 'text-amber-400 text-xs font-bold whitespace-nowrap',
-        html: cp.name,
-        iconSize: [100, 20],
-        iconAnchor: [50, 10],
-      }),
     }).addTo(map)
+    L.marker([cp.lat, cp.lng], { icon }).addTo(map).bindPopup(`<b>${cp.name}</b>`)
   }
 
-  mapReady.value = true
+  map.invalidateSize()
   loading.value = false
 
   if ('geolocation' in navigator) {
     watchId = navigator.geolocation.watchPosition(
       (pos) => {
-        gpsLat.value = pos.coords.latitude
-        gpsLng.value = pos.coords.longitude
         gpsActive.value = true
         gpsError.value = null
+        const latlng: L.LatLngExpression = [pos.coords.latitude, pos.coords.longitude]
         if (marker) {
-          marker.setLatLng([gpsLat.value, gpsLng.value])
+          marker.setLatLng(latlng)
         } else {
-          marker = L.marker([gpsLat.value, gpsLng.value], {
+          marker = L.marker(latlng, {
             icon: L.divIcon({
-              className: 'gps-dot',
-              html: '<div style="width:16px;height:16px;background:#3b82f6;border:3px solid white;border-radius:50%;box-shadow:0 0 8px rgba(59,130,246,0.6)"></div>',
-              iconSize: [16, 16],
-              iconAnchor: [8, 8],
+              className: '',
+              html: '<div style="width:20px;height:20px;background:#3b82f6;border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 2px #3b82f6"></div>',
+              iconSize: [20, 20],
+              iconAnchor: [10, 10],
             }),
-          }).addTo(map!).bindPopup('Vaše poloha')
+          }).addTo(map!)
         }
       },
-      (err) => {
-        gpsError.value = 'GPS nedostupná: ' + err.message
-      },
+      (err) => { gpsError.value = 'GPS: ' + err.message },
       { enableHighAccuracy: true, timeout: 10000 },
     )
   } else {
-    gpsError.value = 'GPS není v prohlížeči dostupná'
+    gpsError.value = 'GPS není v prohlížeči'
   }
 })
 
@@ -106,47 +102,29 @@ onUnmounted(() => {
   if (map) map.remove()
 })
 
-if (!isLoggedIn.value) {
-  router.push('/admin/login')
-}
+if (!isLoggedIn.value) router.push('/admin/login')
 </script>
 
 <template>
-  <div class="mx-auto max-w-lg">
-    <div class="flex items-center justify-between mb-4">
-      <h1 class="text-xl font-bold text-white">Mapa trasy</h1>
-      <div class="flex items-center gap-2 text-xs">
-        <span class="text-slate-500">GPS</span>
-        <span
-          class="inline-block h-2 w-2 rounded-full"
-          :class="gpsActive ? 'bg-emerald-500' : 'bg-slate-600'"
-        ></span>
+  <div class="flex h-full flex-col">
+    <div class="flex items-center justify-between px-1 pb-2 pt-1">
+      <h1 class="text-base font-bold text-white">Mapa trasy</h1>
+      <div class="flex items-center gap-3 text-xs text-slate-500">
+        <span class="flex items-center gap-1">
+          <span class="inline-block h-2 w-2 rounded-full" :class="gpsActive ? 'bg-emerald-500' : 'bg-slate-600'"></span>
+          GPS
+        </span>
+        <span v-if="gpsError" class="text-amber-400">{{ gpsError }}</span>
       </div>
     </div>
 
-    <p v-if="loading" class="text-slate-500">Načítám mapu…</p>
-    <p v-else-if="gpsError" class="mb-2 text-xs text-amber-400">{{ gpsError }}</p>
+    <div id="race-map" class="flex-1 rounded-xl border border-slate-800 shadow-lg" :class="{ 'opacity-0': loading }"></div>
 
-    <div
-      id="race-map"
-      class="h-[70vh] w-full rounded-xl border border-slate-800 shadow-lg"
-      :class="{ 'opacity-0': loading }"
-    ></div>
+    <div v-if="loading" class="flex flex-1 items-center justify-center text-sm text-slate-500">Načítám mapu…</div>
 
-    <div class="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
-      <span class="rounded bg-slate-800 px-2 py-1">
-        🟡 Stanoviště — přibližná oblast
-      </span>
-      <span class="rounded bg-slate-800 px-2 py-1">
-        🔵 Vaše GPS poloha
-      </span>
+    <div class="flex flex-wrap gap-3 pt-2 text-xs text-slate-500">
+      <span class="flex items-center gap-1"><span class="text-amber-400">●</span> Stanoviště</span>
+      <span class="flex items-center gap-1"><span class="text-blue-500">●</span> GPS poloha</span>
     </div>
   </div>
 </template>
-
-<style>
-.gps-dot {
-  background: none !important;
-  border: none !important;
-}
-</style>
