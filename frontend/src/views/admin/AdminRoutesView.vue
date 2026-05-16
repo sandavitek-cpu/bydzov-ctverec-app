@@ -228,6 +228,100 @@ function updateLocalPoint(index: number, lat: number, lng: number) {
   rebuildMap()
 }
 
+const fileInput = ref<HTMLInputElement | null>(null)
+
+function triggerImport() {
+  fileInput.value?.click()
+}
+
+function handleFileUpload(e: Event) {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = () => {
+    const text = reader.result as string
+    const parser = new DOMParser()
+    const doc = parser.parseFromString(text, 'text/xml')
+    const trkpts = doc.querySelectorAll('trkpt')
+    const wpts = doc.querySelectorAll('wpt')
+    const points: { lat: number; lng: number }[] = []
+    trkpts.forEach(el => {
+      const lat = parseFloat(el.getAttribute('lat') || '')
+      const lon = parseFloat(el.getAttribute('lon') || '')
+      if (!isNaN(lat) && !isNaN(lon)) points.push({ lat, lng: lon })
+    })
+    wpts.forEach(el => {
+      const lat = parseFloat(el.getAttribute('lat') || '')
+      const lon = parseFloat(el.getAttribute('lon') || '')
+      if (!isNaN(lat) && !isNaN(lon)) points.push({ lat, lng: lon })
+    })
+    if (points.length === 0) {
+      error.value = 'Soubor neobsahuje žádné body (trkpt/wpt)'
+      return
+    }
+    localPoints.value = points.map(p => ({ sortOrder: 0, lat: p.lat, lng: p.lng, distanceFromStart: 0 }))
+    recalcPoints()
+    rebuildMap()
+    input.value = ''
+  }
+  reader.readAsText(file)
+}
+
+function exportGpx() {
+  if (localPoints.value.length === 0) return
+  const name = form.value.name || 'Trasa'
+  const lines = [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1">',
+    '  <trk>',
+    `    <name>${name}</name>`,
+    '    <trkseg>',
+  ]
+  for (const pt of localPoints.value) {
+    lines.push(`      <trkpt lat="${pt.lat}" lon="${pt.lng}"></trkpt>`)
+  }
+  lines.push('    </trkseg>')
+  lines.push('  </trk>')
+  lines.push('</gpx>')
+  const blob = new Blob([lines.join('\n')], { type: 'application/gpx+xml' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${name.replace(/\s+/g, '_')}.gpx`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
+function exportRouteGpx(route: RouteData) {
+  if (route.points.length === 0) return
+  const name = route.name
+  const lines = [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1">',
+    '  <trk>',
+    `    <name>${name}</name>`,
+    '    <trkseg>',
+  ]
+  for (const pt of route.points) {
+    lines.push(`      <trkpt lat="${pt.lat}" lon="${pt.lng}"></trkpt>`)
+  }
+  lines.push('    </trkseg>')
+  lines.push('  </trk>')
+  lines.push('</gpx>')
+  const blob = new Blob([lines.join('\n')], { type: 'application/gpx+xml' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${name.replace(/\s+/g, '_')}.gpx`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
 function centerLat(): number {
   if (editing && localPoints.value.length > 0) {
     const avg = localPoints.value.reduce((a, p) => a + p.lat, 0) / localPoints.value.length
@@ -393,14 +487,21 @@ onUnmounted(() => {
           <div v-else class="text-body-sm text-text-soft py-4 text-center">
             Zatím žádné body – klikni do mapy pro přidání prvního bodu.
           </div>
-          <div class="flex gap-3">
+          <div class="flex flex-wrap gap-3">
             <button type="submit" :disabled="saving" class="btn-primary btn-sm">
               {{ saving ? 'Ukládám…' : 'Uložit trasu' }}
+            </button>
+            <button type="button" @click="triggerImport" class="btn-secondary btn-sm">
+              Import GPX
+            </button>
+            <button type="button" @click="exportGpx" :disabled="localPoints.length === 0" class="btn-secondary btn-sm">
+              Export GPX
             </button>
             <button type="button" @click="cancelEdit" class="btn-secondary btn-sm">
               Zrušit
             </button>
           </div>
+          <input ref="fileInput" type="file" accept=".gpx,.xml" @change="handleFileUpload" class="hidden" />
         </form>
       </div>
     </div>
@@ -462,6 +563,11 @@ onUnmounted(() => {
                 <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
               </svg>
             </button>
+            <button @click="exportRouteGpx(route)" class="btn-ghost btn-sm !h-7 !px-2">
+              <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+            </button>
             <button @click="removeRoute(route.id)" class="btn-ghost btn-sm !h-7 !px-2 !text-error">
               <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -474,11 +580,4 @@ onUnmounted(() => {
   </div>
 </template>
 
-<style scoped>
-details > summary {
-  list-style: none;
-}
-details > summary::-webkit-details-marker {
-  display: none;
-}
-</style>
+

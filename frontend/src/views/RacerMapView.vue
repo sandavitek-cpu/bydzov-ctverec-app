@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { apiBaseUrl } from '@/api'
+import { fetchRoadRoute } from '@/utils/mapUtils'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -84,8 +85,9 @@ onMounted(async () => {
   }).addTo(map)
 
   if (mapData.value?.routePoints && mapData.value.routePoints.length > 1) {
-    const latlngs = mapData.value.routePoints.map(p => [p.lat, p.lng] as L.LatLngTuple)
-    routeLine = L.polyline(latlngs, {
+    const raw = mapData.value.routePoints.map(p => ({ lat: p.lat, lng: p.lng }))
+    const roadRoute = await fetchRoadRoute(raw)
+    routeLine = L.polyline(roadRoute, {
       color: '#dc2626',
       weight: 4,
       opacity: 0.8,

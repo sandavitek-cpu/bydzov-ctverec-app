@@ -197,6 +197,29 @@ export async function impersonateUser(userId: number, headers: Record<string, st
   return body as { accessToken: string; username: string; name: string; role: string }
 }
 
+export interface RoutePointData {
+  id: number | null
+  sortOrder: number
+  lat: number
+  lng: number
+  distanceFromStart: number
+}
+
+export interface RouteData {
+  id: number
+  variant: string
+  name: string
+  totalDistance: number
+  published: boolean
+  points: RoutePointData[]
+}
+
+export async function fetchAdminRoutes(headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/routes`, { headers })
+  if (!res.ok) throw new Error(`API ${res.status}`)
+  return res.json() as Promise<RouteData[]>
+}
+
 export async function deleteAdminCheckpoint(id: number, headers: Record<string, string>) {
   const res = await fetch(`${apiBaseUrl}/api/admin/checkpoints/${id}`, {
     method: 'DELETE',

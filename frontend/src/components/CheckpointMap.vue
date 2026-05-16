@@ -2,11 +2,13 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { fetchRoadRoute } from '@/utils/mapUtils'
 
 const props = defineProps<{
   lat: number
   lng: number
   checkpoints: { id?: number; name: string; lat: number; lng: number; sortOrder: number }[]
+  routeLines?: { points: { lat: number; lng: number }[]; color: string }[]
 }>()
 
 const emit = defineEmits<{
@@ -18,6 +20,7 @@ const container = ref<HTMLElement | null>(null)
 let map: L.Map | null = null
 let marker: L.Marker | null = null
 let cpMarkers: L.Marker[] = []
+let polylines: L.Polyline[] = []
 
 function initMap() {
   if (!container.value || map) return
@@ -84,12 +87,42 @@ function updateCpMarkers() {
   })
 }
 
+async function updateRouteLines() {
+  if (!map) return
+  polylines.forEach(p => p.remove())
+  polylines = []
+
+  if (!props.routeLines || props.routeLines.length === 0) return
+
+  const allLatLngs: [number, number][] = []
+  for (const rl of props.routeLines) {
+    if (rl.points.length < 2) continue
+    const geo = await fetchRoadRoute(rl.points)
+    if (geo.length > 0) {
+      const pl = L.polyline(geo, {
+        color: rl.color,
+        weight: 3,
+        opacity: 0.7,
+      }).addTo(map)
+      polylines.push(pl)
+      allLatLngs.push(...geo)
+    }
+  }
+
+  if (allLatLngs.length > 0) {
+    const bounds = L.latLngBounds(allLatLngs.map(p => L.latLng(p[0], p[1])))
+    map.fitBounds(bounds.pad(0.15))
+  }
+}
+
 watch(() => [props.lat, props.lng], updateCenter)
 watch(() => props.checkpoints, updateCpMarkers, { deep: true })
+watch(() => props.routeLines, updateRouteLines, { deep: true })
 
 onMounted(() => {
   initMap()
   setTimeout(updateCpMarkers, 300)
+  setTimeout(updateRouteLines, 500)
 })
 
 onUnmounted(() => {

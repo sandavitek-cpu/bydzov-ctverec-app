@@ -4,17 +4,20 @@ import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import CheckpointMap from '@/components/CheckpointMap.vue'
 import UserPickerModal from '@/components/UserPickerModal.vue'
-import { apiBaseUrl, createAdminCheckpoint, updateAdminCheckpoint, deleteAdminCheckpoint, fetchAdminUsers, type AdminUser, type CheckpointData } from '@/api'
+import { apiBaseUrl, createAdminCheckpoint, updateAdminCheckpoint, deleteAdminCheckpoint, fetchAdminUsers, fetchAdminRoutes, type AdminUser, type CheckpointData, type RouteData } from '@/api'
+import { reverseGeocode } from '@/utils/mapUtils'
 
 const router = useRouter()
 const { isAdmin, authHeaders, logout } = useAuth()
 
 const checkpoints = ref<CheckpointData[]>([])
 const users = ref<AdminUser[]>([])
+const routes = ref<RouteData[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const editing = ref<CheckpointData | null>(null)
 const showUserPicker = ref(false)
+const addresses = ref<Record<number, string>>({})
 
 const commissionerUsers = computed(() =>
   users.value.filter(u => {
@@ -34,6 +37,19 @@ const form = ref({
   volunteers: [] as string[],
 })
 
+const routeLines = computed(() =>
+  routes.value.flatMap(r =>
+    r.points.length > 0
+      ? [{ points: r.points.map(p => ({ lat: p.lat, lng: p.lng })), color: r.variant === 'JEDNODENNI' ? '#dc2626' : '#2563eb' }]
+      : []
+  )
+)
+
+const routeVariantLabel: Record<string, string> = {
+  JEDNODENNI: 'Jednodenní',
+  DVODENNI: 'Dvoudenní',
+}
+
 if (!isAdmin.value) {
   router.push('/admin/login')
 }
@@ -42,15 +58,26 @@ async function load() {
   loading.value = true
   error.value = null
   try {
-    const res = await fetch(`${apiBaseUrl}/api/admin/checkpoints`, {
-      headers: { ...authHeaders() },
-    })
-    if (res.status === 403) { logout(); router.push('/admin/login'); return }
-    checkpoints.value = await res.json()
+    const h = authHeaders()
+    const [cpRes, rRes] = await Promise.all([
+      fetch(`${apiBaseUrl}/api/admin/checkpoints`, { headers: h }),
+      fetchAdminRoutes(h),
+    ])
+    if (cpRes.status === 403) { logout(); router.push('/admin/login'); return }
+    checkpoints.value = await cpRes.json()
+    routes.value = rRes
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Chyba načítání'
   } finally {
     loading.value = false
+  }
+}
+
+async function loadAddresses() {
+  for (const cp of checkpoints.value) {
+    if (cp.id != null) {
+      addresses.value[cp.id] = await reverseGeocode(cp.lat, cp.lng)
+    }
   }
 }
 
@@ -84,6 +111,7 @@ async function save() {
     }
     resetForm()
     await load()
+    await loadAddresses()
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Chyba uložení'
   }
@@ -94,6 +122,7 @@ async function remove(id: number) {
   try {
     await deleteAdminCheckpoint(id, authHeaders())
     await load()
+    await loadAddresses()
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Chyba smazání'
   }
@@ -106,6 +135,7 @@ function onMapSelectCheckpoint(id: number) {
 
 onMounted(async () => {
   await load()
+  await loadAddresses()
   try {
     users.value = await fetchAdminUsers(authHeaders())
   } catch {}
@@ -206,7 +236,7 @@ onMounted(async () => {
                   <span class="font-medium text-text">{{ cp.name }}</span>
                 </div>
                 <div class="mt-1 text-meta text-text-soft">
-                  {{ cp.lat.toFixed(4) }}, {{ cp.lng.toFixed(4) }} · rádius {{ cp.radius }} m
+                  {{ addresses[cp.id!] || `${cp.lat.toFixed(4)}, ${cp.lng.toFixed(4)}` }} · rádius {{ cp.radius }} m
                 </div>
                 <div v-if="cp.taskDescription" class="mt-1 text-body-sm text-text-muted">{{ cp.taskDescription }}</div>
                 <div class="mt-1 flex gap-3 text-meta">
@@ -236,6 +266,7 @@ onMounted(async () => {
             :lat="form.lat"
             :lng="form.lng"
             :checkpoints="checkpoints"
+            :route-lines="routeLines"
             @click="(lat, lng) => { form.lat = lat; form.lng = lng }"
             @select-checkpoint="onMapSelectCheckpoint"
           />
