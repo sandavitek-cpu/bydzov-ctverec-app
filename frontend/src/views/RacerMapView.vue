@@ -3,7 +3,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { apiBaseUrl } from '@/api'
-import { fetchRoadRoute } from '@/utils/mapUtils'
+import { fetchRoadRoute, addLocateControl } from '@/utils/mapUtils'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -83,6 +83,8 @@ onMounted(async () => {
     attribution: '&copy; <a href="https://openstreetmap.org/copyright">OSM</a>',
     maxZoom: 18,
   }).addTo(map)
+
+  addLocateControl(map)
 
   if (mapData.value?.routePoints && mapData.value.routePoints.length > 1) {
     const raw = mapData.value.routePoints.map(p => ({ lat: p.lat, lng: p.lng }))

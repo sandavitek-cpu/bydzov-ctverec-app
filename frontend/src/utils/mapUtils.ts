@@ -1,3 +1,5 @@
+import L from 'leaflet'
+
 const routeCache = new Map<string, [number, number][]>()
 const addressCache = new Map<string, string>()
 
@@ -25,6 +27,29 @@ export async function fetchRoadRoute(points: { lat: number; lng: number }[]): Pr
 
 function toLatLng(points: { lat: number; lng: number }[]): [number, number][] {
   return points.map(p => [p.lat, p.lng])
+}
+
+export function addLocateControl(map: L.Map) {
+  const LocateControl = L.Control.extend({
+    onAdd: function () {
+      const btn = L.DomUtil.create('button', 'leaflet-bar')
+      btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>'
+      btn.title = 'Vycentrovat na moji polohu'
+      btn.style.cssText = 'width:34px;height:34px;background:#fff;border:2px solid rgba(0,0,0,0.2);border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#333'
+      btn.onclick = function () {
+        if (!('geolocation' in navigator)) return
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            map.setView([pos.coords.latitude, pos.coords.longitude], map.getZoom())
+          },
+          () => {},
+          { enableHighAccuracy: true, timeout: 10000 },
+        )
+      }
+      return btn
+    },
+  })
+  new LocateControl({ position: 'topright' }).addTo(map)
 }
 
 export async function reverseGeocode(lat: number, lng: number): Promise<string> {

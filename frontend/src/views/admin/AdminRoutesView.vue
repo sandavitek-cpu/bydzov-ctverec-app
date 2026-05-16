@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { apiBaseUrl } from '@/api'
+import { addLocateControl } from '@/utils/mapUtils'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -404,6 +405,8 @@ function initMap() {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     maxZoom: 19,
   }).addTo(map)
+
+  addLocateControl(map)
 
   map.on('click', (e: L.LeafletMouseEvent) => {
     addLocalPoint(e.latlng.lat, e.latlng.lng)
