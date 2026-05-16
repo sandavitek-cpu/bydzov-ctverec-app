@@ -162,7 +162,8 @@ class BydzovCtverecApplicationTests {
                 "vehicleCategory", "OSOBNI",
                 "vehiclePlate", "5H1 2345",
                 "vehicleYear", 1990,
-                "crewCount", 2))))
+                "crewCount", 2,
+                "variant", "JEDNODENNI"))))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.teamName").value("Tým test"))
         .andExpect(jsonPath("$.startNumber").isNumber())
