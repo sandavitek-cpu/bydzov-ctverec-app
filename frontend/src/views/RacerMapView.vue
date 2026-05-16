@@ -130,6 +130,7 @@ onMounted(async () => {
               iconAnchor: [10, 10],
             }),
           }).addTo(map!)
+          map!.setView(latlng, map!.getZoom())
         }
       },
       (err) => { gpsError.value = 'GPS: ' + err.message },
