@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { fetchRoadRoute, addLocateControl } from '@/utils/mapUtils'
+import { fetchRoadRoute, addLocateControl, addFullscreenControl } from '@/utils/mapUtils'
 
 const props = defineProps<{
   lat: number
@@ -37,6 +37,7 @@ function initMap() {
   }).addTo(map)
 
   addLocateControl(map)
+  addFullscreenControl(map)
 
   const icon = L.divIcon({
     html: '<div style="width:16px;height:16px;background:#09097B;border:3px solid #fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.3)"></div>',
@@ -134,5 +135,5 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div ref="container" class="h-80 w-full rounded-lg border border-border"></div>
+  <div ref="container" class="h-60 sm:h-72 md:h-80 w-full rounded-lg border border-border"></div>
 </template>

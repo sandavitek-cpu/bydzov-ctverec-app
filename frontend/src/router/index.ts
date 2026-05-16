@@ -9,6 +9,7 @@ import AdminLoggingView from '../views/admin/AdminLoggingView.vue'
 import AdminRolesView from '../views/admin/AdminRolesView.vue'
 import AdminUsersView from '../views/admin/AdminUsersView.vue'
 import AdminRoutesView from '../views/admin/AdminRoutesView.vue'
+import AdminChangelogView from '../views/admin/AdminChangelogView.vue'
 import JudgeScoringView from '../views/JudgeScoringView.vue'
 import ResultsView from '../views/ResultsView.vue'
 import ArchiveView from '../views/ArchiveView.vue'
@@ -23,13 +24,14 @@ const router = createRouter({
     { path: '/', name: 'home', component: HomeView },
     { path: '/registrace', name: 'registration', component: RegistrationView },
     { path: '/admin/login', name: 'admin-login', component: AdminLoginView },
-    { path: '/admin/prihlaseni', name: 'admin-dashboard', component: AdminDashboardView },
-    { path: '/admin/stanoviste', name: 'admin-checkpoints', component: AdminCheckpointsView },
-    { path: '/admin/komunikace', name: 'admin-communications', component: AdminCommunicationsView },
-    { path: '/admin/logovani', name: 'admin-logging', component: AdminLoggingView },
-    { path: '/admin/role', name: 'admin-roles', component: AdminRolesView },
-    { path: '/admin/trasy', name: 'admin-routes', component: AdminRoutesView },
-    { path: '/admin/uzivatele', name: 'admin-users', component: AdminUsersView },
+    { path: '/admin/prihlaseni', name: 'admin-dashboard', component: AdminDashboardView, meta: { requiresAdmin: true } },
+    { path: '/admin/stanoviste', name: 'admin-checkpoints', component: AdminCheckpointsView, meta: { requiresAdmin: true } },
+    { path: '/admin/komunikace', name: 'admin-communications', component: AdminCommunicationsView, meta: { requiresAdmin: true } },
+    { path: '/admin/logovani', name: 'admin-logging', component: AdminLoggingView, meta: { requiresAdmin: true } },
+    { path: '/admin/role', name: 'admin-roles', component: AdminRolesView, meta: { requiresAdmin: true } },
+    { path: '/admin/trasy', name: 'admin-routes', component: AdminRoutesView, meta: { requiresAdmin: true } },
+    { path: '/admin/uzivatele', name: 'admin-users', component: AdminUsersView, meta: { requiresAdmin: true } },
+    { path: '/admin/changelog', name: 'admin-changelog', component: AdminChangelogView, meta: { requiresAdmin: true } },
     { path: '/rozhodci', redirect: '/komisari' },
     { path: '/komisari', name: 'judge-scoring', component: JudgeScoringView },
     { path: '/vysledky/:rok', name: 'results', component: ResultsView },
@@ -40,6 +42,18 @@ const router = createRouter({
     { path: '/zavodnik/mapa', name: 'racer-map', component: RacerMapView },
     { path: '/ucet', name: 'account', component: AccountSettingsView },
   ],
+})
+
+router.beforeEach((to, _from, next) => {
+  if (to.meta?.requiresAdmin) {
+    const token = localStorage.getItem('admin_token')
+    const role = localStorage.getItem('admin_role')
+    if (!token || !role?.split(',').includes('ADMIN')) {
+      next('/admin/login')
+      return
+    }
+  }
+  next()
 })
 
 export default router

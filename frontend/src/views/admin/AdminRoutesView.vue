@@ -3,7 +3,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { apiBaseUrl } from '@/api'
-import { addLocateControl } from '@/utils/mapUtils'
+import { addLocateControl, fetchRoadRoute } from '@/utils/mapUtils'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -46,6 +46,8 @@ const mapContainer = ref<HTMLElement | null>(null)
 let map: L.Map | null = null
 let polyline: L.Polyline | null = null
 let markers: L.Marker[] = []
+const osrmPreview = ref(false)
+const osrmLoading = ref(false)
 
 if (!isAdmin.value) {
   router.push('/admin/login')
@@ -207,6 +209,27 @@ async function removeRoute(id: number) {
     await load()
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Chyba smazání'
+  }
+}
+
+async function toggleRoadPreview() {
+  if (!map || localPoints.value.length < 2) return
+  if (osrmPreview.value) {
+    osrmPreview.value = false
+    rebuildMap()
+    return
+  }
+  osrmLoading.value = true
+  try {
+    const geo = await fetchRoadRoute(localPoints.value)
+    if (geo.length > 0 && polyline) {
+      osrmPreview.value = true
+      polyline.setLatLngs(geo)
+      polyline.setStyle({ color: '#dc2626', weight: 3, opacity: 0.7 })
+      map.fitBounds(polyline.getBounds().pad(0.1))
+    }
+  } finally {
+    osrmLoading.value = false
   }
 }
 
@@ -466,7 +489,7 @@ onUnmounted(() => {
           <div class="text-body-sm text-text-soft">
             Kliknutím do mapy přidáš bod. Tažením bod přemístíš. Pravým kliknutím nebo vyskakovacím oknem bod smažeš.
           </div>
-          <div ref="mapContainer" class="h-80 w-full rounded-lg border border-border"></div>
+          <div ref="mapContainer" class="h-60 sm:h-72 md:h-80 w-full rounded-lg border border-border"></div>
           <div v-if="localPoints.length > 0" class="space-y-1">
             <div class="flex items-center justify-between">
               <span class="text-meta font-medium text-text">Body trasy ({{ localPoints.length }})</span>
@@ -489,6 +512,12 @@ onUnmounted(() => {
           </div>
           <div v-else class="text-body-sm text-text-soft py-4 text-center">
             Zatím žádné body – klikni do mapy pro přidání prvního bodu.
+          </div>
+          <div v-if="localPoints.length >= 2" class="flex items-center gap-2 text-meta text-text-soft">
+            <button type="button" @click="toggleRoadPreview" :disabled="osrmLoading" class="btn-ghost btn-xs">
+              {{ osrmLoading ? 'Načítám…' : osrmPreview ? 'Zpět na rovné čáry' : 'Zobrazit po silnici' }}
+            </button>
+            <span v-if="osrmPreview" class="inline-block h-2 w-2 rounded-full bg-success"></span>
           </div>
           <div class="flex flex-wrap gap-3">
             <button type="submit" :disabled="saving" class="btn-primary btn-sm">

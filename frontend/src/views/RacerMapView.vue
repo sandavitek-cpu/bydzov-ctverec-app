@@ -175,7 +175,7 @@ if (!isLoggedIn.value) router.push('/admin/login')
     </div>
 
     <div v-show="!loading" class="flex flex-col lg:flex-row gap-4">
-      <div id="race-map" class="h-[60vh] rounded-xl border border-border shadow-sm lg:w-3/5"></div>
+      <div id="race-map" class="h-[40vh] sm:h-[50vh] lg:h-[60vh] rounded-xl border border-border shadow-sm lg:w-3/5"></div>
 
       <div class="lg:w-2/5 space-y-3">
         <div v-if="mapData" class="rounded-xl border border-border p-4">

@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import { useToast } from '@/composables/useToast'
 import { apiBaseUrl } from '@/api'
 import logoCtverec from '@/assets/logo_ctverec.png'
 import logoPrevit from '@/assets/logo_previt.png'
@@ -9,6 +10,7 @@ import ImpersonateModal from '@/components/ImpersonateModal.vue'
 
 const route = useRoute()
 const { isLoggedIn, name, username, hasAdmin, hasJudge, hasRacer, impersonating, logout, restoreFromImpersonation } = useAuth()
+const { toasts, remove } = useToast()
 
 const appInfo = ref<{ version: string; deployedAt: string; changelog: { version: string; description: string; createdAt: string }[] } | null>(null)
 const showInfo = ref(false)
@@ -48,6 +50,22 @@ async function toggleInfo() {
 
 <template>
   <div class="min-h-screen bg-bg flex flex-col">
+    <!-- Toast container -->
+    <div class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 max-w-sm">
+      <div v-for="t in toasts" :key="t.id"
+        class="flex items-start gap-3 rounded-xl border px-4 py-3 shadow-lg transition-all animate-slide-in cursor-pointer"
+        :class="{
+          'bg-success/10 border-success text-success': t.type === 'success',
+          'bg-error/10 border-error text-error': t.type === 'error',
+          'bg-info/10 border-info text-info': t.type === 'info',
+        }"
+        @click="remove(t.id)"
+      >
+        <span class="text-body-sm flex-1">{{ t.message }}</span>
+        <button @click.stop="remove(t.id)" class="text-current opacity-60 hover:opacity-100 leading-none">&times;</button>
+      </div>
+    </div>
+
     <!-- Impersonation bar -->
     <div v-if="impersonating" class="bg-accent-gold/20 border-b border-accent-gold/30 px-4 py-2 text-center text-body-sm text-text">
       <span class="font-semibold">Impersonace:</span> {{ name }} (@{{ username }})
@@ -110,6 +128,7 @@ async function toggleInfo() {
                   <RouterLink to="/admin/trasy" class="admin-sidebar-item">Trasy</RouterLink>
                   <RouterLink to="/admin/stanoviste" class="admin-sidebar-item">Stanoviště</RouterLink>
                   <RouterLink to="/admin/komunikace" class="admin-sidebar-item">Komunikace</RouterLink>
+                  <RouterLink to="/admin/changelog" class="admin-sidebar-item">ChangeLog</RouterLink>
                   <RouterLink to="/admin/logovani" class="admin-sidebar-item">Logování</RouterLink>
                   <RouterLink to="/admin/role" class="admin-sidebar-item">Role</RouterLink>
                   <RouterLink to="/admin/uzivatele" class="admin-sidebar-item">Uživatelé</RouterLink>
@@ -170,6 +189,7 @@ async function toggleInfo() {
             <RouterLink to="/admin/trasy" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary">Trasy</RouterLink>
             <RouterLink to="/admin/stanoviste" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary">Stanoviště</RouterLink>
             <RouterLink to="/admin/komunikace" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary">Komunikace</RouterLink>
+            <RouterLink to="/admin/changelog" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary">ChangeLog</RouterLink>
             <RouterLink to="/admin/logovani" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary">Logování</RouterLink>
             <RouterLink to="/admin/role" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary">Role</RouterLink>
             <RouterLink to="/admin/uzivatele" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary">Uživatelé</RouterLink>
@@ -254,3 +274,13 @@ async function toggleInfo() {
     />
   </div>
 </template>
+
+<style>
+@keyframes slide-in {
+  from { opacity: 0; transform: translateX(100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
+}
+</style>

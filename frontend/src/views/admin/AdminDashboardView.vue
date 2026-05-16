@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import { useToast } from '@/composables/useToast'
 import { apiBaseUrl, approveRegistration, impersonateRegistration } from '@/api'
 
 const router = useRouter()
 const { isAdmin, authHeaders, logout, impersonateAs } = useAuth()
+const { show: showToast } = useToast()
 
 interface AdminReg {
   id: number; teamName: string; email: string; phone: string
@@ -39,8 +41,83 @@ const error = ref<string | null>(null)
 const selected = ref<AdminReg | null>(null)
 const approvingId = ref<number | null>(null)
 
+const filterVariant = ref('all')
+const filterStatus = ref('all')
+const filterSearch = ref('')
+const selectedIds = ref<Set<number>>(new Set())
+const batchProcessing = ref(false)
+
 if (!isAdmin.value) {
   router.push('/admin/login')
+}
+
+const filtered = computed(() => {
+  let list = registrations.value
+  if (filterVariant.value !== 'all') {
+    list = list.filter(r => r.variant === filterVariant.value)
+  }
+  if (filterStatus.value !== 'all') {
+    list = list.filter(r => r.status === filterStatus.value)
+  }
+  if (filterSearch.value.trim()) {
+    const q = filterSearch.value.toLowerCase()
+    list = list.filter(r =>
+      r.teamName.toLowerCase().includes(q) ||
+      r.vehiclePlate.toLowerCase().includes(q) ||
+      r.email.toLowerCase().includes(q) ||
+      r.lastName?.toLowerCase().includes(q) ||
+      r.firstName?.toLowerCase().includes(q)
+    )
+  }
+  return list
+})
+
+function toggleSelect(id: number) {
+  const s = new Set(selectedIds.value)
+  if (s.has(id)) s.delete(id); else s.add(id)
+  selectedIds.value = s
+}
+
+function toggleSelectAll() {
+  if (selectedIds.value.size === filtered.value.length) {
+    selectedIds.value = new Set()
+  } else {
+    selectedIds.value = new Set(filtered.value.map(r => r.id))
+  }
+}
+
+async function batchAction(action: 'approve' | 'paid' | 'pending') {
+  const ids = Array.from(selectedIds.value)
+  if (ids.length === 0) return
+  batchProcessing.value = true
+  let success = 0; let fail = 0
+  for (const id of ids) {
+    try {
+      if (action === 'approve') {
+        await approveRegistration(id, authHeaders())
+      } else {
+        const newStatus = action === 'paid' ? 'PAID' : 'PENDING'
+        const res = await fetch(`${apiBaseUrl}/api/admin/registrations/${id}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', ...authHeaders() },
+          body: JSON.stringify({ status: newStatus }),
+        })
+        if (!res.ok) throw new Error()
+      }
+      success++
+    } catch {
+      fail++
+    }
+  }
+  selectedIds.value = new Set()
+  await fetchAll()
+  batchProcessing.value = false
+  const actionLabel = action === 'approve' ? 'Schváleno' : action === 'paid' ? 'Zaplaceno' : 'Vráceno'
+  if (fail > 0) {
+    showToast(`${actionLabel}: ${success} OK, ${fail} selhalo`, 'error')
+  } else {
+    showToast(`${actionLabel}: ${success} posádek`, 'success')
+  }
 }
 
 async function fetchAll() {
@@ -80,9 +157,9 @@ async function toggleStatus(reg: AdminReg) {
 async function handleApprove(reg: AdminReg) {
   approvingId.value = reg.id
   try {
-    const result = await approveRegistration(reg.id, authHeaders())
-    reg.approved = true
+    await approveRegistration(reg.id, authHeaders())
     await fetchAll()
+    showToast(`${reg.teamName} schválen`, 'success')
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Schválení selhalo'
   } finally {
@@ -147,12 +224,36 @@ const variantLabel: Record<string, string> = {
     <div class="flex items-center justify-between gap-4 mb-6">
       <div>
         <h1 class="text-page-title text-text">Přihlášky</h1>
-        <p class="text-body-sm text-text-soft">{{ registrations.length }} posádek</p>
+        <p class="text-body-sm text-text-soft">{{ filtered.length }} z {{ registrations.length }} posádek</p>
       </div>
       <div class="flex gap-3">
         <button @click="downloadCsv" class="btn-secondary btn-sm">CSV</button>
         <button v-if="registrations.some(r => r.status !== 'PAID')" @click="mailtoUnpaid" class="btn-ghost btn-sm">Upomínka</button>
       </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="flex flex-wrap gap-3 mb-6">
+      <select v-model="filterVariant" class="input-field !w-auto !h-[36px] text-body-sm">
+        <option value="all">Všechny varianty</option>
+        <option value="JEDNODENNI">Jednodenní</option>
+        <option value="DVODENNI">Dvoudenní</option>
+      </select>
+      <select v-model="filterStatus" class="input-field !w-auto !h-[36px] text-body-sm">
+        <option value="all">Všechny stavy</option>
+        <option value="PAID">Zaplaceno</option>
+        <option value="PENDING">Čeká na platbu</option>
+      </select>
+      <input v-model="filterSearch" placeholder="Hledat tým, SPZ, email…" class="input-field !w-auto !min-w-[200px] !h-[36px] text-body-sm flex-1" />
+    </div>
+
+    <!-- Batch actions -->
+    <div v-if="selectedIds.size > 0" class="mb-4 flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-2">
+      <span class="text-body-sm font-semibold text-text">{{ selectedIds.size }} vybráno</span>
+      <button @click="batchAction('approve')" :disabled="batchProcessing" class="btn-primary btn-xs">Schválit</button>
+      <button @click="batchAction('paid')" :disabled="batchProcessing" class="btn-secondary btn-xs">Označit zaplaceno</button>
+      <button @click="batchAction('pending')" :disabled="batchProcessing" class="btn-ghost btn-xs">Vrátit na čeká</button>
+      <button @click="selectedIds = new Set()" class="btn-ghost btn-xs text-text-soft">Zrušit výběr</button>
     </div>
 
     <!-- Stats -->
@@ -210,9 +311,8 @@ const variantLabel: Record<string, string> = {
     <p v-if="loading" class="text-body text-text-soft py-12 text-center">Načítám…</p>
     <p v-else-if="error" class="alert alert-error mb-4">{{ error }}</p>
 
-    <div v-else-if="registrations.length === 0" class="py-12 text-center">
-      <p class="text-section-title text-text-soft">Zatím žádné přihlášky</p>
-      <p class="text-body text-text-soft mt-2">Jakmile se někdo přihlásí, uvidíte ho zde.</p>
+    <div v-else-if="filtered.length === 0" class="py-12 text-center">
+      <p class="text-section-title text-text-soft">Žádné přihlášky neodpovídají filtrům</p>
     </div>
 
     <!-- Table -->
@@ -220,6 +320,9 @@ const variantLabel: Record<string, string> = {
       <table class="w-full">
         <thead class="table-header">
           <tr>
+            <th class="w-8">
+              <input type="checkbox" :checked="selectedIds.size === filtered.length && filtered.length > 0" @change="toggleSelectAll" class="cursor-pointer" />
+            </th>
             <th class="w-8 text-center">#</th>
             <th>Posádka</th>
             <th class="hidden sm:table-cell">Varianta</th>
@@ -229,10 +332,13 @@ const variantLabel: Record<string, string> = {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="r in registrations" :key="r.id"
+          <tr v-for="r in filtered" :key="r.id"
             @click="selectReg(r)"
             class="table-row cursor-pointer"
           >
+            <td class="text-center" @click.stop>
+              <input type="checkbox" :checked="selectedIds.has(r.id)" @change="toggleSelect(r.id)" class="cursor-pointer" />
+            </td>
             <td class="text-center font-mono font-bold text-primary">{{ r.startNumber }}</td>
             <td>
               <div class="font-medium text-text">{{ r.teamName }}</div>

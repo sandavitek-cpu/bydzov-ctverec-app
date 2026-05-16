@@ -29,6 +29,30 @@ function toLatLng(points: { lat: number; lng: number }[]): [number, number][] {
   return points.map(p => [p.lat, p.lng])
 }
 
+export function addFullscreenControl(map: L.Map) {
+  const FullscreenControl = L.Control.extend({
+    onAdd: function () {
+      const btn = L.DomUtil.create('button', 'leaflet-bar')
+      btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/></svg>'
+      btn.title = 'Celá obrazovka'
+      btn.style.cssText = 'width:34px;height:34px;background:#fff;border:2px solid rgba(0,0,0,0.2);border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#333;margin-top:4px'
+      const container = map.getContainer()
+      btn.onclick = function () {
+        if (document.fullscreenElement) {
+          document.exitFullscreen()
+        } else {
+          container.requestFullscreen?.()
+        }
+      }
+      document.addEventListener('fullscreenchange', () => {
+        setTimeout(() => map.invalidateSize(), 300)
+      })
+      return btn
+    },
+  })
+  new FullscreenControl({ position: 'topright' }).addTo(map)
+}
+
 export function addLocateControl(map: L.Map) {
   const LocateControl = L.Control.extend({
     onAdd: function () {
