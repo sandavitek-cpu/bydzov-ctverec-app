@@ -48,6 +48,9 @@ onMounted(async () => {
         checkpoints.value = all.filter((cp: any) =>
           cp.volunteers?.some((v: string) => v === name.value)
         )
+        if (checkpoints.value.length > 0) {
+          quickCheckpointId.value = checkpoints.value[0].id
+        }
       }
     }
     if (role.value === 'racer') {
@@ -75,7 +78,7 @@ onMounted(async () => {
 })
 
 const quickStartNumber = ref<number | null>(null)
-const quickRun = ref(1)
+const quickCheckpointId = ref<number | null>(null)
 const quickPoints = ref<number | null>(null)
 const quickRacer = ref<any>(null)
 const quickSaving = ref(false)
@@ -100,21 +103,20 @@ async function quickLookup() {
 }
 
 async function quickSubmit() {
-  if (!quickRacer.value || quickPoints.value == null) return
+  if (!quickRacer.value || quickPoints.value == null || !quickCheckpointId.value) return
   quickSaving.value = true
   quickError.value = null
   quickSuccess.value = false
   try {
     await submitScore({
       racerRegistrationId: quickRacer.value.id,
-      runNumber: quickRun.value,
+      checkpointId: quickCheckpointId.value,
       points: quickPoints.value,
     }, authHeaders())
     quickSuccess.value = true
     quickStartNumber.value = null
     quickRacer.value = null
     quickPoints.value = null
-    quickRun.value = 1
   } catch (e) {
     quickError.value = e instanceof Error ? e.message : 'Chyba'
   } finally {
@@ -232,11 +234,11 @@ async function quickSubmit() {
             <div v-if="quickRacer">
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label class="input-label">Jízda</label>
-                  <select v-model.number="quickRun" class="input-field">
-                    <option :value="1">1.</option>
-                    <option :value="2">2.</option>
-                    <option :value="3">3.</option>
+                  <label class="input-label">Stanoviště</label>
+                  <select v-model.number="quickCheckpointId" class="input-field">
+                    <option v-for="cp in checkpoints" :key="cp.id" :value="cp.id">
+                      {{ cp.sortOrder }}. {{ cp.name }}
+                    </option>
                   </select>
                 </div>
                 <div>

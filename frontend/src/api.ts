@@ -67,12 +67,13 @@ export async function lookupRacerByStartNumber(startNumber: number) {
 
 export interface ScoreSubmit {
   racerRegistrationId: number
-  runNumber: number
+  checkpointId: number
   points: number
 }
 
 export interface RunScore {
-  runNumber: number
+  checkpointOrder: number
+  checkpointName: string
   points: number
 }
 

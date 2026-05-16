@@ -8,7 +8,8 @@ const router = useRouter()
 const { isLoggedIn, authHeaders, logout } = useAuth()
 
 interface ScoreRow {
-  runNumber: number
+  checkpointName: string
+  checkpointOrder: number
   points: number
 }
 
@@ -94,12 +95,12 @@ if (!isLoggedIn.value) {
       </div>
 
       <div v-if="data.scores.length > 0">
-        <h2 class="text-subsection text-text mb-4">Jízdy</h2>
+        <h2 class="text-subsection text-text mb-4">Stanoviště</h2>
         <div class="space-y-2">
-          <div v-for="s in data.scores" :key="s.runNumber"
+          <div v-for="s in data.scores" :key="s.checkpointOrder"
             class="card !p-4 flex items-center justify-between"
           >
-            <span class="text-text-muted">{{ s.runNumber }}. jízda</span>
+            <span class="text-text-muted">{{ s.checkpointName }}</span>
             <span class="font-mono font-bold text-text text-kpi">{{ s.points }} b.</span>
           </div>
         </div>

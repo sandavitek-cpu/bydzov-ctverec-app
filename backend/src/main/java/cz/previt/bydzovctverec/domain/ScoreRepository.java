@@ -7,8 +7,9 @@ import org.springframework.data.repository.query.Param;
 
 public interface ScoreRepository extends JpaRepository<Score, Long> {
 
-  List<Score> findByRacerRegistrationIdOrderByRunNumber(Long racerRegistrationId);
+  @Query("SELECT s FROM Score s JOIN FETCH s.checkpoint cp WHERE s.racerRegistration.id = :racerRegistrationId ORDER BY cp.sortOrder")
+  List<Score> findByRacerRegistrationIdWithCheckpoint(@Param("racerRegistrationId") Long racerRegistrationId);
 
-  @Query("SELECT s FROM Score s JOIN FETCH s.racerRegistration r WHERE r.edition.editionYear = :year ORDER BY r.id, s.runNumber")
+  @Query("SELECT s FROM Score s JOIN FETCH s.racerRegistration r JOIN FETCH s.checkpoint cp WHERE r.edition.editionYear = :year ORDER BY r.id, cp.sortOrder")
   List<Score> findByEditionYearWithRacer(@Param("year") Integer year);
 }

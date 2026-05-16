@@ -27,8 +27,9 @@ public class Score {
   @JoinColumn(name = "judge_id", nullable = false)
   private User judge;
 
-  @Column(name = "run_number", nullable = false)
-  private Integer runNumber;
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  @JoinColumn(name = "checkpoint_id", nullable = false)
+  private Checkpoint checkpoint;
 
   @Column(nullable = false)
   private Integer points;
@@ -41,10 +42,10 @@ public class Score {
 
   protected Score() {}
 
-  public Score(RacerRegistration racerRegistration, User judge, Integer runNumber, Integer points, String note, Instant createdAt) {
+  public Score(RacerRegistration racerRegistration, User judge, Checkpoint checkpoint, Integer points, String note, Instant createdAt) {
     this.racerRegistration = racerRegistration;
     this.judge = judge;
-    this.runNumber = runNumber;
+    this.checkpoint = checkpoint;
     this.points = points;
     this.note = note;
     this.createdAt = createdAt;
@@ -53,7 +54,7 @@ public class Score {
   public Long getId() { return id; }
   public RacerRegistration getRacerRegistration() { return racerRegistration; }
   public User getJudge() { return judge; }
-  public Integer getRunNumber() { return runNumber; }
+  public Checkpoint getCheckpoint() { return checkpoint; }
   public Integer getPoints() { return points; }
   public String getNote() { return note; }
   public Instant getCreatedAt() { return createdAt; }

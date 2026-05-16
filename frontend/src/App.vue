@@ -19,6 +19,7 @@ const infoRef = ref<HTMLElement | null>(null)
 
 const isLoginPage = computed(() => route.path === '/admin/login')
 const showAdminSidebar = computed(() => isLoggedIn.value && route.path.startsWith('/admin') && !isLoginPage.value)
+const mobileSidebarOpen = ref(false)
 
 function onLogout() {
   logout()
@@ -127,6 +128,7 @@ async function toggleInfo() {
                   <RouterLink to="/admin/prihlaseni" class="admin-sidebar-item">Přihlášky</RouterLink>
                   <RouterLink to="/admin/trasy" class="admin-sidebar-item">Trasy</RouterLink>
                   <RouterLink to="/admin/stanoviste" class="admin-sidebar-item">Stanoviště</RouterLink>
+                  <RouterLink to="/admin/bodovani" class="admin-sidebar-item">Bodování</RouterLink>
                   <RouterLink to="/admin/komunikace" class="admin-sidebar-item">Komunikace</RouterLink>
                   <RouterLink to="/admin/changelog" class="admin-sidebar-item">ChangeLog</RouterLink>
                   <RouterLink to="/admin/logovani" class="admin-sidebar-item">Logování</RouterLink>
@@ -179,20 +181,32 @@ async function toggleInfo() {
       </div>
     </header>
 
+    <!-- Mobile menu button -->
+    <button v-if="showAdminSidebar" @click="mobileSidebarOpen = !mobileSidebarOpen" class="fixed bottom-4 left-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white shadow-lg lg:hidden">
+      <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path v-if="!mobileSidebarOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+
+    <!-- Mobile sidebar overlay -->
+    <div v-if="mobileSidebarOpen && showAdminSidebar" class="fixed inset-0 z-30 bg-black/30 lg:hidden" @click="mobileSidebarOpen = false"></div>
+
     <!-- Main content area -->
     <div class="mx-auto w-full max-w-wide flex-1 flex flex-col">
       <div v-if="showAdminSidebar" class="flex flex-1">
-        <aside class="hidden w-56 shrink-0 lg:block admin-sidebar">
+        <aside :class="['w-56 shrink-0 admin-sidebar', mobileSidebarOpen ? 'fixed inset-y-0 left-0 z-40 block' : 'hidden lg:block']">
           <nav class="py-4">
             <div class="admin-sidebar-section">Administrace</div>
-            <RouterLink to="/admin/prihlaseni" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary">Přihlášky</RouterLink>
-            <RouterLink to="/admin/trasy" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary">Trasy</RouterLink>
-            <RouterLink to="/admin/stanoviste" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary">Stanoviště</RouterLink>
-            <RouterLink to="/admin/komunikace" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary">Komunikace</RouterLink>
-            <RouterLink to="/admin/changelog" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary">ChangeLog</RouterLink>
-            <RouterLink to="/admin/logovani" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary">Logování</RouterLink>
-            <RouterLink to="/admin/role" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary">Role</RouterLink>
-            <RouterLink to="/admin/uzivatele" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary">Uživatelé</RouterLink>
+            <RouterLink to="/admin/prihlaseni" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Přihlášky</RouterLink>
+            <RouterLink to="/admin/trasy" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Trasy</RouterLink>
+            <RouterLink to="/admin/stanoviste" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Stanoviště</RouterLink>
+            <RouterLink to="/admin/bodovani" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Bodování</RouterLink>
+            <RouterLink to="/admin/komunikace" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Komunikace</RouterLink>
+            <RouterLink to="/admin/changelog" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">ChangeLog</RouterLink>
+            <RouterLink to="/admin/logovani" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Logování</RouterLink>
+            <RouterLink to="/admin/role" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Role</RouterLink>
+            <RouterLink to="/admin/uzivatele" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Uživatelé</RouterLink>
           </nav>
         </aside>
         <main class="flex-1 px-4 lg:px-8 py-8">

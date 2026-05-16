@@ -1,13 +1,13 @@
 package cz.previt.bydzovctverec.web;
 
+import cz.previt.bydzovctverec.domain.Checkpoint;
+import cz.previt.bydzovctverec.domain.CheckpointRepository;
 import cz.previt.bydzovctverec.domain.RacerRegistration;
 import cz.previt.bydzovctverec.domain.RacerRegistrationRepository;
 import cz.previt.bydzovctverec.domain.Score;
 import cz.previt.bydzovctverec.domain.ScoreRepository;
 import cz.previt.bydzovctverec.domain.User;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -30,11 +30,13 @@ public class ScoreController {
 
   private final ScoreRepository scoreRepository;
   private final RacerRegistrationRepository racerRegistrationRepository;
+  private final CheckpointRepository checkpointRepository;
   private final SimpMessagingTemplate messagingTemplate;
 
-  public ScoreController(ScoreRepository scoreRepository, RacerRegistrationRepository racerRegistrationRepository, SimpMessagingTemplate messagingTemplate) {
+  public ScoreController(ScoreRepository scoreRepository, RacerRegistrationRepository racerRegistrationRepository, CheckpointRepository checkpointRepository, SimpMessagingTemplate messagingTemplate) {
     this.scoreRepository = scoreRepository;
     this.racerRegistrationRepository = racerRegistrationRepository;
+    this.checkpointRepository = checkpointRepository;
     this.messagingTemplate = messagingTemplate;
   }
 
@@ -46,13 +48,17 @@ public class ScoreController {
     if (racer == null) {
       return ResponseEntity.badRequest().body(new ErrorResponse("Racer registration not found"));
     }
+    Checkpoint cp = checkpointRepository.findById(request.checkpointId()).orElse(null);
+    if (cp == null) {
+      return ResponseEntity.badRequest().body(new ErrorResponse("Checkpoint not found"));
+    }
 
-    Score score = new Score(racer, judge, request.runNumber(), request.points(), request.note(), Instant.now());
+    Score score = new Score(racer, judge, cp, request.points(), request.note(), Instant.now());
     scoreRepository.save(score);
 
     broadcastResults(racer.getEdition().getEditionYear());
 
-    return ResponseEntity.ok(new ScoreResponse(score.getId(), score.getRunNumber(), score.getPoints(), score.getNote()));
+    return ResponseEntity.ok(new ScoreResponse(score.getId(), cp.getName(), cp.getSortOrder(), score.getPoints(), score.getNote()));
   }
 
   private void broadcastResults(Integer year) {
@@ -66,7 +72,7 @@ public class ScoreController {
       List<Score> racerScores = entry.getValue();
       int total = racerScores.stream().mapToInt(Score::getPoints).sum();
       List<PublicResultsController.RunScore> runs = racerScores.stream()
-          .map(s -> new PublicResultsController.RunScore(s.getRunNumber(), s.getPoints()))
+          .map(s -> new PublicResultsController.RunScore(s.getCheckpoint().getSortOrder(), s.getCheckpoint().getName(), s.getPoints()))
           .toList();
       rows.add(new PublicResultsController.ResultRow(0, r.getStartNumber(), r.getTeamName(),
           r.getVehicleCategory(), r.getVehiclePlate(), total, runs));
@@ -86,10 +92,10 @@ public class ScoreController {
 
   public record CreateScoreRequest(
       @NotNull Long racerRegistrationId,
-      @NotNull @Min(1) @Max(99) Integer runNumber,
+      @NotNull Long checkpointId,
       @NotNull Integer points,
       String note) {}
 
-  public record ScoreResponse(Long id, Integer runNumber, Integer points, String note) {}
+  public record ScoreResponse(Long id, String checkpointName, Integer checkpointOrder, Integer points, String note) {}
   public record ErrorResponse(String message) {}
 }

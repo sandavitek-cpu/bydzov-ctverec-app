@@ -6,11 +6,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import cz.previt.bydzovctverec.domain.Checkpoint;
+import cz.previt.bydzovctverec.domain.CheckpointRepository;
 import cz.previt.bydzovctverec.domain.Edition;
 import cz.previt.bydzovctverec.domain.EditionRepository;
 import cz.previt.bydzovctverec.domain.RacerRegistration;
 import cz.previt.bydzovctverec.domain.RacerRegistrationRepository;
-import cz.previt.bydzovctverec.domain.CheckpointRepository;
 import cz.previt.bydzovctverec.domain.UserRole;
 import cz.previt.bydzovctverec.domain.ScheduleItemRepository;
 import cz.previt.bydzovctverec.domain.ScoreRepository;
@@ -104,6 +105,7 @@ class BydzovCtverecApplicationTests {
     User judge = userRepository.save(new User("judge@test.cz", "judge", passwordEncoder.encode("pass"), UserRole.JUDGE, "Judge", "", Instant.now()));
     Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElseThrow();
     RacerRegistration racer = racerRegistrationRepository.save(new RacerRegistration(edition, "John", "Doe", "john@test.cz", "Kart", Instant.now()));
+    Checkpoint cp = checkpointRepository.save(new Checkpoint(edition, "Test CP", 50.0, 15.0, 100, 1));
 
     MvcResult loginResult = mockMvc
         .perform(post("/api/auth/login")
@@ -119,7 +121,7 @@ class BydzovCtverecApplicationTests {
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(Map.of(
                 "racerRegistrationId", racer.getId(),
-                "runNumber", 1,
+                "checkpointId", cp.getId(),
                 "points", 100))))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.points").value(100));

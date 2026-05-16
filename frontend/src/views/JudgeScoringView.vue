@@ -1,14 +1,20 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
-import { lookupRacerByStartNumber, submitScore, type RacerLookup } from '@/api'
+import { apiBaseUrl, lookupRacerByStartNumber, submitScore, type RacerLookup } from '@/api'
 
 const router = useRouter()
 const { isLoggedIn, authHeaders } = useAuth()
 
+interface CheckpointOption {
+  id: number
+  name: string
+  sortOrder: number
+}
+
 const startNumber = ref<number | null>(null)
-const runNumber = ref(1)
+const selectedCheckpoint = ref<number | null>(null)
 const points = ref<number | null>(null)
 const racer = ref<RacerLookup | null>(null)
 const loading = ref(false)
@@ -16,6 +22,22 @@ const lookupLoading = ref(false)
 const error = ref<string | null>(null)
 const success = ref(false)
 const searched = ref(false)
+
+const checkpoints = ref<CheckpointOption[]>([])
+
+onMounted(async () => {
+  try {
+    const res = await fetch(`${apiBaseUrl}/api/racer/checkpoints`, { headers: authHeaders() })
+    if (res.ok) {
+      checkpoints.value = await res.json()
+      if (checkpoints.value.length > 0) {
+        selectedCheckpoint.value = checkpoints.value[0].id
+      }
+    }
+  } catch {
+    // silently fail, judge will see empty dropdown
+  }
+})
 
 async function handleLookup() {
   if (!startNumber.value) return
@@ -36,13 +58,13 @@ async function handleLookup() {
 }
 
 async function handleSubmit() {
-  if (!racer.value || points.value === null || points.value === undefined) return
+  if (!racer.value || points.value === null || points.value === undefined || !selectedCheckpoint.value) return
   loading.value = true
   error.value = null
   try {
     await submitScore({
       racerRegistrationId: racer.value.id,
-      runNumber: runNumber.value,
+      checkpointId: selectedCheckpoint.value,
       points: points.value,
     }, authHeaders())
     success.value = true
@@ -86,7 +108,7 @@ if (!isLoggedIn.value) {
         </div>
         <h2 class="text-subsection text-success">Body zapsány</h2>
         <p class="mt-2 text-body text-text-muted">
-          {{ racer?.teamName }} — jízda {{ runNumber }}:
+          {{ racer?.teamName }} —
           <strong class="text-primary">{{ points }} b.</strong>
         </p>
       </div>
@@ -131,11 +153,11 @@ if (!isLoggedIn.value) {
 
       <div v-if="racer" class="space-y-5">
         <div>
-          <label class="input-label">Jízda</label>
-          <select v-model.number="runNumber" class="input-field">
-            <option :value="1">1. jízda</option>
-            <option :value="2">2. jízda</option>
-            <option :value="3">3. jízda</option>
+          <label class="input-label">Stanoviště</label>
+          <select v-model.number="selectedCheckpoint" class="input-field">
+            <option v-for="cp in checkpoints" :key="cp.id" :value="cp.id">
+              {{ cp.sortOrder }}. {{ cp.name }}
+            </option>
           </select>
         </div>
 

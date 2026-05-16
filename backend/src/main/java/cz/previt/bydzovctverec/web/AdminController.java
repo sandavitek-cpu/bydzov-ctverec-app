@@ -4,6 +4,8 @@ import cz.previt.bydzovctverec.config.EmailService;
 import cz.previt.bydzovctverec.config.JwtService;
 import cz.previt.bydzovctverec.domain.AppRole;
 import cz.previt.bydzovctverec.domain.AppRoleRepository;
+import cz.previt.bydzovctverec.domain.Checkpoint;
+import cz.previt.bydzovctverec.domain.CheckpointRepository;
 import cz.previt.bydzovctverec.domain.Edition;
 import cz.previt.bydzovctverec.domain.EditionRepository;
 import cz.previt.bydzovctverec.domain.RacerRegistration;
@@ -44,16 +46,18 @@ public class AdminController {
   private final EditionRepository editionRepository;
   private final RacerRegistrationRepository racerRegistrationRepository;
   private final ScoreRepository scoreRepository;
+  private final CheckpointRepository checkpointRepository;
   private final UserRepository userRepository;
   private final AppRoleRepository appRoleRepository;
   private final PasswordEncoder passwordEncoder;
   private final JwtService jwtService;
   private final EmailService emailService;
 
-  public AdminController(EditionRepository editionRepository, RacerRegistrationRepository racerRegistrationRepository, ScoreRepository scoreRepository, UserRepository userRepository, AppRoleRepository appRoleRepository, PasswordEncoder passwordEncoder, JwtService jwtService, EmailService emailService) {
+  public AdminController(EditionRepository editionRepository, RacerRegistrationRepository racerRegistrationRepository, ScoreRepository scoreRepository, CheckpointRepository checkpointRepository, UserRepository userRepository, AppRoleRepository appRoleRepository, PasswordEncoder passwordEncoder, JwtService jwtService, EmailService emailService) {
     this.editionRepository = editionRepository;
     this.racerRegistrationRepository = racerRegistrationRepository;
     this.scoreRepository = scoreRepository;
+    this.checkpointRepository = checkpointRepository;
     this.userRepository = userRepository;
     this.appRoleRepository = appRoleRepository;
     this.passwordEncoder = passwordEncoder;
@@ -266,32 +270,34 @@ public class AdminController {
       return ResponseEntity.badRequest().body(Map.of("error", "Ročník nenalezen"));
     }
 
-    List<RacerRegistration> regs = racerRegistrationRepository.findByEditionOrderByStartNumber(edition);
+    List<Checkpoint> checkpoints = checkpointRepository.findByEditionOrderBySortOrder(edition);
     List<Score> scores = scoreRepository.findByEditionYearWithRacer(year);
 
-    Map<Long, List<Score>> scoresByRacer = scores.stream()
-        .collect(Collectors.groupingBy(s -> s.getRacerRegistration().getId()));
+    Map<RacerRegistration, List<Score>> grouped = scores.stream()
+        .collect(Collectors.groupingBy(Score::getRacerRegistration));
 
     List<Map<String, Object>> results = new ArrayList<>();
-    for (var reg : regs) {
-      List<Score> racerScores = scoresByRacer.getOrDefault(reg.getId(), List.of());
+    for (var entry : grouped.entrySet()) {
+      RacerRegistration r = entry.getKey();
+      List<Score> racerScores = entry.getValue();
       int totalPoints = racerScores.stream().mapToInt(Score::getPoints).sum();
-
-      Map<String, Object> kBody = new java.util.LinkedHashMap<>();
-      for (var score : racerScores) {
-        kBody.put("K" + score.getRunNumber(), score.getPoints());
-      }
+      List<Map<String, Object>> scoresList = racerScores.stream()
+          .map(s -> Map.<String, Object>of(
+              "checkpointOrder", s.getCheckpoint().getSortOrder(),
+              "checkpointName", s.getCheckpoint().getName(),
+              "points", s.getPoints()))
+          .toList();
 
       results.add(Map.of(
-          "startNumber", reg.getStartNumber(),
-          "teamName", reg.getTeamName() != null ? reg.getTeamName() : (reg.getFirstName() + " " + reg.getLastName()),
-          "vehicleCategory", reg.getVehicleCategory(),
-          "vehicleMake", reg.getVehicleMake() != null ? reg.getVehicleMake() : "",
-          "vehiclePlate", reg.getVehiclePlate(),
-          "vehicleYear", reg.getVehicleYear(),
-          "variant", reg.getVariant() != null ? reg.getVariant() : "",
+          "startNumber", r.getStartNumber(),
+          "teamName", r.getTeamName() != null ? r.getTeamName() : (r.getFirstName() + " " + r.getLastName()),
+          "vehicleCategory", r.getVehicleCategory(),
+          "vehicleMake", r.getVehicleMake() != null ? r.getVehicleMake() : "",
+          "vehiclePlate", r.getVehiclePlate(),
+          "vehicleYear", r.getVehicleYear(),
+          "variant", r.getVariant() != null ? r.getVariant() : "",
           "totalPoints", totalPoints,
-          "kBody", kBody));
+          "scores", scoresList));
     }
 
     results.sort(Comparator.comparingInt(r -> -(int) r.get("totalPoints")));
@@ -303,7 +309,13 @@ public class AdminController {
       ranked.add(row);
     }
 
-    return ResponseEntity.ok(Map.of("year", year, "results", ranked));
+    List<Map<String, Object>> cpList = checkpoints.stream()
+        .map(cp -> Map.<String, Object>of(
+            "sortOrder", cp.getSortOrder(),
+            "name", cp.getName()))
+        .toList();
+
+    return ResponseEntity.ok(Map.of("year", year, "checkpoints", cpList, "results", ranked));
   }
 
   @GetMapping("/export")

@@ -59,7 +59,7 @@ public class RacerController {
       return ResponseEntity.ok(Map.of("error", "Nejste přihlášen k závodu"));
     }
 
-    List<Score> scores = scoreRepository.findByRacerRegistrationIdOrderByRunNumber(reg.getId());
+    List<Score> scores = scoreRepository.findByRacerRegistrationIdWithCheckpoint(reg.getId());
     int totalPoints = scores.stream().mapToInt(Score::getPoints).sum();
     Edition edition = reg.getEdition();
     List<Score> allScores = scoreRepository.findByEditionYearWithRacer(edition.getEditionYear());
@@ -71,7 +71,7 @@ public class RacerController {
     for (var entry : sorted) { if (entry.getKey().equals(reg.getId())) break; rank++; }
 
     List<ScoreResponse> scoreList = scores.stream()
-        .map(s -> new ScoreResponse(s.getId(), s.getRunNumber(), s.getPoints(), s.getNote()))
+        .map(s -> new ScoreResponse(s.getId(), s.getCheckpoint().getName(), s.getCheckpoint().getSortOrder(), s.getPoints(), s.getNote()))
         .toList();
 
     return ResponseEntity.ok(new StandingResponse(
@@ -157,9 +157,9 @@ public class RacerController {
 
     List<Checkpoint> checkpoints = checkpointRepository.findByEditionOrderBySortOrder(edition);
 
-    List<Score> scores = scoreRepository.findByRacerRegistrationIdOrderByRunNumber(reg.getId());
+    List<Score> scores = scoreRepository.findByRacerRegistrationIdWithCheckpoint(reg.getId());
     Map<Integer, Integer> scoreMap = scores.stream()
-        .collect(Collectors.groupingBy(Score::getRunNumber, Collectors.summingInt(Score::getPoints)));
+        .collect(Collectors.groupingBy(s -> s.getCheckpoint().getSortOrder(), Collectors.summingInt(Score::getPoints)));
 
     List<CheckpointScoreData> checkpointData = new ArrayList<>();
     for (Checkpoint cp : checkpoints) {
@@ -189,7 +189,7 @@ public class RacerController {
         reg.getTeamName(), reg.getStartNumber()));
   }
 
-  public record ScoreResponse(Long id, Integer runNumber, Integer points, String note) {}
+  public record ScoreResponse(Long id, String checkpointName, Integer checkpointOrder, Integer points, String note) {}
   public record ScheduleItemResponse(String time, String label, String description) {}
   public record StandingResponse(String teamName, Integer startNumber, int totalPoints, int rank, int totalRacers, List<ScoreResponse> scores, String email, String vehiclePlate, String vehicleCategory) {}
   public record CheckpointResponse(String name, Double lat, Double lng, Integer radius, Integer sortOrder, String taskDescription) {}

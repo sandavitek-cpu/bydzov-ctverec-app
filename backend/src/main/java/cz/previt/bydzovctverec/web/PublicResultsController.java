@@ -44,7 +44,7 @@ public class PublicResultsController {
       List<Score> racerScores = entry.getValue();
       int total = racerScores.stream().mapToInt(Score::getPoints).sum();
       List<RunScore> runs = racerScores.stream()
-          .map(s -> new RunScore(s.getRunNumber(), s.getPoints()))
+          .map(s -> new RunScore(s.getCheckpoint().getSortOrder(), s.getCheckpoint().getName(), s.getPoints()))
           .toList();
       rows.add(new ResultRow(0, r.getStartNumber(), r.getTeamName(),
           r.getVehicleCategory(), r.getVehiclePlate(), total, runs));
@@ -65,5 +65,5 @@ public class PublicResultsController {
   public record ResultRow(int rank, Integer startNumber, String teamName,
       String vehicleCategory, String vehiclePlate, int totalPoints, List<RunScore> runs) {}
 
-  public record RunScore(int runNumber, int points) {}
+  public record RunScore(Integer checkpointOrder, String checkpointName, int points) {}
 }

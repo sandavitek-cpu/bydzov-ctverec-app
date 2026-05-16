@@ -45,11 +45,6 @@ const routeLines = computed(() =>
   )
 )
 
-const routeVariantLabel: Record<string, string> = {
-  JEDNODENNI: 'Jednodenní',
-  DVODENNI: 'Dvoudenní',
-}
-
 if (!isAdmin.value) {
   router.push('/admin/login')
 }

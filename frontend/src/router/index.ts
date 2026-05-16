@@ -10,6 +10,7 @@ import AdminRolesView from '../views/admin/AdminRolesView.vue'
 import AdminUsersView from '../views/admin/AdminUsersView.vue'
 import AdminRoutesView from '../views/admin/AdminRoutesView.vue'
 import AdminChangelogView from '../views/admin/AdminChangelogView.vue'
+import AdminCheckpointScoresView from '../views/admin/AdminCheckpointScoresView.vue'
 import JudgeScoringView from '../views/JudgeScoringView.vue'
 import ResultsView from '../views/ResultsView.vue'
 import ArchiveView from '../views/ArchiveView.vue'
@@ -32,6 +33,7 @@ const router = createRouter({
     { path: '/admin/trasy', name: 'admin-routes', component: AdminRoutesView, meta: { requiresAdmin: true } },
     { path: '/admin/uzivatele', name: 'admin-users', component: AdminUsersView, meta: { requiresAdmin: true } },
     { path: '/admin/changelog', name: 'admin-changelog', component: AdminChangelogView, meta: { requiresAdmin: true } },
+    { path: '/admin/bodovani', name: 'admin-scores', component: AdminCheckpointScoresView, meta: { requiresAdmin: true } },
     { path: '/rozhodci', redirect: '/komisari' },
     { path: '/komisari', name: 'judge-scoring', component: JudgeScoringView },
     { path: '/vysledky/:rok', name: 'results', component: ResultsView },

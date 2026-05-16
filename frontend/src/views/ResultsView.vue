@@ -109,7 +109,7 @@ const categoryLabel: Record<string, string> = {
             <th>Posádka</th>
             <th class="hidden sm:table-cell">Vozidlo</th>
             <th class="text-right">Body</th>
-            <th class="hidden md:table-cell text-right">Jízdy</th>
+            <th class="hidden md:table-cell text-right">Stanoviště</th>
           </tr>
         </thead>
         <tbody>
@@ -133,9 +133,9 @@ const categoryLabel: Record<string, string> = {
             <td class="hidden md:table-cell text-right">
               <span
                 v-for="run in r.runs"
-                :key="run.runNumber"
+                :key="run.checkpointOrder"
                 class="ml-1 inline-block rounded-md bg-surface-strong px-2 py-0.5 text-meta text-text-muted"
-              >{{ run.runNumber }}:{{ run.points }}</span>
+              >{{ run.checkpointName }}:{{ run.points }}</span>
             </td>
           </tr>
         </tbody>
