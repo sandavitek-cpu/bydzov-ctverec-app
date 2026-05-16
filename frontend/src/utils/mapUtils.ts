@@ -36,7 +36,9 @@ export function addLocateControl(map: L.Map) {
       btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>'
       btn.title = 'Vycentrovat na moji polohu'
       btn.style.cssText = 'width:34px;height:34px;background:#fff;border:2px solid rgba(0,0,0,0.2);border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#333'
-      btn.onclick = function () {
+      L.DomEvent.disableClickPropagation(btn)
+      btn.onclick = function (e) {
+        L.DomEvent.stopPropagation(e)
         if (!('geolocation' in navigator)) return
         navigator.geolocation.getCurrentPosition(
           (pos) => {
