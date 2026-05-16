@@ -8,6 +8,7 @@ import AdminCommunicationsView from '../views/admin/AdminCommunicationsView.vue'
 import AdminLoggingView from '../views/admin/AdminLoggingView.vue'
 import AdminRolesView from '../views/admin/AdminRolesView.vue'
 import AdminUsersView from '../views/admin/AdminUsersView.vue'
+import AdminRoutesView from '../views/admin/AdminRoutesView.vue'
 import JudgeScoringView from '../views/JudgeScoringView.vue'
 import ResultsView from '../views/ResultsView.vue'
 import ArchiveView from '../views/ArchiveView.vue'
@@ -27,6 +28,7 @@ const router = createRouter({
     { path: '/admin/komunikace', name: 'admin-communications', component: AdminCommunicationsView },
     { path: '/admin/logovani', name: 'admin-logging', component: AdminLoggingView },
     { path: '/admin/role', name: 'admin-roles', component: AdminRolesView },
+    { path: '/admin/trasy', name: 'admin-routes', component: AdminRoutesView },
     { path: '/admin/uzivatele', name: 'admin-users', component: AdminUsersView },
     { path: '/rozhodci', redirect: '/komisari' },
     { path: '/komisari', name: 'judge-scoring', component: JudgeScoringView },

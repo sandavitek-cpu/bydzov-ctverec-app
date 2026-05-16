@@ -6,11 +6,18 @@ import cz.previt.bydzovctverec.domain.Edition;
 import cz.previt.bydzovctverec.domain.EditionRepository;
 import cz.previt.bydzovctverec.domain.RacerRegistration;
 import cz.previt.bydzovctverec.domain.RacerRegistrationRepository;
+import cz.previt.bydzovctverec.domain.Route;
+import cz.previt.bydzovctverec.domain.RoutePoint;
+import cz.previt.bydzovctverec.domain.RoutePointRepository;
+import cz.previt.bydzovctverec.domain.RouteRepository;
 import cz.previt.bydzovctverec.domain.ScheduleItem;
 import cz.previt.bydzovctverec.domain.ScheduleItemRepository;
 import cz.previt.bydzovctverec.domain.Score;
 import cz.previt.bydzovctverec.domain.ScoreRepository;
 import cz.previt.bydzovctverec.domain.User;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -30,13 +37,17 @@ public class RacerController {
   private final EditionRepository editionRepository;
   private final ScheduleItemRepository scheduleItemRepository;
   private final CheckpointRepository checkpointRepository;
+  private final RouteRepository routeRepository;
+  private final RoutePointRepository routePointRepository;
 
-  public RacerController(RacerRegistrationRepository racerRegistrationRepository, ScoreRepository scoreRepository, EditionRepository editionRepository, ScheduleItemRepository scheduleItemRepository, CheckpointRepository checkpointRepository) {
+  public RacerController(RacerRegistrationRepository racerRegistrationRepository, ScoreRepository scoreRepository, EditionRepository editionRepository, ScheduleItemRepository scheduleItemRepository, CheckpointRepository checkpointRepository, RouteRepository routeRepository, RoutePointRepository routePointRepository) {
     this.racerRegistrationRepository = racerRegistrationRepository;
     this.scoreRepository = scoreRepository;
     this.editionRepository = editionRepository;
     this.scheduleItemRepository = scheduleItemRepository;
     this.checkpointRepository = checkpointRepository;
+    this.routeRepository = routeRepository;
+    this.routePointRepository = routePointRepository;
   }
 
   @GetMapping("/registration")
@@ -116,8 +127,73 @@ public class RacerController {
     )).toList());
   }
 
+  @GetMapping("/map")
+  @Transactional(readOnly = true)
+  public ResponseEntity<?> myMap(Authentication auth) {
+    User user = (User) auth.getPrincipal();
+    RacerRegistration reg = racerRegistrationRepository.findByEmail(user.getEmail()).orElse(null);
+    if (reg == null) {
+      return ResponseEntity.ok(Map.of("error", "Nejste přihlášen k závodu"));
+    }
+
+    Edition edition = reg.getEdition();
+    String variant = reg.getVariant();
+
+    Route route = null;
+    if (variant != null) {
+      route = routeRepository.findByEditionAndVariant(edition, variant)
+          .filter(Route::getPublished)
+          .orElse(null);
+    }
+
+    List<RoutePointData> routePoints = Collections.emptyList();
+    double totalDistance = 0;
+    if (route != null) {
+      routePoints = routePointRepository.findByRouteOrderBySortOrder(route).stream()
+          .map(rp -> new RoutePointData(rp.getLat(), rp.getLng(), rp.getDistanceFromStart()))
+          .toList();
+      totalDistance = route.getTotalDistance() != null ? route.getTotalDistance() : 0;
+    }
+
+    List<Checkpoint> checkpoints = checkpointRepository.findByEditionOrderBySortOrder(edition);
+
+    List<Score> scores = scoreRepository.findByRacerRegistrationIdOrderByRunNumber(reg.getId());
+    Map<Integer, Integer> scoreMap = scores.stream()
+        .collect(Collectors.groupingBy(Score::getRunNumber, Collectors.summingInt(Score::getPoints)));
+
+    List<CheckpointScoreData> checkpointData = new ArrayList<>();
+    for (Checkpoint cp : checkpoints) {
+      int runNum = cp.getSortOrder() != null ? cp.getSortOrder() : 0;
+      Integer pts = scoreMap.get(runNum);
+      checkpointData.add(new CheckpointScoreData(
+          cp.getName(), cp.getLat(), cp.getLng(), cp.getRadius(),
+          cp.getSortOrder(), cp.getTaskDescription(), cp.getMaxPoints(), pts));
+    }
+
+    int totalScore = scores.stream().mapToInt(Score::getPoints).sum();
+
+    List<Score> allScores = scoreRepository.findByEditionYearWithRacer(edition.getEditionYear());
+    Map<Long, Integer> totals = allScores.stream()
+        .collect(Collectors.groupingBy(s -> s.getRacerRegistration().getId(), Collectors.summingInt(Score::getPoints)));
+    List<Map.Entry<Long, Integer>> sorted = totals.entrySet().stream()
+        .sorted(Map.Entry.<Long, Integer>comparingByValue().reversed()).toList();
+    int rank = 1;
+    for (var entry : sorted) {
+      if (entry.getKey().equals(reg.getId())) break;
+      rank++;
+    }
+
+    return ResponseEntity.ok(new RacerMapResponse(
+        routePoints, checkpointData, totalDistance,
+        totalScore, rank, sorted.size(),
+        reg.getTeamName(), reg.getStartNumber()));
+  }
+
   public record ScoreResponse(Long id, Integer runNumber, Integer points, String note) {}
   public record ScheduleItemResponse(String time, String label, String description) {}
   public record StandingResponse(String teamName, Integer startNumber, int totalPoints, int rank, int totalRacers, List<ScoreResponse> scores, String email, String vehiclePlate, String vehicleCategory) {}
   public record CheckpointResponse(String name, Double lat, Double lng, Integer radius, Integer sortOrder, String taskDescription) {}
+  public record RoutePointData(double lat, double lng, Double distanceFromStart) {}
+  public record CheckpointScoreData(String name, Double lat, Double lng, Integer radius, Integer sortOrder, String taskDescription, Integer maxPoints, Integer scorePoints) {}
+  public record RacerMapResponse(List<RoutePointData> routePoints, List<CheckpointScoreData> checkpoints, double totalDistance, int totalScore, int rank, int totalRacers, String teamName, Integer startNumber) {}
 }

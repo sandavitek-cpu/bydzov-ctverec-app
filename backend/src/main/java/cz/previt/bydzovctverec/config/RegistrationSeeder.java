@@ -110,6 +110,21 @@ public class RegistrationSeeder {
             null, "Testovací", "Řidič", false, "M", 33, null, null,
             null, null, null, null, null, null, null, false, true, false, true, false, Instant.now()));
 
+        // ===== PŘIDEJ registraci pro seed racer usera =====
+        boolean foundRacer2 = false;
+        for (var r : repo.findAll()) {
+          if ("racer@bydzov-ctverec.cz".equals(r.getEmail())) { foundRacer2 = true; break; }
+        }
+        if (!foundRacer2) {
+          sn++;
+          repo.save(create(edition, sn, new Object[]{
+              "Testovací jezdec", "racer@bydzov-ctverec.cz", "777111501",
+              "OSOBNI", "Škoda 1000 MB", "5H0 0051", 1967, 2, "JEDNODENNI",
+              "Testovací", "jezdec", true, "M", 35, "Test klub",
+              null, null, 0, 0, 0, "",
+              true, true, true, true}));
+        }
+
         log.info("Registration data seeded (total {} registrations)", repo.count());
       } catch (Exception e) {
         log.error("seedRegistrations failed: {}", e.getMessage());

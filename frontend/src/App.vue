@@ -107,6 +107,7 @@ async function toggleInfo() {
                 <template v-if="hasAdmin">
                   <div class="admin-sidebar-section">Administrace</div>
                   <RouterLink to="/admin/prihlaseni" class="admin-sidebar-item">Přihlášky</RouterLink>
+                  <RouterLink to="/admin/trasy" class="admin-sidebar-item">Trasy</RouterLink>
                   <RouterLink to="/admin/stanoviste" class="admin-sidebar-item">Stanoviště</RouterLink>
                   <RouterLink to="/admin/komunikace" class="admin-sidebar-item">Komunikace</RouterLink>
                   <RouterLink to="/admin/logovani" class="admin-sidebar-item">Logování</RouterLink>
@@ -166,6 +167,7 @@ async function toggleInfo() {
           <nav class="py-4">
             <div class="admin-sidebar-section">Administrace</div>
             <RouterLink to="/admin/prihlaseni" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary">Přihlášky</RouterLink>
+            <RouterLink to="/admin/trasy" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary">Trasy</RouterLink>
             <RouterLink to="/admin/stanoviste" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary">Stanoviště</RouterLink>
             <RouterLink to="/admin/komunikace" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary">Komunikace</RouterLink>
             <RouterLink to="/admin/logovani" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary">Logování</RouterLink>
