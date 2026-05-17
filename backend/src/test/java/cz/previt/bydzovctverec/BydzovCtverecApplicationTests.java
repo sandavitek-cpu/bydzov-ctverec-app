@@ -8,6 +8,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cz.previt.bydzovctverec.domain.Checkpoint;
 import cz.previt.bydzovctverec.domain.CheckpointRepository;
+import cz.previt.bydzovctverec.domain.CrewMember;
+import cz.previt.bydzovctverec.domain.CrewMemberRepository;
 import cz.previt.bydzovctverec.domain.Edition;
 import cz.previt.bydzovctverec.domain.EditionRepository;
 import cz.previt.bydzovctverec.domain.RacerRegistration;
@@ -40,6 +42,7 @@ class BydzovCtverecApplicationTests {
   @Autowired private EditionRepository editionRepository;
   @Autowired private UserRepository userRepository;
   @Autowired private RacerRegistrationRepository racerRegistrationRepository;
+  @Autowired private CrewMemberRepository crewMemberRepository;
   @Autowired private ScoreRepository scoreRepository;
   @Autowired private ScheduleItemRepository scheduleItemRepository;
   @Autowired private CheckpointRepository checkpointRepository;
@@ -50,6 +53,7 @@ class BydzovCtverecApplicationTests {
     scoreRepository.deleteAll();
     scheduleItemRepository.deleteAll();
     checkpointRepository.deleteAll();
+    crewMemberRepository.deleteAll();
     racerRegistrationRepository.deleteAll();
     editionRepository.deleteAll();
     userRepository.deleteAll();
@@ -129,9 +133,10 @@ class BydzovCtverecApplicationTests {
 
   @Test
   void racerCanViewOwnRegistration() throws Exception {
-    userRepository.save(new User("racer@test.cz", "racer", passwordEncoder.encode("pass"), UserRole.RACER, "Racer", "", Instant.now()));
+    User user = userRepository.save(new User("racer@test.cz", "racer", passwordEncoder.encode("pass"), UserRole.RACER, "Racer", "", Instant.now()));
     Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElseThrow();
-    racerRegistrationRepository.save(new RacerRegistration(edition, "Tým test", "racer@test.cz", "+420111", "OSOBNI", "ABC", 2000, 2, 42, 1000, Instant.now()));
+    RacerRegistration reg = racerRegistrationRepository.save(new RacerRegistration(edition, "Tým test", "racer@test.cz", "+420111", "OSOBNI", "ABC", 2000, 2, 42, 1000, Instant.now()));
+    crewMemberRepository.save(new CrewMember(reg, user, "Racer", "Test", "racer@test.cz"));
 
     MvcResult loginResult = mockMvc
         .perform(post("/api/auth/login")
