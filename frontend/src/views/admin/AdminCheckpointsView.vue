@@ -153,7 +153,7 @@ onMounted(async () => {
           <h2 class="text-subsection text-text mb-4">
             {{ editing ? 'Upravit stanoviště' : 'Nové stanoviště' }}
           </h2>
-          <form @submit.prevent="save" class="space-y-4">
+          <form @submit.prevent="save" novalidate class="space-y-4">
             <div>
               <label class="input-label">Název</label>
               <input v-model="form.name" required class="input-field" />
