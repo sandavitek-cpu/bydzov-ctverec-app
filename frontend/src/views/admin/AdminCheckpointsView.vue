@@ -54,13 +54,10 @@ async function load() {
   error.value = null
   try {
     const h = authHeaders()
-    const [cpRes, rRes] = await Promise.all([
-      fetch(`${apiBaseUrl}/api/admin/checkpoints`, { headers: h }),
-      fetchAdminRoutes(h),
-    ])
+    const cpRes = await fetch(`${apiBaseUrl}/api/admin/checkpoints`, { headers: h })
     if (cpRes.status === 403) { logout(); router.push('/admin/login'); return }
     checkpoints.value = await cpRes.json()
-    routes.value = rRes
+    routes.value = await fetchAdminRoutes(h)
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Chyba načítání'
   } finally {
