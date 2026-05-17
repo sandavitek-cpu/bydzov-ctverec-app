@@ -2,7 +2,8 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
-import { apiBaseUrl } from '@/api'
+import { apiBaseUrl, fetchRacerStatus } from '@/api'
+import QrPayment from '@/components/QrPayment.vue'
 
 const router = useRouter()
 const { isLoggedIn, authHeaders, logout } = useAuth()
@@ -23,6 +24,11 @@ interface StandingData {
 }
 
 const data = ref<StandingData | null>(null)
+const regStatus = ref<{
+  startFee: number; status: string; variant: string
+  startNumber: number; teamName: string
+} | null>(null)
+const raceStatus = ref<{ started: boolean; finished: boolean } | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
 const registered = ref(true)
@@ -30,20 +36,22 @@ let interval: ReturnType<typeof setInterval> | null = null
 
 async function load() {
   try {
-    const res = await fetch(`${apiBaseUrl}/api/racer/registration`, { headers: authHeaders() })
-    if (res.status === 403) {
+    const [regRes, statusRes] = await Promise.all([
+      fetch(`${apiBaseUrl}/api/racer/registration`, { headers: authHeaders() }),
+      fetchRacerStatus(authHeaders()),
+    ])
+    if (regRes.status === 403) {
       logout()
       router.push('/admin/login')
       return
     }
-    const body = await res.json()
-    if (Array.isArray(body)) {
-      registered.value = false
-    } else if (body.error) {
+    const body = await regRes.json()
+    if (body.error) {
       registered.value = false
     } else {
       data.value = body as StandingData
       registered.value = true
+      regStatus.value = statusRes
     }
     error.value = null
   } catch (e) {
@@ -53,9 +61,23 @@ async function load() {
   }
 }
 
+async function fetchRaceStatus() {
+  try {
+    const res = await fetch(`${apiBaseUrl}/api/public/info`)
+    if (res.ok) {
+      const info = await res.json()
+      raceStatus.value = info.race
+    }
+  } catch { /* ignore */ }
+}
+
 onMounted(() => {
   load()
-  interval = setInterval(load, 10000)
+  fetchRaceStatus()
+  interval = setInterval(() => {
+    load()
+    fetchRaceStatus()
+  }, 10000)
 })
 
 onUnmounted(() => {
@@ -71,12 +93,16 @@ if (!isLoggedIn.value) {
   <div class="max-w-form mx-auto">
     <div class="flex items-center justify-between mb-6">
       <h1 class="text-page-title text-text">Můj stav</h1>
+      <span v-if="raceStatus" class="text-meta" :class="raceStatus.started ? 'text-success' : 'text-text-soft'">
+        {{ raceStatus.finished ? '🏁 Ukončeno' : raceStatus.started ? '🏁 Probíhá' : '⏳ Před startem' }}
+      </span>
     </div>
 
     <p v-if="loading" class="text-body text-text-soft py-8 text-center">Načítám…</p>
     <p v-else-if="error" class="alert alert-error">{{ error }}</p>
 
     <template v-else-if="data">
+      <!-- Standing -->
       <div class="grid grid-cols-3 gap-4 mb-6">
         <div class="card text-center">
           <p class="text-meta text-text-soft uppercase tracking-[0.05em]">Pořadí</p>
@@ -94,7 +120,8 @@ if (!isLoggedIn.value) {
         </div>
       </div>
 
-      <div v-if="data.scores.length > 0">
+      <!-- Scores -->
+      <div v-if="data.scores.length > 0" class="mb-6">
         <h2 class="text-subsection text-text mb-4">Stanoviště</h2>
         <div class="space-y-2">
           <div v-for="s in data.scores" :key="s.checkpointOrder"
@@ -105,7 +132,40 @@ if (!isLoggedIn.value) {
           </div>
         </div>
       </div>
-      <p v-else class="text-body text-text-soft text-center py-8">Zatím žádné body.</p>
+      <p v-else class="text-body text-text-soft text-center py-8 mb-6">Zatím žádné body.</p>
+
+      <!-- Payment -->
+      <div v-if="regStatus" class="card !p-6">
+        <h2 class="text-subsection text-text mb-4">Startovné</h2>
+        <div class="flex items-center justify-between mb-4">
+          <span class="text-body text-text-muted">Částka k úhradě</span>
+          <span class="text-kpi text-primary">{{ regStatus.startFee }} Kč</span>
+        </div>
+        <div class="flex items-center justify-between mb-4">
+          <span class="text-body text-text-muted">Stav platby</span>
+          <span v-if="regStatus.status === 'PAID'" class="badge !bg-success/10 !text-success">Zaplaceno</span>
+          <span v-else class="badge badge-admin">Čeká na platbu</span>
+        </div>
+
+        <template v-if="regStatus.status !== 'PAID'">
+          <div class="flex flex-col items-center gap-4 mt-4 pt-4 border-t border-border">
+            <QrPayment
+              :amount="regStatus.startFee"
+              :variable-symbol="regStatus.startNumber"
+              :message="'VS:' + regStatus.startNumber"
+            />
+            <p class="text-body-sm text-text-soft text-center">
+              Načtěte QR kód v mobilním bankovnictví nebo zašlete platbu na účet
+              <strong class="text-text">1086360369/0800</strong>
+              s variabilním symbolem <strong class="text-text">{{ regStatus.startNumber }}</strong>.
+            </p>
+            <button disabled class="btn-primary w-full opacity-50 cursor-not-allowed py-4">
+              Zaplatit kartou
+            </button>
+            <p class="text-meta text-text-soft text-center">Online platba bude brzy dostupná.</p>
+          </div>
+        </template>
+      </div>
     </template>
 
     <div v-else-if="!registered" class="card text-center">

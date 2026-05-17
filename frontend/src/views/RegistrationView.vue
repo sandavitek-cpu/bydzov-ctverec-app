@@ -42,7 +42,7 @@ const form = ref({
 
 const crewMembers = ref<CrewMemberInput[]>([])
 
-watch(() => form.value.crewCount, (n, old) => {
+watch(() => form.value.crewCount, (n) => {
   const target = Math.max(0, n - 1)
   while (crewMembers.value.length < target) {
     crewMembers.value.push({ firstName: '', lastName: '', email: '' })

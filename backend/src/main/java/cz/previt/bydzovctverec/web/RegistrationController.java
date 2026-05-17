@@ -48,6 +48,7 @@ public class RegistrationController {
 
   private static final Map<String, FeeConfig> FEE = Map.of(
       "JEDNODENNI", new FeeConfig(500, 800, 500),
+      "DVODENNI", new FeeConfig(1000, 1200, 1000),
       "DVODENNI_UZAVRENO", new FeeConfig(1000, 1200, 1000),
       "DVODENNI_BEZ_UBYTOVANI", new FeeConfig(600, 900, 600));
 

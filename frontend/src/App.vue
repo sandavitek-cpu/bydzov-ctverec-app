@@ -245,7 +245,7 @@ async function toggleInfo() {
             <div class="space-y-2 text-body-sm text-text-muted">
               <p><span class="text-text-soft">IČO:</span> 26630061</p>
               <p><span class="text-text-soft">Bankovní účet:</span><br />
-                <span class="font-mono text-text">1086360369/0800</span>
+                <span class="font-mono text-text">1086360369/0800</span> (Česká spořitelna)
               </p>
               <a
                 href="#"

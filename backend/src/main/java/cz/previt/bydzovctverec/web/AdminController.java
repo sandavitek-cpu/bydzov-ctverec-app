@@ -6,6 +6,7 @@ import cz.previt.bydzovctverec.domain.AppRole;
 import cz.previt.bydzovctverec.domain.AppRoleRepository;
 import cz.previt.bydzovctverec.domain.Checkpoint;
 import cz.previt.bydzovctverec.domain.CheckpointRepository;
+import cz.previt.bydzovctverec.domain.CrewMember;
 import cz.previt.bydzovctverec.domain.CrewMemberRepository;
 import cz.previt.bydzovctverec.domain.Edition;
 import cz.previt.bydzovctverec.domain.EditionRepository;
@@ -16,6 +17,7 @@ import cz.previt.bydzovctverec.domain.ScoreRepository;
 import cz.previt.bydzovctverec.domain.User;
 import cz.previt.bydzovctverec.domain.UserRepository;
 import cz.previt.bydzovctverec.domain.UserRole;
+import java.io.ByteArrayOutputStream;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -38,6 +40,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.xhtmlrenderer.pdf.ITextRenderer;
 
 @RestController
 @RequestMapping("/api/admin/registrations")
@@ -175,6 +178,34 @@ public class AdminController {
 
     log.info("Registration {} approved, user {} created", id, email);
     return ResponseEntity.ok(Map.of("approved", true, "email", email));
+  }
+
+  @PostMapping("/{id}/resend-credentials")
+  @Transactional
+  public ResponseEntity<?> resendCredentials(@PathVariable Long id) {
+    RacerRegistration reg = racerRegistrationRepository.findById(id).orElse(null);
+    if (reg == null) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Přihláška nenalezena"));
+    }
+    List<CrewMember> crew = crewMemberRepository.findByRegistration(reg);
+    if (crew.isEmpty()) {
+      return ResponseEntity.badRequest().body(Map.of("error", "K této přihlášce nejsou vytvořeny uživatelské účty"));
+    }
+    int sent = 0;
+    for (CrewMember cm : crew) {
+      User u = cm.getUser();
+      if (u == null) continue;
+      var racerRole = appRoleRepository.findByName("RACER").orElse(null);
+      String rawPassword = generatePassword();
+      u.setPassword(passwordEncoder.encode(rawPassword));
+      userRepository.save(u);
+      String personName = cm.getFirstName() + " " + cm.getLastName();
+      emailService.sendCredentials(cm.getEmail(), personName, cm.getEmail(), rawPassword,
+          reg.getStartNumber(), reg.getStartFee());
+      sent++;
+    }
+    log.info("Credentials resent for registration {} ({} users)", id, sent);
+    return ResponseEntity.ok(Map.of("resent", sent));
   }
 
   @PostMapping("/{id}/impersonate")
@@ -321,6 +352,64 @@ public class AdminController {
     return ResponseEntity.ok(Map.of("year", year, "checkpoints", cpList, "results", ranked));
   }
 
+  @GetMapping("/export/pdf")
+  public ResponseEntity<byte[]> exportPdf() {
+    Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
+    if (edition == null) {
+      return ResponseEntity.badRequest().build();
+    }
+    List<RacerRegistration> regs = racerRegistrationRepository.findByEditionOrderByStartNumber(edition);
+    StringBuilder html = new StringBuilder("""
+        <html><head><meta charset="UTF-8">
+        <style>
+          body { font-family: sans-serif; font-size: 10pt; margin: 2cm; }
+          h1 { text-align: center; font-size: 16pt; margin-bottom: 4pt; }
+          .subtitle { text-align: center; font-size: 9pt; color: #666; margin-bottom: 20pt; }
+          table { width: 100%; border-collapse: collapse; }
+          th { background: #1a1a2e; color: white; padding: 6pt 8pt; text-align: left; font-size: 9pt; }
+          td { padding: 4pt 8pt; border-bottom: 1px solid #ddd; font-size: 9pt; }
+          tr:nth-child(even) td { background: #f8f8f8; }
+          .right { text-align: right; }
+          .center { text-align: center; }
+        </style></head><body>
+        <h1>Novobydžovský čtverec</h1>
+        <p class="subtitle">""");
+    html.append(edition.getLabel()).append(" — startovní listina</p>");
+    html.append("""
+        <table>
+        <tr><th>#</th><th>Posádka</th><th>Kategorie</th><th>Vůz</th><th>SPZ</th><th>Ročník</th><th>Os.</th><th>Varianta</th><th>Stav</th></tr>
+        """);
+    for (RacerRegistration r : regs) {
+      html.append("<tr>")
+        .append("<td class=\"center\">").append(r.getStartNumber()).append("</td>")
+        .append("<td>").append(escHtml(r.getTeamName())).append("</td>")
+        .append("<td>").append(escHtml(r.getVehicleCategory())).append("</td>")
+        .append("<td>").append(escHtml(r.getVehicleMake())).append("</td>")
+        .append("<td>").append(escHtml(r.getVehiclePlate())).append("</td>")
+        .append("<td class=\"center\">").append(r.getVehicleYear()).append("</td>")
+        .append("<td class=\"center\">").append(r.getCrewCount()).append("</td>")
+        .append("<td>").append(escHtml(r.getVariant())).append("</td>")
+        .append("<td>").append("PAID".equals(r.getStatus()) ? "Zaplaceno" : "Čeká").append("</td>")
+        .append("</tr>");
+    }
+    html.append("</table></body></html>");
+
+    try {
+      ByteArrayOutputStream bos = new ByteArrayOutputStream();
+      ITextRenderer renderer = new ITextRenderer();
+      renderer.setDocumentFromString(html.toString());
+      renderer.layout();
+      renderer.createPDF(bos);
+      return ResponseEntity.ok()
+          .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=startovni_listina.pdf")
+          .contentType(MediaType.APPLICATION_PDF)
+          .body(bos.toByteArray());
+    } catch (Exception e) {
+      log.error("PDF generation failed", e);
+      return ResponseEntity.internalServerError().build();
+    }
+  }
+
   @GetMapping("/export")
   public ResponseEntity<String> exportCsv() {
     Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
@@ -347,6 +436,11 @@ public class AdminController {
         .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=prihlasky.csv")
         .contentType(MediaType.parseMediaType("text/csv; charset=utf-8"))
         .body(header + body);
+  }
+
+  private String escHtml(String s) {
+    if (s == null) return "";
+    return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
   }
 
   private String csvEscape(String s) {

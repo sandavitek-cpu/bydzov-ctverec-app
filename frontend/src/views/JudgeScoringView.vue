@@ -7,12 +7,6 @@ import { apiBaseUrl, lookupRacerByStartNumber, submitScore, type RacerLookup } f
 const router = useRouter()
 const { isLoggedIn, authHeaders } = useAuth()
 
-interface CheckpointOption {
-  id: number
-  name: string
-  sortOrder: number
-}
-
 const startNumber = ref<number | null>(null)
 const selectedCheckpoint = ref<number | null>(null)
 const points = ref<number | null>(null)
@@ -23,7 +17,14 @@ const error = ref<string | null>(null)
 const success = ref(false)
 const searched = ref(false)
 
-const checkpoints = ref<CheckpointOption[]>([])
+interface FullCheckpoint {
+  id: number; name: string; sortOrder: number
+  lat?: number; lng?: number; radius?: number
+  taskDescription?: string; maxPoints?: number
+}
+
+const checkpoints = ref<FullCheckpoint[]>([])
+const selectedCpFull = ref<FullCheckpoint | null>(null)
 
 onMounted(async () => {
   try {
@@ -32,12 +33,17 @@ onMounted(async () => {
       checkpoints.value = await res.json()
       if (checkpoints.value.length > 0) {
         selectedCheckpoint.value = checkpoints.value[0].id
+        selectedCpFull.value = checkpoints.value[0]
       }
     }
   } catch {
     // silently fail, judge will see empty dropdown
   }
 })
+
+function onCpChange() {
+  selectedCpFull.value = checkpoints.value.find(c => c.id === selectedCheckpoint.value) ?? null
+}
 
 async function handleLookup() {
   if (!startNumber.value) return
@@ -94,91 +100,107 @@ if (!isLoggedIn.value) {
     <div class="flex items-center justify-between mb-6">
       <div>
         <h1 class="text-page-title text-text">Bodovací formulář</h1>
-        <p class="text-body text-text-muted">Zadejte startovní číslo a body</p>
+        <p class="text-body text-text-muted">Komisařské stanoviště</p>
       </div>
     </div>
 
     <!-- Success -->
     <div v-if="success" class="space-y-6">
-      <div class="card text-center">
-        <div class="inline-flex h-16 w-16 items-center justify-center rounded-full bg-success/10 mb-4">
-          <svg class="h-8 w-8 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="card text-center py-8">
+        <div class="inline-flex h-20 w-20 items-center justify-center rounded-full bg-success/10 mb-4">
+          <svg class="h-10 w-10 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <h2 class="text-subsection text-success">Body zapsány</h2>
+        <h2 class="text-subsection text-success text-xl">Body zapsány</h2>
         <p class="mt-2 text-body text-text-muted">
           {{ racer?.teamName }} —
-          <strong class="text-primary">{{ points }} b.</strong>
+          <strong class="text-primary text-xl">{{ points }} b.</strong>
         </p>
       </div>
-      <button @click="handleNext" class="btn-primary w-full">
+      <button @click="handleNext" class="btn-primary w-full py-4 text-lg font-bold">
         Další závodník
       </button>
     </div>
 
     <!-- Form -->
     <div v-else class="space-y-6">
+      <!-- Start number — full-screen input -->
       <div>
-        <label class="input-label">Startovní číslo</label>
+        <label class="input-label text-lg mb-2">Startovní číslo</label>
         <div class="flex gap-3">
           <input
             v-model.number="startNumber"
             type="number"
             min="1"
+            inputmode="numeric"
+            autofocus
             placeholder="např. 7"
-            class="input-field flex-1 text-center text-2xl font-bold"
+            class="input-field flex-1 text-center text-4xl font-bold py-6"
             @keyup.enter="handleLookup"
           />
-          <button @click="handleLookup" :disabled="lookupLoading || !startNumber" class="btn-primary">
+          <button @click="handleLookup" :disabled="lookupLoading || !startNumber"
+            class="btn-primary px-8 text-lg font-bold min-w-[80px]"
+          >
             {{ lookupLoading ? '…' : 'OK' }}
           </button>
         </div>
       </div>
 
-      <div v-if="racer" class="card !border-success/30 !bg-success/5">
+      <!-- Racer confirmed -->
+      <div v-if="racer" class="card !border-success/30 !bg-success/5 py-6">
         <div class="flex items-center gap-2 text-success mb-1">
-          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
           </svg>
-          <span class="text-label">Potvrzeno</span>
+          <span class="text-label text-lg">Potvrzeno</span>
         </div>
-        <p class="text-subsection text-text">{{ racer.teamName }}</p>
+        <p class="text-subsection text-text text-xl">{{ racer.teamName }}</p>
         <p class="text-body-sm text-text-muted">{{ racer.vehiclePlate }} · #{{ racer.startNumber }}</p>
       </div>
 
-      <p v-else-if="searched && !racer" class="text-body text-text-soft text-center">
-        {{ lookupLoading ? 'Vyhledávám…' : error || 'Zadejte číslo a klikněte OK' }}
+      <p v-else-if="searched && !racer" class="text-body text-text-soft text-center py-4">
+        {{ lookupLoading ? 'Vyhledávám…' : error || 'Zadejte startovní číslo' }}
       </p>
 
-      <div v-if="racer" class="space-y-5">
+      <!-- Scoring form -->
+      <div v-if="racer" class="space-y-6">
         <div>
-          <label class="input-label">Stanoviště</label>
-          <select v-model.number="selectedCheckpoint" class="input-field">
+          <label class="input-label text-lg mb-2">Stanoviště</label>
+          <select v-model.number="selectedCheckpoint" @change="onCpChange" class="input-field text-lg py-4">
             <option v-for="cp in checkpoints" :key="cp.id" :value="cp.id">
               {{ cp.sortOrder }}. {{ cp.name }}
             </option>
           </select>
+          <p v-if="selectedCpFull?.taskDescription" class="mt-2 text-body-sm text-text-muted italic">
+            {{ selectedCpFull.taskDescription }}
+            <span v-if="selectedCpFull?.maxPoints">(max. {{ selectedCpFull.maxPoints }} b.)</span>
+          </p>
         </div>
 
         <div>
-          <label class="input-label">Počet bodů</label>
+          <label class="input-label text-lg mb-2">Počet bodů
+            <span v-if="selectedCpFull?.maxPoints" class="text-text-soft font-normal"> (max. {{ selectedCpFull.maxPoints }})</span>
+          </label>
           <input
             v-model.number="points"
             type="number"
             min="0"
-            max="999"
+            :max="selectedCpFull?.maxPoints ?? 999"
+            inputmode="numeric"
             placeholder="0"
-            class="input-field text-center text-2xl font-bold"
+            class="input-field text-center text-4xl font-bold py-6"
           />
         </div>
 
-        <button @click="handleSubmit" :disabled="loading || points === null" class="btn-primary w-full">
+        <button @click="handleSubmit" :disabled="loading || points === null"
+          class="btn-primary w-full py-5 text-lg font-bold"
+        >
           {{ loading ? 'Odesílám…' : 'Odeslat body' }}
         </button>
       </div>
 
-      <p v-if="error" class="text-body-sm text-error">{{ error }}</p>
+      <p v-if="error" class="text-body-sm text-error text-center py-4 bg-error/5 rounded-lg">{{ error }}</p>
     </div>
   </div>
 </template>

@@ -3,11 +3,15 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
-import { apiBaseUrl, approveRegistration, impersonateRegistration } from '@/api'
+import { apiBaseUrl, impersonateRegistration } from '@/api'
 
 const router = useRouter()
 const { isAdmin, authHeaders, logout, impersonateAs } = useAuth()
 const { show: showToast } = useToast()
+
+interface CrewInfo {
+  firstName: string; lastName: string; email: string
+}
 
 interface AdminReg {
   id: number; teamName: string; email: string; phone: string
@@ -20,7 +24,7 @@ interface AdminReg {
   engineDisplacement: number | null; power: number | null; maxSpeed: number | null
   vehicleNotes: string | null; notes: string | null; contacted: boolean
   properlyRegistered: boolean; arrived: boolean; consent: boolean
-  approved: boolean; createdAt: string
+  approved: boolean; createdAt: string; crewMembers: CrewInfo[]
 }
 
 interface AdminStats {
@@ -39,13 +43,15 @@ const stats = ref<AdminStats | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
 const selected = ref<AdminReg | null>(null)
-const approvingId = ref<number | null>(null)
+const resendingId = ref<number | null>(null)
 
 const filterVariant = ref('all')
 const filterStatus = ref('all')
 const filterSearch = ref('')
 const selectedIds = ref<Set<number>>(new Set())
 const batchProcessing = ref(false)
+
+const raceStatus = ref<{ started: boolean; finished: boolean } | null>(null)
 
 if (!isAdmin.value) {
   router.push('/admin/login')
@@ -86,24 +92,20 @@ function toggleSelectAll() {
   }
 }
 
-async function batchAction(action: 'approve' | 'paid' | 'pending') {
+async function batchAction(action: 'paid' | 'pending') {
   const ids = Array.from(selectedIds.value)
   if (ids.length === 0) return
   batchProcessing.value = true
   let success = 0; let fail = 0
   for (const id of ids) {
     try {
-      if (action === 'approve') {
-        await approveRegistration(id, authHeaders())
-      } else {
-        const newStatus = action === 'paid' ? 'PAID' : 'PENDING'
-        const res = await fetch(`${apiBaseUrl}/api/admin/registrations/${id}/status`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json', ...authHeaders() },
-          body: JSON.stringify({ status: newStatus }),
-        })
-        if (!res.ok) throw new Error()
-      }
+      const newStatus = action === 'paid' ? 'PAID' : 'PENDING'
+      const res = await fetch(`${apiBaseUrl}/api/admin/registrations/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ status: newStatus }),
+      })
+      if (!res.ok) throw new Error()
       success++
     } catch {
       fail++
@@ -112,12 +114,52 @@ async function batchAction(action: 'approve' | 'paid' | 'pending') {
   selectedIds.value = new Set()
   await fetchAll()
   batchProcessing.value = false
-  const actionLabel = action === 'approve' ? 'Schváleno' : action === 'paid' ? 'Zaplaceno' : 'Vráceno'
+  const actionLabel = action === 'paid' ? 'Zaplaceno' : 'Vráceno'
   if (fail > 0) {
     showToast(`${actionLabel}: ${success} OK, ${fail} selhalo`, 'error')
   } else {
     showToast(`${actionLabel}: ${success} posádek`, 'success')
   }
+}
+
+async function fetchRaceStatus() {
+  try {
+    const res = await fetch(`${apiBaseUrl}/api/admin/race`, { headers: authHeaders() })
+    if (res.ok) raceStatus.value = await res.json()
+  } catch { /* ignore */ }
+}
+
+async function handleRaceStart() {
+  try {
+    const res = await fetch(`${apiBaseUrl}/api/admin/race/start`, {
+      method: 'POST', headers: authHeaders(),
+    })
+    if (!res.ok) { showToast('Nepodařilo se spustit závod', 'error'); return }
+    await fetchRaceStatus()
+    showToast('Závod zahájen!', 'success')
+  } catch { showToast('Chyba při spouštění závodu', 'error') }
+}
+
+async function handleRaceFinish() {
+  try {
+    const res = await fetch(`${apiBaseUrl}/api/admin/race/finish`, {
+      method: 'POST', headers: authHeaders(),
+    })
+    if (!res.ok) { showToast('Nepodařilo se ukončit závod', 'error'); return }
+    await fetchRaceStatus()
+    showToast('Závod ukončen!', 'success')
+  } catch { showToast('Chyba při ukončování závodu', 'error') }
+}
+
+async function handleRaceReset() {
+  try {
+    const res = await fetch(`${apiBaseUrl}/api/admin/race/reset`, {
+      method: 'POST', headers: authHeaders(),
+    })
+    if (!res.ok) { showToast('Nepodařilo se resetovat závod', 'error'); return }
+    await fetchRaceStatus()
+    showToast('Závod resetován', 'info')
+  } catch { showToast('Chyba při resetu závodu', 'error') }
 }
 
 async function fetchAll() {
@@ -154,16 +196,20 @@ async function toggleStatus(reg: AdminReg) {
   }
 }
 
-async function handleApprove(reg: AdminReg) {
-  approvingId.value = reg.id
+async function handleResend(reg: AdminReg) {
+  resendingId.value = reg.id
   try {
-    await approveRegistration(reg.id, authHeaders())
+    const res = await fetch(`${apiBaseUrl}/api/admin/registrations/${reg.id}/resend-credentials`, {
+      method: 'POST', headers: authHeaders(),
+    })
+    const body = await res.json()
+    if (!res.ok) throw new Error(body.error ?? 'Chyba')
     await fetchAll()
-    showToast(`${reg.teamName} schválen`, 'success')
+    showToast(`Přihlašovací údaje odeslány (${body.resent} uživatelům)`, 'success')
   } catch (e) {
-    error.value = e instanceof Error ? e.message : 'Schválení selhalo'
+    error.value = e instanceof Error ? e.message : 'Odeslání selhalo'
   } finally {
-    approvingId.value = null
+    resendingId.value = null
   }
 }
 
@@ -174,6 +220,22 @@ async function handleImpersonate(reg: AdminReg) {
     router.push('/')
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Přepnutí selhalo'
+  }
+}
+
+async function downloadPdf() {
+  try {
+    const res = await fetch(`${apiBaseUrl}/api/admin/registrations/export/pdf`, {
+      headers: authHeaders(),
+    })
+    if (!res.ok) throw new Error()
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = 'startovni_listina.pdf'; a.click()
+    URL.revokeObjectURL(url)
+  } catch {
+    showToast('Nepodařilo se stáhnout PDF', 'error')
   }
 }
 
@@ -197,7 +259,7 @@ function mailtoUnpaid() {
   const unpaid = registrations.value.filter(r => r.status !== 'PAID')
   if (unpaid.length === 0) return
   const bcc = unpaid.map(r => r.email).join(',')
-  window.location.href = `mailto:${bcc}?subject=${encodeURIComponent('Novobydžovský čtverec 2026 – připomínka platby startovného')}&body=${encodeURIComponent('Dobrý den,\n\nrádi bychom Vás upozornili, že Vaše startovné za přihlášku do Novobydžovského čtverce 2026 dosud nebylo uhrazeno.\n\nProsíme o co nejdřívější úhradu na účet 2802609342/2010 s variabilním symbolem Vašeho startovního čísla.\n\nDěkujeme.\n\nTým Novobydžovského čtverce')}`
+  window.location.href = `mailto:${bcc}?subject=${encodeURIComponent('Novobydžovský čtverec 2026 – připomínka platby startovného')}&body=${encodeURIComponent('Dobrý den,\n\nrádi bychom Vás upozornili, že Vaše startovné za přihlášku do Novobydžovského čtverce 2026 dosud nebylo uhrazeno.\n\nProsíme o co nejdřívější úhradu na účet 1086360369/0800 (Česká spořitelna) s variabilním symbolem Vašeho startovního čísla.\n\nDěkujeme.\n\nTým Novobydžovského čtverce')}`
 }
 
 function selectReg(r: AdminReg) {
@@ -208,7 +270,10 @@ function closeDetail() {
   selected.value = null
 }
 
-onMounted(fetchAll)
+onMounted(() => {
+  fetchAll()
+  fetchRaceStatus()
+})
 
 const categoryLabel: Record<string, string> = {
   MOTOCYKL: 'Motocykl', OSOBNI: 'Osobní', CLASSIC: 'Historické', NAKLADNI: 'Nákladní',
@@ -227,8 +292,30 @@ const variantLabel: Record<string, string> = {
         <p class="text-body-sm text-text-soft">{{ filtered.length }} z {{ registrations.length }} posádek</p>
       </div>
       <div class="flex gap-3">
+        <button @click="downloadPdf" class="btn-secondary btn-sm">PDF</button>
         <button @click="downloadCsv" class="btn-secondary btn-sm">CSV</button>
         <button v-if="registrations.some(r => r.status !== 'PAID')" @click="mailtoUnpaid" class="btn-ghost btn-sm">Upomínka</button>
+      </div>
+    </div>
+
+    <!-- Race Mode -->
+    <div class="mb-6 rounded-xl border p-4" :class="{
+      'border-success/30 bg-success/5': raceStatus?.started && !raceStatus?.finished,
+      'border-border bg-bg-alt': !raceStatus?.started,
+      'border-info/30 bg-info/5': raceStatus?.finished,
+    }">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="text-label">Režim závodu:</span>
+          <span v-if="!raceStatus?.started" class="badge !bg-text-soft/10 !text-text-soft">Nezahájen</span>
+          <span v-else-if="!raceStatus?.finished" class="badge !bg-success/10 !text-success">Probíhá</span>
+          <span v-else class="badge !bg-info/10 !text-info">Ukončen</span>
+        </div>
+        <div class="flex gap-2">
+          <button v-if="!raceStatus?.started" @click="handleRaceStart" class="btn-primary btn-xs">Zahájit závod</button>
+          <button v-if="raceStatus?.started && !raceStatus?.finished" @click="handleRaceFinish" class="btn-secondary btn-xs">Ukončit závod</button>
+          <button v-if="raceStatus?.started" @click="handleRaceReset" class="btn-ghost btn-xs">Reset</button>
+        </div>
       </div>
     </div>
 
@@ -250,7 +337,6 @@ const variantLabel: Record<string, string> = {
     <!-- Batch actions -->
     <div v-if="selectedIds.size > 0" class="mb-4 flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-2">
       <span class="text-body-sm font-semibold text-text">{{ selectedIds.size }} vybráno</span>
-      <button @click="batchAction('approve')" :disabled="batchProcessing" class="btn-primary btn-xs">Schválit</button>
       <button @click="batchAction('paid')" :disabled="batchProcessing" class="btn-secondary btn-xs">Označit zaplaceno</button>
       <button @click="batchAction('pending')" :disabled="batchProcessing" class="btn-ghost btn-xs">Vrátit na čeká</button>
       <button @click="selectedIds = new Set()" class="btn-ghost btn-xs text-text-soft">Zrušit výběr</button>
@@ -282,30 +368,6 @@ const variantLabel: Record<string, string> = {
         <p class="text-kpi text-text-muted">{{ stats.motos }}</p>
         <p class="text-meta text-text-soft mt-0.5">Motocyklů</p>
       </div>
-      <div class="card !p-4 text-center">
-        <p class="text-kpi text-text-muted">{{ stats.vehiclesBefore1945 }}</p>
-        <p class="text-meta text-text-soft mt-0.5">Do 1945</p>
-      </div>
-      <div class="card !p-4 text-center">
-        <p class="text-kpi text-text-muted">{{ stats.firstTimers }}</p>
-        <p class="text-meta text-text-soft mt-0.5">Nováčků</p>
-      </div>
-      <div class="card !p-4 text-center">
-        <p class="text-kpi text-red">{{ stats.oldestVehicle }}</p>
-        <p class="text-meta text-text-soft mt-0.5">Nejst. vozidlo</p>
-      </div>
-      <div class="card !p-4 text-center">
-        <p class="text-kpi text-red">{{ stats.oldestDriver }}<span class="text-body-sm text-text-soft"> let</span></p>
-        <p class="text-meta text-text-soft mt-0.5">Nejst. řidič</p>
-      </div>
-      <div class="card !p-4 text-center">
-        <p class="text-kpi text-text-muted">{{ stats.jednodenni }} / {{ stats.dvoudenni }} / {{ stats.withoutAccommodation }}</p>
-        <p class="text-meta text-text-soft mt-0.5">1den / 2den / bez</p>
-      </div>
-      <div class="card !p-4 text-center">
-        <p class="text-kpi text-text-muted">{{ stats.kidsUnder10 }}</p>
-        <p class="text-meta text-text-soft mt-0.5">Dětí do 10 let</p>
-      </div>
     </div>
 
     <p v-if="loading" class="text-body text-text-soft py-12 text-center">Načítám…</p>
@@ -326,8 +388,8 @@ const variantLabel: Record<string, string> = {
             <th class="w-8 text-center">#</th>
             <th>Posádka</th>
             <th class="hidden sm:table-cell">Varianta</th>
+            <th>Členové</th>
             <th>Stav</th>
-            <th class="hidden md:table-cell">Schválení</th>
             <th class="text-right">Akce</th>
           </tr>
         </thead>
@@ -349,6 +411,15 @@ const variantLabel: Record<string, string> = {
               <span v-else class="text-body-sm text-text-soft">—</span>
             </td>
             <td>
+              <div class="flex flex-wrap gap-1">
+                <span v-for="(cm, i) in r.crewMembers" :key="i"
+                  class="inline-flex items-center gap-1 rounded-full bg-primary/5 px-2 py-0.5 text-meta text-text-muted"
+                  :title="cm.email"
+                >{{ cm.firstName }} {{ cm.lastName }}</span>
+                <span v-if="!r.crewMembers?.length" class="text-meta text-text-soft">—</span>
+              </div>
+            </td>
+            <td>
               <div class="flex flex-wrap gap-1.5">
                 <button @click.stop="toggleStatus(r)"
                   class="badge cursor-pointer transition-colors"
@@ -358,18 +429,12 @@ const variantLabel: Record<string, string> = {
                 <span v-if="r.firstTime" class="badge !bg-red/10 !text-red">Nový</span>
               </div>
             </td>
-            <td class="hidden md:table-cell">
-              <div class="flex flex-wrap gap-1.5">
-                <span v-if="r.approved" class="badge !bg-success/10 !text-success">Schváleno</span>
-                <span v-else class="badge !bg-warning/10 !text-warning">Čeká</span>
-              </div>
-            </td>
             <td class="text-right">
               <div class="flex gap-1.5 justify-end" @click.stop>
-                <button v-if="!r.approved" @click="handleApprove(r)" :disabled="approvingId === r.id"
-                  class="btn-primary btn-xs"
-                >{{ approvingId === r.id ? '…' : 'Schválit' }}</button>
-                <button v-if="r.approved" @click="handleImpersonate(r)"
+                <button @click="handleResend(r)" :disabled="resendingId === r.id"
+                  class="btn-ghost btn-xs" title="Znovu odeslat přihlašovací údaje"
+                >{{ resendingId === r.id ? '…' : 'Poslat údaje' }}</button>
+                <button @click="handleImpersonate(r)"
                   class="btn-ghost btn-xs"
                   title="Přihlásit jako tento tým"
                 >👁</button>
@@ -394,12 +459,21 @@ const variantLabel: Record<string, string> = {
             <span class="badge" :class="selected.status === 'PAID' ? '!bg-success/10 !text-success' : 'badge-admin'">
               {{ selected.status === 'PAID' ? 'Zaplaceno' : 'Čeká na platbu' }}
             </span>
-            <span v-if="selected.approved" class="badge !bg-success/10 !text-success">Schváleno</span>
-            <span v-else class="badge !bg-warning/10 !text-warning">Neschváleno</span>
             <span v-if="selected.arrived" class="badge !bg-info/10 !text-info">Přijel</span>
             <span v-if="selected.contacted" class="badge !bg-info/10 !text-info">Kontaktován</span>
             <span v-if="selected.firstTime" class="badge !bg-red/10 !text-red">Nováček</span>
             <span v-if="selected.properlyRegistered" class="badge !bg-success/10 !text-success">Přihlášeno</span>
+          </div>
+
+          <!-- Crew Members -->
+          <div v-if="selected.crewMembers?.length" class="rounded-lg border border-border bg-bg-alt p-4">
+            <h3 class="text-label text-text mb-2">Členové posádky</h3>
+            <div class="space-y-1.5">
+              <div v-for="(cm, i) in selected.crewMembers" :key="i" class="flex items-center justify-between text-body-sm">
+                <span class="text-text">{{ cm.firstName }} {{ cm.lastName }}</span>
+                <span class="text-text-soft text-meta">{{ cm.email }}</span>
+              </div>
+            </div>
           </div>
 
           <!-- Vehicle info -->
