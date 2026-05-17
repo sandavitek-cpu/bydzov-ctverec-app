@@ -1,9 +1,12 @@
 package cz.previt.bydzovctverec.config;
 
+import cz.previt.bydzovctverec.domain.CrewMember;
+import cz.previt.bydzovctverec.domain.CrewMemberRepository;
 import cz.previt.bydzovctverec.domain.Edition;
 import cz.previt.bydzovctverec.domain.EditionRepository;
 import cz.previt.bydzovctverec.domain.RacerRegistration;
 import cz.previt.bydzovctverec.domain.RacerRegistrationRepository;
+import cz.previt.bydzovctverec.domain.UserRepository;
 import cz.previt.bydzovctverec.web.RegistrationController;
 import java.time.Instant;
 import java.util.List;
@@ -21,7 +24,8 @@ public class RegistrationSeeder {
 
   @Bean
   @Order(5)
-  CommandLineRunner seedRegistrations(EditionRepository editionRepository, RacerRegistrationRepository repo) {
+  CommandLineRunner seedRegistrations(EditionRepository editionRepository, RacerRegistrationRepository repo,
+      UserRepository userRepository, CrewMemberRepository crewMemberRepository) {
     return args -> {
       try {
         if (repo.count() > 0) {
@@ -117,12 +121,16 @@ public class RegistrationSeeder {
         }
         if (!foundRacer2) {
           sn++;
-          repo.save(create(edition, sn, new Object[]{
+          RacerRegistration racerReg = repo.save(create(edition, sn, new Object[]{
               "Testovací jezdec", "racer@bydzov-ctverec.cz", "777111501",
               "OSOBNI", "Škoda 1000 MB", "5H0 0051", 1967, 2, "JEDNODENNI",
               "Testovací", "jezdec", true, "M", 35, "Test klub",
               null, null, 0, 0, 0, "",
               true, true, true, true}));
+          userRepository.findByEmail("racer@bydzov-ctverec.cz").ifPresent(u -> {
+            crewMemberRepository.save(new CrewMember(racerReg, u, "Testovací", "jezdec", "racer@bydzov-ctverec.cz"));
+            log.info("CrewMember created for seeded racer user");
+          });
         }
 
         log.info("Registration data seeded (total {} registrations)", repo.count());

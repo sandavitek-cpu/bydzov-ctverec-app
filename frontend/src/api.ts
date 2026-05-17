@@ -9,6 +9,12 @@ export async function fetchCurrentEdition() {
   return res.json() as Promise<{ id: number; year: number; label: string }>
 }
 
+export interface CrewMemberInput {
+  firstName: string
+  lastName: string
+  email: string
+}
+
 export interface RegistrationData {
   teamName: string
   email: string
@@ -20,6 +26,7 @@ export interface RegistrationData {
   variant: string
   firstName: string
   lastName: string
+  crewMembers: CrewMemberInput[]
 }
 
 export interface RegistrationResult {

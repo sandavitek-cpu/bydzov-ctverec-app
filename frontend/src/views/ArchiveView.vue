@@ -76,7 +76,7 @@ onMounted(async () => {
         </thead>
         <tbody>
           <tr v-for="(r, i) in filtered" :key="r.editionYear + '-' + r.rank + '-' + i" class="table-row">
-            <td class="font-display text-2xl tracking-[0.04em] text-gold">{{ r.editionYear }}</td>
+            <td class="font-display text-2xl tracking-[0.04em] text-red">{{ r.editionYear }}</td>
             <td class="text-center">
               <span
                 class="inline-flex h-7 w-7 items-center justify-center rounded-full text-body-sm font-bold"

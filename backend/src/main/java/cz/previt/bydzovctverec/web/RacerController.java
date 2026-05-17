@@ -2,6 +2,7 @@ package cz.previt.bydzovctverec.web;
 
 import cz.previt.bydzovctverec.domain.Checkpoint;
 import cz.previt.bydzovctverec.domain.CheckpointRepository;
+import cz.previt.bydzovctverec.domain.CrewMemberRepository;
 import cz.previt.bydzovctverec.domain.Edition;
 import cz.previt.bydzovctverec.domain.EditionRepository;
 import cz.previt.bydzovctverec.domain.RacerRegistration;
@@ -39,8 +40,9 @@ public class RacerController {
   private final CheckpointRepository checkpointRepository;
   private final RouteRepository routeRepository;
   private final RoutePointRepository routePointRepository;
+  private final CrewMemberRepository crewMemberRepository;
 
-  public RacerController(RacerRegistrationRepository racerRegistrationRepository, ScoreRepository scoreRepository, EditionRepository editionRepository, ScheduleItemRepository scheduleItemRepository, CheckpointRepository checkpointRepository, RouteRepository routeRepository, RoutePointRepository routePointRepository) {
+  public RacerController(RacerRegistrationRepository racerRegistrationRepository, ScoreRepository scoreRepository, EditionRepository editionRepository, ScheduleItemRepository scheduleItemRepository, CheckpointRepository checkpointRepository, RouteRepository routeRepository, RoutePointRepository routePointRepository, CrewMemberRepository crewMemberRepository) {
     this.racerRegistrationRepository = racerRegistrationRepository;
     this.scoreRepository = scoreRepository;
     this.editionRepository = editionRepository;
@@ -48,16 +50,18 @@ public class RacerController {
     this.checkpointRepository = checkpointRepository;
     this.routeRepository = routeRepository;
     this.routePointRepository = routePointRepository;
+    this.crewMemberRepository = crewMemberRepository;
   }
 
   @GetMapping("/registration")
   @Transactional(readOnly = true)
   public ResponseEntity<?> myRegistration(Authentication auth) {
     User user = (User) auth.getPrincipal();
-    RacerRegistration reg = racerRegistrationRepository.findByEmail(user.getEmail()).orElse(null);
-    if (reg == null) {
+    var crewMember = crewMemberRepository.findByUser(user).orElse(null);
+    if (crewMember == null) {
       return ResponseEntity.ok(Map.of("error", "Nejste přihlášen k závodu"));
     }
+    RacerRegistration reg = crewMember.getRegistration();
 
     List<Score> scores = scoreRepository.findByRacerRegistrationIdWithCheckpoint(reg.getId());
     int totalPoints = scores.stream().mapToInt(Score::getPoints).sum();
@@ -83,10 +87,11 @@ public class RacerController {
   @GetMapping("/status")
   public ResponseEntity<?> myStatus(Authentication auth) {
     User user = (User) auth.getPrincipal();
-    RacerRegistration reg = racerRegistrationRepository.findByEmail(user.getEmail()).orElse(null);
-    if (reg == null) {
+    var crewMember = crewMemberRepository.findByUser(user).orElse(null);
+    if (crewMember == null) {
       return ResponseEntity.ok(Map.of("error", "Nejste přihlášen k závodu"));
     }
+    RacerRegistration reg = crewMember.getRegistration();
     var m = new java.util.LinkedHashMap<String, Object>();
     m.put("id", reg.getId());
     m.put("teamName", reg.getTeamName());
@@ -131,10 +136,11 @@ public class RacerController {
   @Transactional(readOnly = true)
   public ResponseEntity<?> myMap(Authentication auth) {
     User user = (User) auth.getPrincipal();
-    RacerRegistration reg = racerRegistrationRepository.findByEmail(user.getEmail()).orElse(null);
-    if (reg == null) {
+    var crewMember = crewMemberRepository.findByUser(user).orElse(null);
+    if (crewMember == null) {
       return ResponseEntity.ok(Map.of("error", "Nejste přihlášen k závodu"));
     }
+    RacerRegistration reg = crewMember.getRegistration();
 
     Edition edition = reg.getEdition();
     String variant = reg.getVariant();

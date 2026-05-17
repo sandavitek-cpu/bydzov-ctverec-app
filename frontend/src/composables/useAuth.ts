@@ -86,5 +86,19 @@ export function useAuth() {
     return data
   }
 
-  return { token, role, roles, name, username, impersonating, logout, authHeaders, isAdmin, hasAdmin, hasJudge, hasRacer, isLoggedIn, loginRequest, saveTokens, impersonateAs, restoreFromImpersonation }
+  async function googleLogin(credential: string) {
+    const res = await fetch(`${apiBaseUrl}/api/auth/google`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ credential }),
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      throw new Error(data.error ?? 'Google přihlášení selhalo')
+    }
+    saveTokens(data.accessToken, data.role, data.name, data.username)
+    return data
+  }
+
+  return { token, role, roles, name, username, impersonating, logout, authHeaders, isAdmin, hasAdmin, hasJudge, hasRacer, isLoggedIn, loginRequest, googleLogin, saveTokens, impersonateAs, restoreFromImpersonation }
 }

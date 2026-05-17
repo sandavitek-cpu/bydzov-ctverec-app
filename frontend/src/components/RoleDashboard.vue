@@ -147,7 +147,7 @@ async function quickSubmit() {
         <p class="text-meta text-text-soft mt-0.5">Členů</p>
       </div>
       <div class="card !p-4 text-center">
-        <p class="text-kpi" :class="stats.paid === stats.totalCrews ? 'text-success' : 'text-accent-gold'">{{ stats.paid }}</p>
+        <p class="text-kpi" :class="stats.paid === stats.totalCrews ? 'text-success' : 'text-red'">{{ stats.paid }}</p>
         <p class="text-meta text-text-soft mt-0.5">Zaplaceno</p>
       </div>
       <div class="card !p-4 text-center">

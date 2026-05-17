@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { submitRegistration, type RegistrationResult } from '@/api'
+import { ref, computed, watch } from 'vue'
+import { submitRegistration, type RegistrationResult, type CrewMemberInput } from '@/api'
 
 const VARIANTS = [
   { value: 'JEDNODENNI', label: 'Jednodenní závod', deadline: '6. 6. 2026' },
@@ -38,6 +38,18 @@ const form = ref({
   lastName: '',
   vehicleMake: '',
   consent: false,
+})
+
+const crewMembers = ref<CrewMemberInput[]>([])
+
+watch(() => form.value.crewCount, (n, old) => {
+  const target = Math.max(0, n - 1)
+  while (crewMembers.value.length < target) {
+    crewMembers.value.push({ firstName: '', lastName: '', email: '' })
+  }
+  if (crewMembers.value.length > target) {
+    crewMembers.value.splice(target)
+  }
 })
 
 const submitted = ref(false)
@@ -78,6 +90,7 @@ async function handleSubmit() {
       variant: form.value.variant,
       firstName: form.value.firstName,
       lastName: form.value.lastName,
+      crewMembers: crewMembers.value.filter(m => m.firstName && m.lastName && m.email),
     })
     submitted.value = true
   } catch (e) {
@@ -105,6 +118,7 @@ const qrUrl = computed(() => {
         <p class="font-semibold">Přihláška přijata ✓</p>
         <p class="mt-1">Děkujeme za přihlášení. Vaše startovní číslo:</p>
         <p class="mt-2 text-kpi text-primary">#{{ result.startNumber }}</p>
+        <p class="mt-2">Všem členům posádky byl vytvořen uživatelský účet. Přihlašovací údaje byly odeslány na jejich e-maily.</p>
       </div>
 
       <div class="card">
@@ -210,6 +224,30 @@ const qrUrl = computed(() => {
         </div>
       </div>
 
+      <!-- Crew members -->
+      <div v-if="crewMembers.length > 0" class="space-y-4">
+        <p class="text-label text-text">Ostatní členové posádky</p>
+        <p class="text-meta text-text-soft -mt-2">Každému bude vytvořen uživatelský účet a na e-mail obdrží přihlašovací údaje.</p>
+        <div v-for="(cm, i) in crewMembers" :key="i"
+          class="rounded-lg border border-border bg-bg-alt p-4 space-y-3">
+          <p class="text-meta font-semibold text-text-muted">Člen posádky {{ i + 1 }}</p>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="input-label">Jméno</label>
+              <input v-model="cm.firstName" required class="input-field" placeholder="Karel" />
+            </div>
+            <div>
+              <label class="input-label">Příjmení</label>
+              <input v-model="cm.lastName" required class="input-field" placeholder="Novák" />
+            </div>
+          </div>
+          <div>
+            <label class="input-label">E-mail</label>
+            <input v-model="cm.email" type="email" required class="input-field" placeholder="clen@example.cz" />
+          </div>
+        </div>
+      </div>
+
       <!-- Fee breakdown -->
       <div v-if="selectedVariant && form.vehicleCategory && form.vehicleYear" class="rounded-lg border border-border bg-bg-alt p-4 space-y-1 text-body-sm">
         <div class="flex items-center justify-between">
@@ -218,7 +256,7 @@ const qrUrl = computed(() => {
         </div>
         <div class="flex items-center justify-between">
           <span class="text-text-soft">Vozidlo:</span>
-          <span class="text-text" :class="isVintage ? 'text-accent-gold font-semibold' : ''">{{ isVintage ? 'do 1945 (veterán)' : 'od 1946' }}</span>
+          <span class="text-text" :class="isVintage ? 'text-red font-semibold' : ''">{{ isVintage ? 'do 1945 (veterán)' : 'od 1946' }}</span>
         </div>
         <hr class="border-border my-1" />
         <div class="flex items-center justify-between">

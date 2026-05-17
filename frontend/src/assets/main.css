@@ -3,27 +3,27 @@
 @tailwind utilities;
 
 :root {
-  --bg: #F4F0E8;
-  --bg-alt: #ECE5D8;
-  --surface: #FBF8F2;
-  --surface-2: #F6F1E8;
-  --surface-strong: #E7DED0;
-  --border: #D3C7B6;
-  --border-strong: #B8AA96;
-  --text: #2A241C;
-  --text-muted: #5C5246;
-  --text-soft: #857865;
-  --text-inverse: #F8F4EC;
+  --bg: #FFFFFF;
+  --bg-alt: #F3F4F6;
+  --surface: #FFFFFF;
+  --surface-2: #F9FAFB;
+  --surface-strong: #E5E7EB;
+  --border: #D1D5DB;
+  --border-strong: #9CA3AF;
+  --text: #111827;
+  --text-muted: #4B5563;
+  --text-soft: #6B7280;
+  --text-inverse: #FFFFFF;
   --primary: #09097B;
   --primary-hover: #070763;
   --primary-active: #05054B;
-  --accent-olive: #6F7750;
-  --accent-petrol: #2F5D62;
-  --accent-gold: #B88A3B;
-  --success: #4E6B3C;
-  --warning: #A56A1F;
-  --error: #9E2F2F;
-  --info: #3F667A;
+  --red: #DC2626;
+  --red-hover: #B91C1C;
+  --red-light: #FEE2E2;
+  --success: #16A34A;
+  --warning: #D97706;
+  --error: #DC2626;
+  --info: #2563EB;
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
@@ -289,8 +289,8 @@ body {
     color: var(--info);
   }
   .badge-racer {
-    background-color: rgba(111,119,80,0.10);
-    color: var(--accent-olive);
+    background-color: rgba(220,38,38,0.10);
+    color: var(--red);
   }
 
   .alert {
@@ -388,13 +388,13 @@ body {
 
   .heritage-year {
     font-family: "Bebas Neue", "Oswald", sans-serif;
-    color: var(--accent-gold);
+    color: var(--red);
     letter-spacing: 0.03em;
   }
 
   .rank-1 {
-    background-color: rgba(184,138,59,0.15);
-    color: var(--accent-gold);
+    background-color: rgba(220,38,38,0.15);
+    color: var(--red);
   }
   .rank-2 {
     background-color: rgba(90,82,70,0.10);

@@ -26,14 +26,14 @@ onMounted(async () => {
   <RoleDashboard v-if="isLoggedIn && (hasAdmin || hasJudge || hasRacer)" />
   <div v-else class="space-y-16">
     <!-- Hero -->
-    <section class="relative overflow-hidden rounded-xl bg-surface-strong px-8 py-12 lg:py-20 mb-4 border-l-4 border-l-accent-gold">
+    <section class="relative overflow-hidden rounded-xl bg-surface-strong px-8 py-12 lg:py-20 mb-4 border-l-4 border-l-red">
       <div class="absolute inset-0 opacity-[0.03] pointer-events-none select-none" style="background-image: repeating-linear-gradient(45deg, transparent, transparent 40px, currentColor 40px, currentColor 41px);"></div>
       <div class="relative z-10">
         <p class="text-meta text-text-soft uppercase tracking-[0.12em]">30. ročník – 20.–21. června 2026</p>
         <h1 class="text-hero text-text mt-2">Novobydžovský<br />Čtverec</h1>
-        <p class="font-accent text-xl italic text-accent-gold mt-1">Memoriál Elišky Junkové</p>
+        <p class="font-accent text-xl italic text-red mt-1">Memoriál Elišky Junkové</p>
         <div class="flex items-center gap-4 mt-4">
-          <span class="font-accent text-2xl italic text-accent-gold">Od roku 1996</span>
+          <span class="font-accent text-2xl italic text-red">Od roku 1996</span>
           <span class="h-8 w-px bg-border"></span>
           <span class="font-display text-3xl tracking-[0.04em] text-primary">{{ edition?.year ?? '…' }}</span>
         </div>
@@ -175,11 +175,11 @@ onMounted(async () => {
       </div>
       <p class="text-body-sm text-text-soft mt-2">V ceně je plnohodnotné občerstvení na celý závod, pamětní list a ubytování (pouze dvoudenní varianta).</p>
       <div class="mt-6 grid gap-4 sm:grid-cols-3">
-        <div class="card border-l-4 border-l-accent-gold">
+        <div class="card border-l-4 border-l-red">
           <h3 class="text-subsection text-text">Jednodenní závod</h3>
           <div class="mt-4 space-y-3">
             <div class="rounded-md bg-bg-alt p-3">
-              <p class="text-label text-accent-gold">Vozidlo DO 1945</p>
+              <p class="text-label text-red">Vozidlo DO 1945</p>
               <p class="text-kpi text-text mt-1">500 Kč</p>
               <p class="text-meta text-text-soft">včetně řidiče + 500 Kč každý další člen</p>
             </div>
@@ -194,7 +194,7 @@ onMounted(async () => {
           <h3 class="text-subsection text-text">Dvoudenní – UZAVŘENO</h3>
           <div class="mt-4 space-y-3">
             <div class="rounded-md bg-bg-alt p-3">
-              <p class="text-label text-accent-gold">Vozidlo DO 1945</p>
+              <p class="text-label text-red">Vozidlo DO 1945</p>
               <p class="text-kpi text-text mt-1">1 000 Kč</p>
               <p class="text-meta text-text-soft">včetně řidiče + 1 000 Kč každý další člen</p>
             </div>
@@ -205,11 +205,11 @@ onMounted(async () => {
             </div>
           </div>
         </div>
-        <div class="card border-l-4 border-l-accent-olive">
+        <div class="card border-l-4 border-l-text-soft">
           <h3 class="text-subsection text-text">Dvoudenní bez ubytování</h3>
           <div class="mt-4 space-y-3">
             <div class="rounded-md bg-bg-alt p-3">
-              <p class="text-label text-accent-gold">Vozidlo DO 1945</p>
+              <p class="text-label text-red">Vozidlo DO 1945</p>
               <p class="text-kpi text-text mt-1">600 Kč</p>
               <p class="text-meta text-text-soft">včetně řidiče + 600 Kč každý další člen</p>
             </div>
@@ -231,25 +231,25 @@ onMounted(async () => {
         <div>
           <h3 class="text-subsection text-primary">Jednodenní závod</h3>
           <ul class="mt-3 space-y-2 text-body-sm text-text-muted">
-            <li class="flex items-center gap-2"><span class="text-accent-gold">●</span> Nejmladší účastník</li>
-            <li class="flex items-center gap-2"><span class="text-accent-gold">●</span> Nejstarší účastník</li>
-            <li class="flex items-center gap-2"><span class="text-accent-gold">●</span> Nejstarší automobil</li>
-            <li class="flex items-center gap-2"><span class="text-accent-gold">●</span> Nejstarší motocykl</li>
+            <li class="flex items-center gap-2"><span class="text-red">●</span> Nejmladší účastník</li>
+            <li class="flex items-center gap-2"><span class="text-red">●</span> Nejstarší účastník</li>
+            <li class="flex items-center gap-2"><span class="text-red">●</span> Nejstarší automobil</li>
+            <li class="flex items-center gap-2"><span class="text-red">●</span> Nejstarší motocykl</li>
             <li class="flex items-center gap-2"><span class="text-primary">●</span> Hlavní kategorie <strong>Auto do roku 1945</strong></li>
             <li class="flex items-center gap-2"><span class="text-primary">●</span> Hlavní kategorie <strong>Auto od roku 1946</strong></li>
             <li class="flex items-center gap-2"><span class="text-primary">●</span> Hlavní kategorie <strong>Moto</strong></li>
-            <li class="flex items-center gap-2"><span class="text-accent-olive">●</span> Speciální cena pro posledního</li>
+            <li class="flex items-center gap-2"><span class="text-text-soft">●</span> Speciální cena pro posledního</li>
           </ul>
         </div>
         <div>
           <h3 class="text-subsection text-primary">Dvoudenní závod</h3>
           <ul class="mt-3 space-y-2 text-body-sm text-text-muted">
-            <li class="flex items-center gap-2"><span class="text-accent-gold">●</span> Nejmladší účastník</li>
-            <li class="flex items-center gap-2"><span class="text-accent-gold">●</span> Nejstarší účastník</li>
-            <li class="flex items-center gap-2"><span class="text-accent-gold">●</span> Nejstarší automobil</li>
-            <li class="flex items-center gap-2"><span class="text-accent-gold">●</span> Nejstarší motocykl</li>
+            <li class="flex items-center gap-2"><span class="text-red">●</span> Nejmladší účastník</li>
+            <li class="flex items-center gap-2"><span class="text-red">●</span> Nejstarší účastník</li>
+            <li class="flex items-center gap-2"><span class="text-red">●</span> Nejstarší automobil</li>
+            <li class="flex items-center gap-2"><span class="text-red">●</span> Nejstarší motocykl</li>
             <li class="flex items-center gap-2"><span class="text-primary">●</span> Hlavní kategorie celého dvoudenního závodu</li>
-            <li class="flex items-center gap-2"><span class="text-accent-olive">●</span> Speciální cena pro posledního</li>
+            <li class="flex items-center gap-2"><span class="text-text-soft">●</span> Speciální cena pro posledního</li>
           </ul>
         </div>
       </div>

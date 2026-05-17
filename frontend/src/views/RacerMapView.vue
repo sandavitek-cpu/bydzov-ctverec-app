@@ -43,6 +43,7 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 const gpsActive = ref(false)
 const gpsError = ref<string | null>(null)
+const gpsCoords = ref<{ lat: number; lng: number } | null>(null)
 let map: L.Map | null = null
 let marker: L.Marker | null = null
 let routeLine: L.Polyline | null = null
@@ -84,7 +85,7 @@ onMounted(async () => {
     maxZoom: 18,
   }).addTo(map)
 
-  addLocateControl(map)
+  addLocateControl(map, () => gpsCoords.value)
 
   if (mapData.value?.routePoints && mapData.value.routePoints.length > 1) {
     const raw = mapData.value.routePoints.map(p => ({ lat: p.lat, lng: p.lng }))
@@ -122,6 +123,7 @@ onMounted(async () => {
       (pos) => {
         gpsActive.value = true
         gpsError.value = null
+        gpsCoords.value = { lat: pos.coords.latitude, lng: pos.coords.longitude }
         const latlng: L.LatLngExpression = [pos.coords.latitude, pos.coords.longitude]
         if (marker) {
           marker.setLatLng(latlng)

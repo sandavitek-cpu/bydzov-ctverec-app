@@ -1,13 +1,27 @@
 package cz.previt.bydzovctverec.web;
 
+import cz.previt.bydzovctverec.config.EmailService;
+import cz.previt.bydzovctverec.domain.AppRole;
+import cz.previt.bydzovctverec.domain.AppRoleRepository;
+import cz.previt.bydzovctverec.domain.CrewMember;
+import cz.previt.bydzovctverec.domain.CrewMemberRepository;
 import cz.previt.bydzovctverec.domain.Edition;
 import cz.previt.bydzovctverec.domain.EditionRepository;
 import cz.previt.bydzovctverec.domain.RacerRegistration;
 import cz.previt.bydzovctverec.domain.RacerRegistrationRepository;
+import cz.previt.bydzovctverec.domain.User;
+import cz.previt.bydzovctverec.domain.UserRepository;
+import cz.previt.bydzovctverec.domain.UserRole;
 import jakarta.validation.Valid;
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,8 +33,16 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/public/registrations")
 public class RegistrationController {
 
+  private static final Logger log = LoggerFactory.getLogger(RegistrationController.class);
+  private static final String CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+
   private final EditionRepository editionRepository;
   private final RacerRegistrationRepository racerRegistrationRepository;
+  private final UserRepository userRepository;
+  private final AppRoleRepository appRoleRepository;
+  private final CrewMemberRepository crewMemberRepository;
+  private final PasswordEncoder passwordEncoder;
+  private final EmailService emailService;
 
   private record FeeConfig(int baseDo1945, int baseOd1946, int extraPerson) {}
 
@@ -29,12 +51,21 @@ public class RegistrationController {
       "DVODENNI_UZAVRENO", new FeeConfig(1000, 1200, 1000),
       "DVODENNI_BEZ_UBYTOVANI", new FeeConfig(600, 900, 600));
 
-  public RegistrationController(EditionRepository editionRepository, RacerRegistrationRepository racerRegistrationRepository) {
+  public RegistrationController(EditionRepository editionRepository,
+      RacerRegistrationRepository racerRegistrationRepository, UserRepository userRepository,
+      AppRoleRepository appRoleRepository, CrewMemberRepository crewMemberRepository,
+      PasswordEncoder passwordEncoder, EmailService emailService) {
     this.editionRepository = editionRepository;
     this.racerRegistrationRepository = racerRegistrationRepository;
+    this.userRepository = userRepository;
+    this.appRoleRepository = appRoleRepository;
+    this.crewMemberRepository = crewMemberRepository;
+    this.passwordEncoder = passwordEncoder;
+    this.emailService = emailService;
   }
 
   @PostMapping
+  @Transactional
   public ResponseEntity<?> register(@Valid @RequestBody RegistrationRequest request) {
     Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
     if (edition == null) {
@@ -44,32 +75,61 @@ public class RegistrationController {
     int startNumber = generateStartNumber(edition);
     int startFee = calculateFee(request.variant(), request.vehicleYear(), request.crewCount());
 
-     String firstName = request.firstName() != null ? request.firstName().trim() : "";
-     String lastName = request.lastName() != null ? request.lastName().trim() : "";
-     RacerRegistration reg = new RacerRegistration(
-         edition, request.teamName(), request.email(), request.phone(),
-         request.vehicleCategory(), request.vehicleMake() != null ? request.vehicleMake() : "",
-         request.vehiclePlate(), request.vehicleYear(),
-         request.crewCount(), startNumber, startFee,
-         request.variant(), firstName, lastName,
-         request.firstTime() != null ? request.firstTime() : false,
-         request.gender(), request.driverAge(),
-         request.club(), request.address(),
-         request.youngestAge(), request.youngestName(),
-         request.engineDisplacement(), request.power(), request.maxSpeed(),
-         request.vehicleNotes(), request.notes(),
-         false, false, false,
-         request.consent() != null ? request.consent() : false,
-         false,
-         Instant.now());
+    String firstName = request.firstName() != null ? request.firstName().trim() : "";
+    String lastName = request.lastName() != null ? request.lastName().trim() : "";
+    String email = request.email() != null ? request.email().trim() : "";
+
+    RacerRegistration reg = new RacerRegistration(
+        edition, request.teamName(), email, request.phone(),
+        request.vehicleCategory(), request.vehicleMake() != null ? request.vehicleMake() : "",
+        request.vehiclePlate(), request.vehicleYear(),
+        request.crewCount(), startNumber, startFee,
+        request.variant(), firstName, lastName,
+        request.firstTime() != null ? request.firstTime() : false,
+        request.gender(), request.driverAge(),
+        request.club(), request.address(),
+        request.youngestAge(), request.youngestName(),
+        request.engineDisplacement(), request.power(), request.maxSpeed(),
+        request.vehicleNotes(), request.notes(),
+        false, false, false,
+        request.consent() != null ? request.consent() : false,
+        true, Instant.now());
 
     racerRegistrationRepository.save(reg);
 
+    var racerRole = appRoleRepository.findByName("RACER").orElse(null);
+
+    String driverPwd = createUser(email, firstName, lastName, racerRole, reg);
+    emailService.sendCredentials(email, firstName + " " + lastName, email, driverPwd,
+        startNumber, startFee);
+
+    if (request.crewMembers() != null) {
+      for (var cm : request.crewMembers()) {
+        String cmEmail = cm.email().trim();
+        String cmPwd = createUser(cmEmail, cm.firstName().trim(), cm.lastName().trim(), racerRole, reg);
+        emailService.sendCredentials(cmEmail, cm.firstName() + " " + cm.lastName(), cmEmail,
+            cmPwd, startNumber, startFee);
+      }
+    }
+
+    log.info("Registration {} created with {} crew members", reg.getId(),
+        1 + (request.crewMembers() != null ? request.crewMembers().size() : 0));
+
     return ResponseEntity.ok(new RegistrationResponse(
-        reg.getId(), reg.getTeamName(), reg.getEmail(), reg.getPhone(),
+        reg.getId(), reg.getTeamName(), email, reg.getPhone(),
         reg.getVehicleCategory(), reg.getVehiclePlate(), reg.getVehicleYear(),
         reg.getCrewCount(), reg.getStartNumber(), reg.getStartFee(),
         reg.getStatus(), reg.getVariant()));
+  }
+
+  private String createUser(String email, String firstName, String lastName, AppRole racerRole, RacerRegistration reg) {
+    String rawPassword = generatePassword();
+    User user = new User(email, email, passwordEncoder.encode(rawPassword), UserRole.RACER,
+        firstName, lastName, Instant.now());
+    if (racerRole != null) user.getAppRoles().add(racerRole);
+    userRepository.save(user);
+    crewMemberRepository.save(new CrewMember(reg, user, firstName, lastName, email));
+    return rawPassword;
   }
 
   @GetMapping("/lookup/{startNumber}")
@@ -100,5 +160,13 @@ public class RegistrationController {
         .findTopByEditionOrderByStartNumberDesc(edition)
         .map(r -> r.getStartNumber() + 1)
         .orElse(1);
+  }
+
+  private static String generatePassword() {
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < 10; i++) {
+      sb.append(CHARS.charAt((int) (Math.random() * CHARS.length())));
+    }
+    return sb.toString();
   }
 }

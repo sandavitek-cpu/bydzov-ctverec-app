@@ -5,42 +5,38 @@ export default {
     extend: {
       colors: {
         bg: {
-          DEFAULT: '#F4F0E8',
-          alt: '#ECE5D8',
+          DEFAULT: '#FFFFFF',
+          alt: '#F3F4F6',
         },
         surface: {
-          DEFAULT: '#FBF8F2',
-          2: '#F6F1E8',
-          strong: '#E7DED0',
+          DEFAULT: '#FFFFFF',
+          2: '#F9FAFB',
+          strong: '#E5E7EB',
         },
         border: {
-          DEFAULT: '#D3C7B6',
-          strong: '#B8AA96',
+          DEFAULT: '#D1D5DB',
+          strong: '#9CA3AF',
         },
         text: {
-          DEFAULT: '#2A241C',
-          muted: '#5C5246',
-          soft: '#857865',
-          inverse: '#F8F4EC',
+          DEFAULT: '#111827',
+          muted: '#4B5563',
+          soft: '#6B7280',
+          inverse: '#FFFFFF',
         },
         primary: {
           DEFAULT: '#09097B',
           hover: '#070763',
           active: '#05054B',
         },
-        olive: {
-          DEFAULT: '#6F7750',
+        red: {
+          DEFAULT: '#DC2626',
+          hover: '#B91C1C',
+          light: '#FEE2E2',
         },
-        petrol: {
-          DEFAULT: '#2F5D62',
-        },
-        gold: {
-          DEFAULT: '#B88A3B',
-        },
-        success: '#4E6B3C',
-        warning: '#A56A1F',
-        error: '#9E2F2F',
-        info: '#3F667A',
+        success: '#16A34A',
+        warning: '#D97706',
+        error: '#DC2626',
+        info: '#2563EB',
       },
       fontFamily: {
         display: ['"Bebas Neue"', '"Oswald"', 'sans-serif'],

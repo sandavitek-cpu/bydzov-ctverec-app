@@ -267,7 +267,7 @@ const variantLabel: Record<string, string> = {
         <p class="text-meta text-text-soft mt-0.5">Členů</p>
       </div>
       <div class="card !p-4 text-center">
-        <p class="text-kpi" :class="stats.paid === stats.totalCrews ? 'text-success' : 'text-accent-gold'">{{ stats.paid }}<span class="text-body-sm text-text-soft">/{{ stats.totalCrews }}</span></p>
+        <p class="text-kpi" :class="stats.paid === stats.totalCrews ? 'text-success' : 'text-red'">{{ stats.paid }}<span class="text-body-sm text-text-soft">/{{ stats.totalCrews }}</span></p>
         <p class="text-meta text-text-soft mt-0.5">Zaplaceno</p>
       </div>
       <div class="card !p-4 text-center">
@@ -291,11 +291,11 @@ const variantLabel: Record<string, string> = {
         <p class="text-meta text-text-soft mt-0.5">Nováčků</p>
       </div>
       <div class="card !p-4 text-center">
-        <p class="text-kpi text-accent-gold">{{ stats.oldestVehicle }}</p>
+        <p class="text-kpi text-red">{{ stats.oldestVehicle }}</p>
         <p class="text-meta text-text-soft mt-0.5">Nejst. vozidlo</p>
       </div>
       <div class="card !p-4 text-center">
-        <p class="text-kpi text-accent-gold">{{ stats.oldestDriver }}<span class="text-body-sm text-text-soft"> let</span></p>
+        <p class="text-kpi text-red">{{ stats.oldestDriver }}<span class="text-body-sm text-text-soft"> let</span></p>
         <p class="text-meta text-text-soft mt-0.5">Nejst. řidič</p>
       </div>
       <div class="card !p-4 text-center">
@@ -354,8 +354,8 @@ const variantLabel: Record<string, string> = {
                   class="badge cursor-pointer transition-colors"
                   :class="r.status === 'PAID' ? '!bg-success/10 !text-success' : 'badge-admin'"
                 >{{ r.status === 'PAID' ? 'Zaplaceno' : 'Čeká' }}</button>
-                <span v-if="r.arrived" class="badge !bg-accent-olive/10 !text-accent-olive">Přijel</span>
-                <span v-if="r.firstTime" class="badge !bg-accent-gold/10 !text-accent-gold">Nový</span>
+                <span v-if="r.arrived" class="badge !bg-info/10 !text-info">Přijel</span>
+                <span v-if="r.firstTime" class="badge !bg-red/10 !text-red">Nový</span>
               </div>
             </td>
             <td class="hidden md:table-cell">
@@ -396,9 +396,9 @@ const variantLabel: Record<string, string> = {
             </span>
             <span v-if="selected.approved" class="badge !bg-success/10 !text-success">Schváleno</span>
             <span v-else class="badge !bg-warning/10 !text-warning">Neschváleno</span>
-            <span v-if="selected.arrived" class="badge !bg-accent-olive/10 !text-accent-olive">Přijel</span>
+            <span v-if="selected.arrived" class="badge !bg-info/10 !text-info">Přijel</span>
             <span v-if="selected.contacted" class="badge !bg-info/10 !text-info">Kontaktován</span>
-            <span v-if="selected.firstTime" class="badge !bg-accent-gold/10 !text-accent-gold">Nováček</span>
+            <span v-if="selected.firstTime" class="badge !bg-red/10 !text-red">Nováček</span>
             <span v-if="selected.properlyRegistered" class="badge !bg-success/10 !text-success">Přihlášeno</span>
           </div>
 

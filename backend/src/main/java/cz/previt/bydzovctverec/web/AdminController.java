@@ -6,6 +6,7 @@ import cz.previt.bydzovctverec.domain.AppRole;
 import cz.previt.bydzovctverec.domain.AppRoleRepository;
 import cz.previt.bydzovctverec.domain.Checkpoint;
 import cz.previt.bydzovctverec.domain.CheckpointRepository;
+import cz.previt.bydzovctverec.domain.CrewMemberRepository;
 import cz.previt.bydzovctverec.domain.Edition;
 import cz.previt.bydzovctverec.domain.EditionRepository;
 import cz.previt.bydzovctverec.domain.RacerRegistration;
@@ -52,8 +53,9 @@ public class AdminController {
   private final PasswordEncoder passwordEncoder;
   private final JwtService jwtService;
   private final EmailService emailService;
+  private final CrewMemberRepository crewMemberRepository;
 
-  public AdminController(EditionRepository editionRepository, RacerRegistrationRepository racerRegistrationRepository, ScoreRepository scoreRepository, CheckpointRepository checkpointRepository, UserRepository userRepository, AppRoleRepository appRoleRepository, PasswordEncoder passwordEncoder, JwtService jwtService, EmailService emailService) {
+  public AdminController(EditionRepository editionRepository, RacerRegistrationRepository racerRegistrationRepository, ScoreRepository scoreRepository, CheckpointRepository checkpointRepository, UserRepository userRepository, AppRoleRepository appRoleRepository, PasswordEncoder passwordEncoder, JwtService jwtService, EmailService emailService, CrewMemberRepository crewMemberRepository) {
     this.editionRepository = editionRepository;
     this.racerRegistrationRepository = racerRegistrationRepository;
     this.scoreRepository = scoreRepository;
@@ -63,6 +65,7 @@ public class AdminController {
     this.passwordEncoder = passwordEncoder;
     this.jwtService = jwtService;
     this.emailService = emailService;
+    this.crewMemberRepository = crewMemberRepository;
   }
 
   @GetMapping
@@ -72,7 +75,7 @@ public class AdminController {
       return ResponseEntity.ok(List.of());
     }
     List<RacerRegistration> regs = racerRegistrationRepository.findByEditionOrderByStartNumber(edition);
-    return ResponseEntity.ok(regs.stream().map(AdminRegistrationResponse::from).toList());
+    return ResponseEntity.ok(regs.stream().map(r -> AdminRegistrationResponse.from(r, crewMemberRepository.findByRegistration(r))).toList());
   }
 
   @GetMapping("/{id}")
@@ -81,7 +84,7 @@ public class AdminController {
     if (reg == null) {
       return ResponseEntity.badRequest().body(Map.of("error", "Přihláška nenalezena"));
     }
-    return ResponseEntity.ok(AdminRegistrationResponse.from(reg));
+    return ResponseEntity.ok(AdminRegistrationResponse.from(reg, crewMemberRepository.findByRegistration(reg)));
   }
 
   @PatchMapping("/{id}/status")
@@ -125,7 +128,7 @@ public class AdminController {
     if (body.containsKey("arrived")) reg.setArrived((Boolean) body.get("arrived"));
     if (body.containsKey("consent")) reg.setConsent((Boolean) body.get("consent"));
     racerRegistrationRepository.save(reg);
-    return ResponseEntity.ok(AdminRegistrationResponse.from(reg));
+    return ResponseEntity.ok(AdminRegistrationResponse.from(reg, crewMemberRepository.findByRegistration(reg)));
   }
 
   @PostMapping("/{id}/approve")

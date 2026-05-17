@@ -236,7 +236,7 @@ onMounted(async () => {
                 <div v-if="cp.taskDescription" class="mt-1 text-body-sm text-text-muted">{{ cp.taskDescription }}</div>
                 <div class="mt-1 flex gap-3 text-meta">
                   <span v-if="cp.maxPoints != null" class="text-primary">max {{ cp.maxPoints }} bodů</span>
-                  <span v-if="cp.volunteers?.length" class="text-accent-olive">{{ cp.volunteers.join(', ') }}</span>
+                  <span v-if="cp.volunteers?.length" class="text-text-soft">{{ cp.volunteers.join(', ') }}</span>
                 </div>
               </div>
               <div class="flex gap-1 shrink-0">

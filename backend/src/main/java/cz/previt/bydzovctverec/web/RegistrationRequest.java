@@ -1,9 +1,11 @@
 package cz.previt.bydzovctverec.web;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import java.util.List;
 
 public record RegistrationRequest(
     @NotBlank String teamName,
@@ -30,4 +32,11 @@ public record RegistrationRequest(
     Boolean consent,
     String recaptchaToken,
     String firstName,
-    String lastName) {}
+    String lastName,
+    @Valid List<CrewMemberInput> crewMembers) {
+
+  public record CrewMemberInput(
+      @NotBlank String firstName,
+      @NotBlank String lastName,
+      @NotBlank @Email String email) {}
+}

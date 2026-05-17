@@ -39,6 +39,11 @@ npm-debug.log*
 *.iml
 .vscode/
 
+# Generated files
+logs/
+backend/logs/
+backend.pid
+
 # Environment
 .env
 .env.local

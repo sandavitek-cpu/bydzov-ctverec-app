@@ -1,7 +1,9 @@
 package cz.previt.bydzovctverec.web;
 
+import cz.previt.bydzovctverec.domain.CrewMember;
 import cz.previt.bydzovctverec.domain.RacerRegistration;
 import java.time.Instant;
+import java.util.List;
 
 public record AdminRegistrationResponse(
     Long id,
@@ -36,9 +38,14 @@ public record AdminRegistrationResponse(
     Boolean arrived,
     Boolean consent,
     Boolean approved,
-    Instant createdAt) {
+    Instant createdAt,
+    List<CrewMemberInfo> crewMembers) {
 
-  public static AdminRegistrationResponse from(RacerRegistration r) {
+  public record CrewMemberInfo(String firstName, String lastName, String email) {}
+
+  public static AdminRegistrationResponse from(RacerRegistration r, List<CrewMember> crewMembers) {
+    List<CrewMemberInfo> cmList = crewMembers == null ? List.of()
+        : crewMembers.stream().map(cm -> new CrewMemberInfo(cm.getFirstName(), cm.getLastName(), cm.getEmail())).toList();
     return new AdminRegistrationResponse(
         r.getId(), r.getTeamName(), r.getEmail(), r.getPhone(),
         r.getVehicleCategory(), r.getVehicleMake(), r.getVehiclePlate(),
@@ -50,6 +57,6 @@ public record AdminRegistrationResponse(
         r.getVehicleNotes(), r.getNotes(), r.getContacted(),
         r.getProperlyRegistered(), r.getArrived(), r.getConsent(),
         r.getApproved(),
-        r.getCreatedAt());
+        r.getCreatedAt(), cmList);
   }
 }

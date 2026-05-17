@@ -30,25 +30,25 @@ public class EmailService {
     }
   }
 
-  public void sendCredentials(String to, String teamName, String login, String password, Integer startNumber, Integer startFee) {
+  public void sendCredentials(String to, String personName, String login, String password, Integer startNumber, Integer startFee) {
     String body = """
 Dobrý den %s,
 
-Vaše přihláška na Novobydžovský čtverec 2026 byla schválena.
+byl Vám vytvořen účet do závodnického portálu Novobydžovského čtverce 2026.
 
-Vaše přihlašovací údaje do závodnického portálu:
+Vaše přihlašovací údaje:
   Přihlašovací jméno: %s
   Heslo: %s
 
-Startovní číslo: %d
+Startovní číslo Vaší posádky: %d
 Startovné: %d Kč
 
-Svůj stav a itinerář můžete sledovat na:
+Po přihlášení uvidíte itinerář, mapu a stav Vaší přihlášky:
 https://app.bydzov-ctverec.cz
 
 S pozdravem
 Tým Novobydžovského čtverce
-""".formatted(teamName, login, password, startNumber, startFee);
-    send(to, "Novobydžovský čtverec 2026 – přihláška schválena", body);
+""".formatted(personName, login, password, startNumber, startFee);
+    send(to, "Novobydžovský čtverec 2026 – vytvořen účet", body);
   }
 }

@@ -1,14 +1,22 @@
 package cz.previt.bydzovctverec.web;
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
 import cz.previt.bydzovctverec.config.JwtService;
 import cz.previt.bydzovctverec.domain.AppRole;
+import cz.previt.bydzovctverec.domain.AppRoleRepository;
 import cz.previt.bydzovctverec.domain.User;
 import cz.previt.bydzovctverec.domain.UserRepository;
+import cz.previt.bydzovctverec.domain.UserRole;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import java.time.Instant;
+import java.util.Collections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -26,12 +34,18 @@ public class AuthController {
   private final PasswordEncoder passwordEncoder;
   private final JwtService jwtService;
   private final UserRepository userRepository;
+  private final AppRoleRepository appRoleRepository;
+  private final String googleClientId;
 
-  public AuthController(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder, JwtService jwtService, UserRepository userRepository) {
+  public AuthController(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder,
+      JwtService jwtService, UserRepository userRepository, AppRoleRepository appRoleRepository,
+      @Value("${google.client-id}") String googleClientId) {
     this.userDetailsService = userDetailsService;
     this.passwordEncoder = passwordEncoder;
     this.jwtService = jwtService;
     this.userRepository = userRepository;
+    this.appRoleRepository = appRoleRepository;
+    this.googleClientId = googleClientId;
   }
 
   @PostMapping("/login")
@@ -47,21 +61,62 @@ public class AuthController {
       if (user == null) {
         return ResponseEntity.status(401).body(new ErrorResponse("Uživatel nenalezen"));
       }
-      String accessToken = jwtService.generateAccessToken(user);
-      String refreshToken = jwtService.generateRefreshToken(user);
-      var roleStr = user.getAppRoles().isEmpty()
-          ? user.getRole().name()
-          : user.getAppRoles().stream().map(AppRole::getName).collect(java.util.stream.Collectors.joining(","));
-      return ResponseEntity.ok(new LoginResponse(accessToken, refreshToken, roleStr, user.getName(), user.getUsername()));
+      return ResponseEntity.ok(buildLoginResponse(user));
     } catch (Exception e) {
       log.warn("Login failed for {}: {}", request.login(), e.getMessage());
       return ResponseEntity.status(401).body(new ErrorResponse("Přihlášení selhalo"));
     }
   }
 
+  @PostMapping("/google")
+  public ResponseEntity<?> googleLogin(@RequestBody GoogleRequest request) {
+    try {
+      if (googleClientId == null || googleClientId.isBlank()) {
+        return ResponseEntity.status(500).body(new ErrorResponse("Google přihlášení není nakonfigurováno"));
+      }
+      GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), GsonFactory.getDefaultInstance())
+          .setAudience(Collections.singletonList(googleClientId))
+          .build();
+      GoogleIdToken idToken = verifier.verify(request.credential());
+      if (idToken == null) {
+        return ResponseEntity.status(401).body(new ErrorResponse("Neplatný Google token"));
+      }
+      GoogleIdToken.Payload payload = idToken.getPayload();
+      String email = payload.getEmail();
+      String givenName = (String) payload.get("given_name");
+      String familyName = (String) payload.get("family_name");
+
+      User user = userRepository.findByEmail(email).orElse(null);
+      if (user == null) {
+        String firstName = givenName != null ? givenName : email;
+        String lastName = familyName != null ? familyName : "";
+        var racerRole = appRoleRepository.findByName("RACER").orElse(null);
+        user = new User(email, email, passwordEncoder.encode(""), UserRole.RACER, firstName, lastName, Instant.now());
+        if (racerRole != null) user.getAppRoles().add(racerRole);
+        userRepository.save(user);
+        log.info("User created via Google: {}", email);
+      }
+
+      return ResponseEntity.ok(buildLoginResponse(user));
+    } catch (Exception e) {
+      log.warn("Google login failed: {}", e.getMessage());
+      return ResponseEntity.status(401).body(new ErrorResponse("Google přihlášení selhalo"));
+    }
+  }
+
+  private LoginResponse buildLoginResponse(User user) {
+    String accessToken = jwtService.generateAccessToken(user);
+    String refreshToken = jwtService.generateRefreshToken(user);
+    var roleStr = user.getAppRoles().isEmpty()
+        ? user.getRole().name()
+        : user.getAppRoles().stream().map(AppRole::getName).collect(java.util.stream.Collectors.joining(","));
+    return new LoginResponse(accessToken, refreshToken, roleStr, user.getName(), user.getUsername());
+  }
+
   public record LoginRequest(@NotBlank String login, @NotBlank String password) {}
   public record LoginResponse(String accessToken, String refreshToken, String role, String name, String username) {}
   public record RefreshRequest(@NotBlank String refreshToken) {}
   public record RefreshResponse(String accessToken) {}
+  public record GoogleRequest(@NotBlank String credential) {}
   public record ErrorResponse(String error) {}
 }
