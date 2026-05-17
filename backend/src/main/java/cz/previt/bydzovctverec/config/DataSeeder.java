@@ -31,6 +31,7 @@ public class DataSeeder {
   private static final Logger log = LoggerFactory.getLogger(DataSeeder.class);
 
   @Bean
+  @org.springframework.core.annotation.Order(2)
   CommandLineRunner seedRoles(AppRoleRepository appRoleRepository) {
     return args -> {
       try {
@@ -98,6 +99,7 @@ public class DataSeeder {
   }
 
   @Bean
+  @org.springframework.core.annotation.Order(4)
   CommandLineRunner seedRacer(UserRepository userRepository, AppRoleRepository appRoleRepository, PasswordEncoder encoder) {
     return args -> {
       try {

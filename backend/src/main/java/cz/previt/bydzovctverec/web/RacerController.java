@@ -127,8 +127,8 @@ public class RacerController {
     }
     List<Checkpoint> items = checkpointRepository.findByEditionOrderBySortOrder(edition);
     return ResponseEntity.ok(items.stream().map(c -> new CheckpointResponse(
-        c.getName(), c.getLat(), c.getLng(), c.getRadius(),
-        c.getSortOrder(), c.getTaskDescription()
+        c.getId(), c.getName(), c.getLat(), c.getLng(), c.getRadius(),
+        c.getSortOrder(), c.getTaskDescription(), c.getMaxPoints(), c.getVolunteers()
     )).toList());
   }
 
@@ -198,7 +198,7 @@ public class RacerController {
   public record ScoreResponse(Long id, String checkpointName, Integer checkpointOrder, Integer points, String note) {}
   public record ScheduleItemResponse(String time, String label, String description) {}
   public record StandingResponse(String teamName, Integer startNumber, int totalPoints, int rank, int totalRacers, List<ScoreResponse> scores, String email, String vehiclePlate, String vehicleCategory) {}
-  public record CheckpointResponse(String name, Double lat, Double lng, Integer radius, Integer sortOrder, String taskDescription) {}
+  public record CheckpointResponse(Long id, String name, Double lat, Double lng, Integer radius, Integer sortOrder, String taskDescription, Integer maxPoints, List<String> volunteers) {}
   public record RoutePointData(double lat, double lng, Double distanceFromStart) {}
   public record CheckpointScoreData(String name, Double lat, Double lng, Integer radius, Integer sortOrder, String taskDescription, Integer maxPoints, Integer scorePoints) {}
   public record RacerMapResponse(List<RoutePointData> routePoints, List<CheckpointScoreData> checkpoints, double totalDistance, int totalScore, int rank, int totalRacers, String teamName, Integer startNumber) {}

@@ -42,7 +42,7 @@ onMounted(async () => {
       }
     }
     if (role.value === 'judge') {
-      const res = await fetch(`${apiBaseUrl}/api/admin/checkpoints`, { headers: h })
+      const res = await fetch(`${apiBaseUrl}/api/racer/checkpoints`, { headers: h })
       if (res.ok) {
         const all = await res.json()
         checkpoints.value = all.filter((cp: any) =>
