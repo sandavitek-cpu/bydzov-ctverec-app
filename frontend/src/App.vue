@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
@@ -20,6 +20,11 @@ const infoRef = ref<HTMLElement | null>(null)
 const isLoginPage = computed(() => route.path === '/admin/login')
 const showAdminSidebar = computed(() => isLoggedIn.value && route.path.startsWith('/admin') && !isLoginPage.value)
 const mobileSidebarOpen = ref(false)
+const mobileNavOpen = ref(false)
+
+function closeMobileNav() {
+  mobileNavOpen.value = false
+}
 
 function onLogout() {
   logout()
@@ -30,6 +35,8 @@ function onDocumentClick(e: MouseEvent) {
     showInfo.value = false
   }
 }
+
+watch(() => route.path, () => { mobileNavOpen.value = false })
 
 onMounted(() => document.addEventListener('click', onDocumentClick))
 onUnmounted(() => document.removeEventListener('click', onDocumentClick))
@@ -73,21 +80,36 @@ async function toggleInfo() {
       <button @click="restoreFromImpersonation" class="ml-3 btn-primary btn-xs">Zpět</button>
     </div>
     <!-- Top bar -->
-    <header class="h-18 border-b border-border bg-surface shrink-0">
+    <header class="h-18 border-b border-border bg-surface shrink-0 relative">
       <div class="mx-auto flex h-full max-w-wide items-center justify-between gap-4 px-4 lg:px-8">
-        <RouterLink to="/" class="flex items-center gap-3 no-underline group">
+        <RouterLink to="/" class="flex items-center gap-3 no-underline group shrink-0" @click="closeMobileNav">
           <img
             :src="logoCtverec"
             alt="Novobydžovský čtverec"
             class="h-10 w-auto object-contain"
           />
-          <div class="flex flex-col leading-tight">
+          <div class="flex flex-col leading-tight max-sm:hidden">
             <span class="font-display text-2xl tracking-[0.04em] text-text">Novobydžovský</span>
             <span class="font-display text-2xl tracking-[0.04em] text-primary -mt-1">Čtverec</span>
             <span class="text-meta text-red -mt-0.5">Memoriál Elišky Junkové</span>
           </div>
         </RouterLink>
-        <nav class="flex items-center gap-1">
+
+        <!-- Mobile hamburger -->
+        <div class="flex items-center gap-2 lg:hidden">
+          <button v-if="!isLoggedIn" @click="mobileNavOpen = !mobileNavOpen" class="btn-primary btn-sm no-underline">
+            Menu
+          </button>
+          <button v-else @click="mobileNavOpen = !mobileNavOpen" class="flex h-10 w-10 items-center justify-center rounded-lg border border-border text-text-muted">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path v-if="!mobileNavOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Desktop nav -->
+        <nav class="hidden lg:flex items-center gap-1">
           <RouterLink to="/" class="px-3 py-2 text-label text-text-muted no-underline transition-colors hover:text-primary" active-class="text-primary bg-primary/10 rounded-md">
             Domů
           </RouterLink>
@@ -179,6 +201,54 @@ async function toggleInfo() {
           </div>
         </nav>
       </div>
+
+      <!-- Mobile nav drawer -->
+      <transition name="mobile-nav">
+        <div v-if="mobileNavOpen" class="absolute left-0 right-0 top-full z-50 border-b border-border bg-surface shadow-lg lg:hidden">
+          <nav class="flex flex-col px-4 py-3">
+            <RouterLink to="/" class="mobile-nav-item" @click="closeMobileNav">Domů</RouterLink>
+            <RouterLink to="/registrace" class="mobile-nav-item" @click="closeMobileNav">Přihláška</RouterLink>
+            <RouterLink to="/vysledky/2026" class="mobile-nav-item" @click="closeMobileNav">Výsledky</RouterLink>
+            <RouterLink to="/archiv" class="mobile-nav-item" @click="closeMobileNav">Archiv</RouterLink>
+
+            <template v-if="!isLoggedIn">
+              <hr class="my-2 border-border" />
+              <RouterLink to="/admin/login" class="btn-primary text-center no-underline py-3" @click="closeMobileNav">Přihlásit</RouterLink>
+            </template>
+
+            <template v-else>
+              <hr class="my-2 border-border" />
+              <div class="text-label text-text-soft px-3 py-1">{{ name }}<span v-if="username" class="ml-1 text-text-soft">@{{ username }}</span></div>
+              <template v-if="hasAdmin">
+                <div class="mobile-nav-section">Administrace</div>
+                <RouterLink to="/admin/prihlaseni" class="mobile-nav-item" @click="closeMobileNav">Přihlášky</RouterLink>
+                <RouterLink to="/admin/trasy" class="mobile-nav-item" @click="closeMobileNav">Trasy</RouterLink>
+                <RouterLink to="/admin/stanoviste" class="mobile-nav-item" @click="closeMobileNav">Stanoviště</RouterLink>
+                <RouterLink to="/admin/bodovani" class="mobile-nav-item" @click="closeMobileNav">Bodování</RouterLink>
+                <RouterLink to="/admin/komunikace" class="mobile-nav-item" @click="closeMobileNav">Komunikace</RouterLink>
+                <RouterLink to="/admin/changelog" class="mobile-nav-item" @click="closeMobileNav">ChangeLog</RouterLink>
+                <RouterLink to="/admin/logovani" class="mobile-nav-item" @click="closeMobileNav">Logování</RouterLink>
+                <RouterLink to="/admin/role" class="mobile-nav-item" @click="closeMobileNav">Role</RouterLink>
+                <RouterLink to="/admin/uzivatele" class="mobile-nav-item" @click="closeMobileNav">Uživatelé</RouterLink>
+                <button @click="showImpersonateModal = true; closeMobileNav()" class="mobile-nav-item w-full text-left">Přihlásit jako</button>
+              </template>
+              <template v-if="hasJudge">
+                <div class="mobile-nav-section">Komisař</div>
+                <RouterLink to="/komisari" class="mobile-nav-item" @click="closeMobileNav">Komisaři</RouterLink>
+              </template>
+              <template v-if="hasRacer">
+                <div class="mobile-nav-section">Závodník</div>
+                <RouterLink to="/zavodnik/itinerar" class="mobile-nav-item" @click="closeMobileNav">Itinerář</RouterLink>
+                <RouterLink to="/zavodnik/mapa" class="mobile-nav-item" @click="closeMobileNav">Mapa</RouterLink>
+                <RouterLink to="/zavodnik/stav" class="mobile-nav-item" @click="closeMobileNav">Můj stav</RouterLink>
+              </template>
+              <hr class="my-2 border-border" />
+              <RouterLink to="/ucet" class="mobile-nav-item" @click="closeMobileNav">Nastavení účtu</RouterLink>
+              <button @click="onLogout" class="mobile-nav-item w-full text-left text-text-soft">Odhlásit</button>
+            </template>
+          </nav>
+        </div>
+      </transition>
     </header>
 
     <!-- Mobile menu button -->
@@ -296,5 +366,38 @@ async function toggleInfo() {
 }
 .animate-slide-in {
   animation: slide-in 0.3s ease-out;
+}
+
+.mobile-nav-item {
+  display: block;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--text-muted, #4B5563);
+  text-decoration: none;
+  border-radius: 10px;
+  transition: background 0.15s, color 0.15s;
+}
+.mobile-nav-item:hover,
+.mobile-nav-item:active {
+  background: #F3F4F6;
+  color: var(--primary, #09097B);
+}
+.mobile-nav-section {
+  padding: 0.5rem 0.75rem 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-soft, #6B7280);
+}
+
+.mobile-nav-enter-active,
+.mobile-nav-leave-active {
+  transition: all 0.2s ease-out;
+}
+.mobile-nav-enter-from,
+.mobile-nav-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
 }
 </style>
