@@ -26,3 +26,6 @@ spring:
 
 jwt:
   secret: test-secret-key-that-is-at-least-64-characters-long-for-hmac-sha-test
+
+google:
+  client-id: ''
