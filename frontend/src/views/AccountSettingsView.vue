@@ -108,7 +108,7 @@ async function changePassword() {
         <label class="input-label">Uživatelské jméno</label>
         <p class="text-body text-text-muted border border-border rounded-md bg-bg-alt px-4 py-2.5">{{ form.username }}</p>
       </div>
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label class="input-label">Jméno</label>
           <input v-model="form.firstName" required class="input-field" />
@@ -118,7 +118,7 @@ async function changePassword() {
           <input v-model="form.lastName" class="input-field" />
         </div>
       </div>
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label class="input-label">Email</label>
           <input v-model="form.email" type="email" required class="input-field" />
@@ -148,7 +148,7 @@ async function changePassword() {
         <label class="input-label">Současné heslo</label>
         <input v-model="pwForm.currentPassword" type="password" required class="input-field" />
       </div>
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label class="input-label">Nové heslo</label>
           <input v-model="pwForm.newPassword" type="password" required minlength="6" class="input-field" />

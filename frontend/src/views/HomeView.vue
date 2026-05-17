@@ -26,11 +26,11 @@ onMounted(async () => {
   <RoleDashboard v-if="isLoggedIn && (hasAdmin || hasJudge || hasRacer)" />
   <div v-else class="space-y-16">
     <!-- Hero -->
-    <section class="relative overflow-hidden rounded-xl bg-surface-strong px-8 py-12 lg:py-20 mb-4 border-l-4 border-l-red">
+    <section class="relative overflow-hidden rounded-xl bg-surface-strong px-4 sm:px-8 py-8 sm:py-12 lg:py-20 mb-4 border-l-4 border-l-red">
       <div class="absolute inset-0 opacity-[0.03] pointer-events-none select-none" style="background-image: repeating-linear-gradient(45deg, transparent, transparent 40px, currentColor 40px, currentColor 41px);"></div>
       <div class="relative z-10">
         <p class="text-meta text-text-soft uppercase tracking-[0.12em]">30. ročník – 20.–21. června 2026</p>
-        <h1 class="text-hero text-text mt-2">Novobydžovský<br />Čtverec</h1>
+        <h1 class="text-hero text-text mt-2">Novobydžovský Čtverec</h1>
         <p class="font-accent text-xl italic text-red mt-1">Memoriál Elišky Junkové</p>
         <div class="flex items-center gap-4 mt-4">
           <span class="font-accent text-2xl italic text-red">Od roku 1996</span>
@@ -90,7 +90,7 @@ onMounted(async () => {
     </section>
 
     <!-- Conditions -->
-    <section class="rounded-xl bg-surface-strong px-8 py-8 border-l-4 border-l-primary">
+    <section class="rounded-xl bg-surface-strong px-4 sm:px-8 py-8 border-l-4 border-l-primary">
       <h2 class="text-section-title text-text">Podmínky závodníka</h2>
       <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div class="flex items-center gap-3">
@@ -131,7 +131,7 @@ onMounted(async () => {
               { time: '16:30 – 18:30', text: 'Večeře' },
               { time: '~ 19:00', text: 'Vyhlášení vítězů' },
             ]" :key="item.time" class="flex items-start gap-3">
-              <span class="shrink-0 rounded-md bg-primary/10 px-2 py-0.5 font-mono text-meta text-primary font-semibold min-w-[7rem]">{{ item.time }}</span>
+              <span class="shrink-0 rounded-md bg-primary/10 px-2 py-0.5 font-mono text-meta text-primary font-semibold min-w-[5rem] sm:min-w-[7rem]">{{ item.time }}</span>
               <span class="text-body-sm text-text-muted">{{ item.text }}</span>
             </div>
           </div>
@@ -148,7 +148,7 @@ onMounted(async () => {
               { time: '—', text: 'Oběd na trase' },
               { time: 'od 14:00', text: 'Dojezd do kempu, ubytování a večeře' },
             ]" :key="item.time" class="flex items-start gap-3">
-              <span class="shrink-0 rounded-md bg-primary/10 px-2 py-0.5 font-mono text-meta text-primary font-semibold min-w-[7rem]">{{ item.time }}</span>
+              <span class="shrink-0 rounded-md bg-primary/10 px-2 py-0.5 font-mono text-meta text-primary font-semibold min-w-[5rem] sm:min-w-[7rem]">{{ item.time }}</span>
               <span class="text-body-sm text-text-muted">{{ item.text }}</span>
             </div>
             <hr class="border-border" />
@@ -159,7 +159,7 @@ onMounted(async () => {
               { time: '11:30 – 12:30', text: 'Oběd' },
               { time: '~ 13:00', text: 'Vyhlášení vítězů' },
             ]" :key="item.time" class="flex items-start gap-3">
-              <span class="shrink-0 rounded-md bg-primary/10 px-2 py-0.5 font-mono text-meta text-primary font-semibold min-w-[7rem]">{{ item.time }}</span>
+              <span class="shrink-0 rounded-md bg-primary/10 px-2 py-0.5 font-mono text-meta text-primary font-semibold min-w-[5rem] sm:min-w-[7rem]">{{ item.time }}</span>
               <span class="text-body-sm text-text-muted">{{ item.text }}</span>
             </div>
           </div>

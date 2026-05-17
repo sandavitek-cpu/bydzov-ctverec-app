@@ -304,14 +304,14 @@ const variantLabel: Record<string, string> = {
       'border-border bg-bg-alt': !raceStatus?.started,
       'border-info/30 bg-info/5': raceStatus?.finished,
     }">
-      <div class="flex items-center justify-between">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div class="flex items-center gap-3">
           <span class="text-label">Režim závodu:</span>
           <span v-if="!raceStatus?.started" class="badge !bg-text-soft/10 !text-text-soft">Nezahájen</span>
           <span v-else-if="!raceStatus?.finished" class="badge !bg-success/10 !text-success">Probíhá</span>
           <span v-else class="badge !bg-info/10 !text-info">Ukončen</span>
         </div>
-        <div class="flex gap-2">
+        <div class="flex gap-2 flex-wrap">
           <button v-if="!raceStatus?.started" @click="handleRaceStart" class="btn-primary btn-xs">Zahájit závod</button>
           <button v-if="raceStatus?.started && !raceStatus?.finished" @click="handleRaceFinish" class="btn-secondary btn-xs">Ukončit závod</button>
           <button v-if="raceStatus?.started" @click="handleRaceReset" class="btn-ghost btn-xs">Reset</button>
@@ -331,7 +331,7 @@ const variantLabel: Record<string, string> = {
         <option value="PAID">Zaplaceno</option>
         <option value="PENDING">Čeká na platbu</option>
       </select>
-      <input v-model="filterSearch" placeholder="Hledat tým, SPZ, email…" class="input-field !w-auto !min-w-[200px] !h-[36px] text-body-sm flex-1" />
+      <input v-model="filterSearch" placeholder="Hledat tým, SPZ, email…" class="input-field !w-full sm:!w-auto sm:!min-w-[200px] !h-[36px] text-body-sm flex-1" />
     </div>
 
     <!-- Batch actions -->
@@ -429,10 +429,10 @@ const variantLabel: Record<string, string> = {
                 <span v-if="r.firstTime" class="badge !bg-red/10 !text-red">Nový</span>
               </div>
             </td>
-            <td class="text-right">
+            <td class="text-right whitespace-nowrap">
               <div class="flex gap-1.5 justify-end" @click.stop>
                 <button @click="handleResend(r)" :disabled="resendingId === r.id"
-                  class="btn-ghost btn-xs" title="Znovu odeslat přihlašovací údaje"
+                  class="btn-ghost btn-xs whitespace-nowrap" title="Znovu odeslat přihlašovací údaje"
                 >{{ resendingId === r.id ? '…' : 'Poslat údaje' }}</button>
                 <button @click="handleImpersonate(r)"
                   class="btn-ghost btn-xs"
@@ -446,8 +446,8 @@ const variantLabel: Record<string, string> = {
     </div>
 
     <!-- Detail modal -->
-    <div v-if="selected" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 py-8" @click.self="closeDetail">
-      <div class="mx-4 w-full max-w-lg rounded-xl border border-border bg-surface p-6 shadow-lg">
+    <div v-if="selected" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 py-4 sm:py-8" @click.self="closeDetail">
+      <div class="mx-4 w-full max-w-lg rounded-xl border border-border bg-surface p-4 sm:p-6 shadow-lg">
         <div class="flex items-center justify-between mb-5">
           <h2 class="text-subsection text-text">#{{ selected.startNumber }} – {{ selected.teamName }}</h2>
           <button @click="closeDetail" class="text-text-soft hover:text-text text-xl leading-none">&times;</button>

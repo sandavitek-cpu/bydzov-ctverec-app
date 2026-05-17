@@ -96,11 +96,8 @@ async function toggleInfo() {
         </RouterLink>
 
         <!-- Mobile hamburger -->
-        <div class="flex items-center gap-2 lg:hidden">
-          <button v-if="!isLoggedIn" @click="mobileNavOpen = !mobileNavOpen" class="btn-primary btn-sm no-underline">
-            Menu
-          </button>
-          <button v-else @click="mobileNavOpen = !mobileNavOpen" class="flex h-10 w-10 items-center justify-center rounded-lg border border-border text-text-muted">
+        <div class="flex items-center gap-2 md:hidden">
+          <button @click="mobileNavOpen = !mobileNavOpen" class="flex h-10 w-10 items-center justify-center rounded-lg border border-border text-text-muted">
             <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path v-if="!mobileNavOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
               <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -109,7 +106,7 @@ async function toggleInfo() {
         </div>
 
         <!-- Desktop nav -->
-        <nav class="hidden lg:flex items-center gap-1">
+        <nav class="hidden md:flex items-center gap-1">
           <RouterLink to="/" class="px-3 py-2 text-label text-text-muted no-underline transition-colors hover:text-primary" active-class="text-primary bg-primary/10 rounded-md">
             Domů
           </RouterLink>
@@ -204,7 +201,7 @@ async function toggleInfo() {
 
       <!-- Mobile nav drawer -->
       <transition name="mobile-nav">
-        <div v-if="mobileNavOpen" class="absolute left-0 right-0 top-full z-50 border-b border-border bg-surface shadow-lg lg:hidden">
+        <div v-if="mobileNavOpen" class="absolute left-0 right-0 top-full z-50 border-b border-border bg-surface shadow-lg md:hidden">
           <nav class="flex flex-col px-4 py-3">
             <RouterLink to="/" class="mobile-nav-item" @click="closeMobileNav">Domů</RouterLink>
             <RouterLink to="/registrace" class="mobile-nav-item" @click="closeMobileNav">Přihláška</RouterLink>
@@ -252,7 +249,7 @@ async function toggleInfo() {
     </header>
 
     <!-- Mobile menu button -->
-    <button v-if="showAdminSidebar" @click="mobileSidebarOpen = !mobileSidebarOpen" class="fixed bottom-4 left-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white shadow-lg lg:hidden">
+    <button v-if="showAdminSidebar" @click="mobileSidebarOpen = !mobileSidebarOpen" class="fixed bottom-4 right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white shadow-lg md:hidden">
       <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path v-if="!mobileSidebarOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
         <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -260,12 +257,12 @@ async function toggleInfo() {
     </button>
 
     <!-- Mobile sidebar overlay -->
-    <div v-if="mobileSidebarOpen && showAdminSidebar" class="fixed inset-0 z-30 bg-black/30 lg:hidden" @click="mobileSidebarOpen = false"></div>
+    <div v-if="mobileSidebarOpen && showAdminSidebar" class="fixed inset-0 z-30 bg-black/30 md:hidden" @click="mobileSidebarOpen = false"></div>
 
     <!-- Main content area -->
     <div class="mx-auto w-full max-w-wide flex-1 flex flex-col">
       <div v-if="showAdminSidebar" class="flex flex-1">
-        <aside :class="['w-56 shrink-0 admin-sidebar', mobileSidebarOpen ? 'fixed inset-y-0 left-0 z-40 block' : 'hidden lg:block']">
+        <aside :class="['w-56 shrink-0 admin-sidebar', mobileSidebarOpen ? 'fixed inset-y-0 left-0 z-40 block' : 'hidden md:block']">
           <nav class="py-4">
             <div class="admin-sidebar-section">Administrace</div>
             <RouterLink to="/admin/prihlaseni" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Přihlášky</RouterLink>

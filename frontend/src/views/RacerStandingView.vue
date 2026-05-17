@@ -103,7 +103,7 @@ if (!isLoggedIn.value) {
 
     <template v-else-if="data">
       <!-- Standing -->
-      <div class="grid grid-cols-3 gap-4 mb-6">
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
         <div class="card text-center">
           <p class="text-meta text-text-soft uppercase tracking-[0.05em]">Pořadí</p>
           <p class="text-kpi text-primary mt-1">

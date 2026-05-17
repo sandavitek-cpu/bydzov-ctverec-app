@@ -93,8 +93,8 @@ onUnmounted(() => {
         <h1 class="text-page-title text-text mt-1">Přihlášení</h1>
       </div>
 
-      <div v-if="clientId" class="flex justify-center mb-6">
-        <div ref="googleBtnContainer"></div>
+      <div v-if="clientId" class="flex justify-center mb-6 overflow-hidden">
+        <div ref="googleBtnContainer" class="max-w-full"></div>
       </div>
       <p v-if="googleError" class="text-body-sm text-error text-center mb-4">{{ googleError }}</p>
 

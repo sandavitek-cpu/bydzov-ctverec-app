@@ -199,7 +199,7 @@ onMounted(async () => {
                 </div>
               </div>
             </div>
-            <div class="flex gap-3 pt-1">
+            <div class="flex flex-wrap gap-3 pt-1">
               <button type="submit" class="btn-primary btn-sm">
                 {{ editing ? 'Uložit' : 'Přidat' }}
               </button>

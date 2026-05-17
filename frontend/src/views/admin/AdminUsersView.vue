@@ -288,7 +288,7 @@ onMounted(async () => {
             <label class="input-label">Uživatelské jméno</label>
             <input v-model="createForm.username" required class="input-field" />
           </div>
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="input-label">Jméno</label>
               <input v-model="createForm.firstName" required class="input-field" />
@@ -298,7 +298,7 @@ onMounted(async () => {
               <input v-model="createForm.lastName" class="input-field" />
             </div>
           </div>
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="input-label">Email</label>
               <input v-model="createForm.email" type="email" required class="input-field" />
@@ -308,7 +308,7 @@ onMounted(async () => {
               <input v-model="createForm.phone" type="tel" class="input-field" />
             </div>
           </div>
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="input-label">V klubu od</label>
               <input v-model="createForm.memberSince" type="date" class="input-field" />
@@ -335,7 +335,7 @@ onMounted(async () => {
         </div>
 
         <div class="space-y-4">
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="input-label">Jméno</label>
               <input v-model="editFirstName" class="input-field" />
@@ -345,7 +345,7 @@ onMounted(async () => {
               <input v-model="editLastName" class="input-field" />
             </div>
           </div>
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="input-label">Email</label>
               <input v-model="editEmail" type="email" class="input-field" />
@@ -368,9 +368,9 @@ onMounted(async () => {
 
         <div>
           <h3 class="text-subsection text-text">Nové heslo</h3>
-          <div class="mt-3 flex gap-3">
+          <div class="mt-3 flex flex-col sm:flex-row gap-3">
             <input v-model="pwNewPassword" type="password" placeholder="Nové heslo" minlength="6" class="input-field flex-1" />
-            <button @click="setPassword" :disabled="pwSaving || !pwNewPassword" class="btn-primary btn-sm">
+            <button @click="setPassword" :disabled="pwSaving || !pwNewPassword" class="btn-primary btn-sm sm:w-auto w-full">
               {{ pwSaving ? '…' : 'Nastavit' }}
             </button>
           </div>

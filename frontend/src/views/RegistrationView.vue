@@ -164,7 +164,8 @@ const qrUrl = computed(() => {
       </div>
 
       <!-- Driver name -->
-      <div class="grid grid-cols-2 gap-4">
+      <!-- Driver name -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label class="input-label">Jméno řidiče</label>
           <input v-model="form.firstName" required class="input-field" placeholder="Jan" />
@@ -176,7 +177,7 @@ const qrUrl = computed(() => {
       </div>
 
       <!-- Contact -->
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label class="input-label">E-mail</label>
           <input v-model="form.email" type="email" required class="input-field" placeholder="posadka@example.cz" />
@@ -190,7 +191,7 @@ const qrUrl = computed(() => {
       <!-- Vehicle -->
       <div>
         <label class="input-label">Typ vozidla</label>
-        <div class="flex gap-3">
+        <div class="flex flex-col sm:flex-row gap-3">
           <label v-for="t in VEHICLE_TYPES" :key="t.value"
             class="flex-1 flex items-center justify-center gap-2 rounded-lg border border-border p-3 cursor-pointer transition-colors"
             :class="form.vehicleCategory === t.value ? 'border-primary bg-primary/5 text-primary' : 'hover:bg-bg-alt'"
@@ -201,7 +202,7 @@ const qrUrl = computed(() => {
         </div>
       </div>
 
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label class="input-label">Značka a typ vozidla</label>
           <input v-model="form.vehicleMake" required class="input-field" placeholder="Škoda 1000 MB" />
@@ -212,7 +213,7 @@ const qrUrl = computed(() => {
         </div>
       </div>
 
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label class="input-label">Rok výroby</label>
           <input v-model.number="form.vehicleYear" type="number" required min="1900" max="1989" class="input-field" />
@@ -231,7 +232,7 @@ const qrUrl = computed(() => {
         <div v-for="(cm, i) in crewMembers" :key="i"
           class="rounded-lg border border-border bg-bg-alt p-4 space-y-3">
           <p class="text-meta font-semibold text-text-muted">Člen posádky {{ i + 1 }}</p>
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="input-label">Jméno</label>
               <input v-model="cm.firstName" required class="input-field" placeholder="Karel" />
