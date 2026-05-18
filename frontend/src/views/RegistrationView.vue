@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import { submitRegistration, fetchVehicles, createVehicle, fetchRacerProfile, type RegistrationResult, type CrewMemberInput, type VehicleData } from '@/api'
+import { submitRegistration, fetchVehicles, createVehicle, fetchRacerProfile, lookupUserByEmail, type RegistrationResult, type CrewMemberInput, type VehicleData } from '@/api'
 import { useAuth } from '@/composables/useAuth'
 
 const { isLoggedIn, authHeaders } = useAuth()
@@ -101,6 +101,25 @@ watch(selectedVehicleId, (id) => {
 })
 
 const hasVehicles = computed(() => myVehicles.value.length > 0)
+
+let emailLookupTimer: ReturnType<typeof setTimeout> | null = null
+
+async function lookupEmail(email: string, target: { firstName: string; lastName: string; phone: string }) {
+  if (!email || !email.includes('@')) return
+  try {
+    const user = await lookupUserByEmail(email)
+    if (user && user.firstName) {
+      target.firstName = target.firstName || user.firstName
+      target.lastName = target.lastName || user.lastName
+      target.phone = target.phone || user.phone
+    }
+  } catch { /* ignore */ }
+}
+
+function onEmailInput(email: string, target: { firstName: string; lastName: string; phone: string }) {
+  if (emailLookupTimer) clearTimeout(emailLookupTimer)
+  emailLookupTimer = setTimeout(() => lookupEmail(email, target), 500)
+}
 
 const selectedVariant = computed(() => VARIANTS.find(v => v.value === form.value.variant))
 
@@ -280,7 +299,7 @@ const qrUrl = computed(() => {
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label class="input-label">E-mail</label>
-          <input v-model="form.email" type="email" required class="input-field" :class="{ 'opacity-60': isLoggedIn }" placeholder="posadka@example.cz" :readonly="isLoggedIn" />
+          <input v-model="form.email" type="email" required class="input-field" :class="{ 'opacity-60': isLoggedIn }" placeholder="posadka@example.cz" :readonly="isLoggedIn" @input="!isLoggedIn && onEmailInput(form.email, form)" />
           <p v-if="isLoggedIn" class="text-meta text-text-soft mt-1">E-mail je převzat z tvého účtu</p>
         </div>
         <div>
@@ -360,7 +379,7 @@ const qrUrl = computed(() => {
           </div>
           <div>
             <label class="input-label">E-mail</label>
-            <input v-model="cm.email" type="email" required class="input-field" placeholder="clen@example.cz" />
+            <input v-model="cm.email" type="email" required class="input-field" placeholder="clen@example.cz" @input="onEmailInput(cm.email, cm)" />
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>

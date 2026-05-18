@@ -84,6 +84,18 @@ export async function lookupRacerByStartNumber(startNumber: number) {
   return res.json() as Promise<RacerLookup>
 }
 
+export interface UserLookup {
+  firstName: string
+  lastName: string
+  phone: string
+}
+
+export async function lookupUserByEmail(email: string) {
+  const res = await fetch(`${apiBaseUrl}/api/public/registrations/lookup-user?email=${encodeURIComponent(email)}`)
+  if (!res.ok) throw new Error(`API ${res.status}`)
+  return res.json() as Promise<UserLookup>
+}
+
 export interface ScoreSubmit {
   racerRegistrationId: number
   checkpointId: number

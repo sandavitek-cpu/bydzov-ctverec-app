@@ -148,6 +148,19 @@ public class RegistrationController {
     return rawPassword;
   }
 
+  @GetMapping("/lookup-user")
+  public ResponseEntity<?> lookupUserByEmail(String email) {
+    if (email == null || email.isBlank()) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Email is required"));
+    }
+    return userRepository.findByEmail(email.trim())
+        .map(u -> ResponseEntity.ok(Map.of(
+            "firstName", u.getFirstName(),
+            "lastName", u.getLastName(),
+            "phone", u.getPhone() != null ? u.getPhone() : "")))
+        .orElse(ResponseEntity.ok(Map.of()));
+  }
+
   @GetMapping("/lookup/{startNumber}")
   public ResponseEntity<?> lookupByStartNumber(@PathVariable Integer startNumber) {
     Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
