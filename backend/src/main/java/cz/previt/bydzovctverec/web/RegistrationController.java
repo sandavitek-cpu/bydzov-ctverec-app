@@ -201,6 +201,8 @@ public class RegistrationController {
     User user = new User(email, email, passwordEncoder.encode(rawPassword), UserRole.RACER,
         firstName, lastName, Instant.now());
     if (racerRole != null) user.getAppRoles().add(racerRole);
+    String phone = reg.getPhone() != null ? reg.getPhone().trim() : "";
+    user.setPhone(phone);
     userRepository.save(user);
     crewMemberRepository.save(new CrewMember(reg, user, firstName, lastName, email,
         driverAge, gender, address,

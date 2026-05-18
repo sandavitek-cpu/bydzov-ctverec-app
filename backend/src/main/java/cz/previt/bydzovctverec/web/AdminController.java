@@ -210,6 +210,7 @@ public class AdminController {
     }
     User user = new User(email, email, passwordEncoder.encode(rawPassword),
         UserRole.RACER, firstName, lastName, Instant.now());
+    user.setPhone(reg.getPhone());
     user.getAppRoles().addAll(roles);
     userRepository.save(user);
 
