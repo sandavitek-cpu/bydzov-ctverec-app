@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { fetchCeremonyCategories, fetchResults, type CeremonyCategory, type ResultRow } from '@/api'
+import { fetchCeremonyCategories, fetchResults, type CeremonyCategory } from '@/api'
 
 const route = useRoute()
 const year = ref(Number(route.params.rok) || new Date().getFullYear())
