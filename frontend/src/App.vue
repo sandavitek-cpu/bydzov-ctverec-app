@@ -148,6 +148,7 @@ async function toggleInfo() {
                   <div class="admin-sidebar-section">Administrace</div>
                   <RouterLink to="/admin/prihlaseni" class="dropdown-item">Přihlášky</RouterLink>
                   <RouterLink to="/admin/varianty" class="dropdown-item">Závod</RouterLink>
+                  <RouterLink to="/admin/kategorie" class="dropdown-item">Kategorie</RouterLink>
                   <RouterLink to="/admin/trasy" class="dropdown-item">Trasy</RouterLink>
                   <RouterLink to="/admin/stanoviste" class="dropdown-item">Stanoviště</RouterLink>
                   <RouterLink to="/admin/bodovani" class="dropdown-item">Bodování</RouterLink>

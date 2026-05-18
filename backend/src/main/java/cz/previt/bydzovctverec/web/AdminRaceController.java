@@ -3,6 +3,7 @@ package cz.previt.bydzovctverec.web;
 import cz.previt.bydzovctverec.domain.Edition;
 import cz.previt.bydzovctverec.domain.EditionRepository;
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,10 +30,7 @@ public class AdminRaceController {
     }
     return ResponseEntity.ok(Map.of(
         "started", edition.getRaceStartedAt() != null,
-        "finished", edition.getRaceFinishedAt() != null,
-        "startedAt", edition.getRaceStartedAt(),
-        "finishedAt", edition.getRaceFinishedAt()
-    ));
+        "finished", edition.getRaceFinishedAt() != null));
   }
 
   @PostMapping("/start")
@@ -47,7 +45,10 @@ public class AdminRaceController {
     }
     edition.setRaceStartedAt(Instant.now());
     editionRepository.save(edition);
-    return ResponseEntity.ok(Map.of("started", true, "startedAt", edition.getRaceStartedAt()));
+    Map<String, Object> resp = new LinkedHashMap<>();
+    resp.put("started", true);
+    resp.put("startedAt", edition.getRaceStartedAt());
+    return ResponseEntity.ok(resp);
   }
 
   @PostMapping("/finish")
@@ -62,7 +63,10 @@ public class AdminRaceController {
     }
     edition.setRaceFinishedAt(Instant.now());
     editionRepository.save(edition);
-    return ResponseEntity.ok(Map.of("finished", true, "finishedAt", edition.getRaceFinishedAt()));
+    Map<String, Object> resp = new LinkedHashMap<>();
+    resp.put("finished", true);
+    resp.put("finishedAt", edition.getRaceFinishedAt());
+    return ResponseEntity.ok(resp);
   }
 
   @PostMapping("/reset")
