@@ -321,10 +321,19 @@ async function saveEdit() {
       body: JSON.stringify(body),
     })
     if (!res.ok) throw new Error()
-    const updated = await res.json()
-    Object.assign(selected.value, updated)
+    const result = await res.json()
+    if (result.registration) {
+      Object.assign(selected.value, result.registration)
+      if (result.message) {
+        showToast(result.message, 'info')
+      } else {
+        showToast('Údaje uloženy', 'success')
+      }
+    } else {
+      Object.assign(selected.value, result)
+      showToast('Údaje uloženy', 'success')
+    }
     editing.value = false
-    showToast('Údaje uloženy', 'success')
     await fetchAll()
   } catch {
     showToast('Nepodařilo se uložit změny', 'error')
@@ -677,6 +686,10 @@ const variantLabel: Record<string, string> = {
                 <input type="number" v-model.number="editForm.crewCount" class="input-field w-full" min="1" max="10" />
               </div>
             </div>
+            <p v-if="selected && editForm.crewCount > (selected.crewMembers?.length || 0)"
+              class="text-body-sm text-warning">
+              Počet osob byl zvýšen na {{ editForm.crewCount }}, ale je evidováno pouze {{ selected.crewMembers?.length || 0 }} členů posádky. Doplňte zbývající členy.
+            </p>
             <div>
               <label class="text-label text-text-soft mb-1 block">První účast</label>
               <input type="checkbox" v-model="editForm.firstTime" class="cursor-pointer" />

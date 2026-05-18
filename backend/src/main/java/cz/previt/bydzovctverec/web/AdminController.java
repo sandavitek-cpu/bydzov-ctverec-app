@@ -145,8 +145,36 @@ public class AdminController {
     if (body.containsKey("properlyRegistered")) reg.setProperlyRegistered((Boolean) body.get("properlyRegistered"));
     if (body.containsKey("arrived")) reg.setArrived((Boolean) body.get("arrived"));
     if (body.containsKey("consent")) reg.setConsent((Boolean) body.get("consent"));
+
+    boolean feeAffected = body.containsKey("variant") || body.containsKey("vehicleYear") || body.containsKey("crewCount");
+    String message = null;
+    if (feeAffected) {
+      Integer oldFee = reg.getStartFee();
+      String variant = reg.getVariant();
+      int year = reg.getVehicleYear() != null ? reg.getVehicleYear() : 0;
+      int crew = reg.getCrewCount() != null ? reg.getCrewCount() : 1;
+      int newFee = RegistrationController.calculateFee(variant, year, crew);
+      if (newFee != oldFee) {
+        reg.setStartFee(newFee);
+        Integer paid = reg.getPaidAmount() != null ? reg.getPaidAmount() : 0;
+        if (newFee > paid) {
+          if ("PAID".equals(reg.getStatus())) {
+            reg.setPaidAt(null);
+          }
+          reg.setStatus("PENDING");
+          message = "Cena změněna na " + newFee + " Kč. Doplatek: " + (newFee - paid) + " Kč.";
+        } else if (newFee < paid) {
+          message = "Cena snížena na " + newFee + " Kč. Přeplatek: " + (paid - newFee) + " Kč.";
+        }
+      }
+    }
+
     racerRegistrationRepository.save(reg);
-    return ResponseEntity.ok(AdminRegistrationResponse.from(reg, crewMemberRepository.findByRegistration(reg)));
+    var response = AdminRegistrationResponse.from(reg, crewMemberRepository.findByRegistration(reg));
+    if (message != null) {
+      return ResponseEntity.ok(Map.of("registration", response, "message", message));
+    }
+    return ResponseEntity.ok(response);
   }
 
   @PostMapping("/{id}/approve")
