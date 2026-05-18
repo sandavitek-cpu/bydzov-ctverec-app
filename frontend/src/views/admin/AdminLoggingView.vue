@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { fetchLogLevel, setLogLevel, downloadLog } from '@/api'
 
 const router = useRouter()
@@ -69,7 +70,7 @@ onMounted(loadLevel)
       <h1 class="text-page-title text-text">Logování</h1>
     </div>
 
-    <p v-if="loading" class="text-body text-text-soft py-8 text-center">Načítám…</p>
+    <LoadingSpinner v-if="loading" />
 
     <div v-else class="grid gap-6 lg:grid-cols-2">
       <div class="card">

@@ -18,7 +18,9 @@ const showImpersonateModal = ref(false)
 const infoRef = ref<HTMLElement | null>(null)
 
 const isLoginPage = computed(() => route.path === '/admin/login')
-const showAdminSidebar = computed(() => isLoggedIn.value && route.path.startsWith('/admin') && !isLoginPage.value)
+const isAdminPage = computed(() => route.path.startsWith('/admin') && !isLoginPage.value)
+const showAdminSidebar = computed(() => isLoggedIn.value && isAdminPage.value)
+const sidebarCollapsed = ref(false)
 const mobileSidebarOpen = ref(false)
 const mobileNavOpen = ref(false)
 
@@ -131,7 +133,7 @@ async function toggleInfo() {
           <div v-else class="relative ml-2 flex items-center">
             <div class="group relative">
               <button
-                class="flex items-center gap-2 rounded-pill border border-border bg-surface px-4 py-1.5 text-label text-text-muted transition-colors hover:bg-bg-alt"
+                class="flex items-center gap-2 rounded-lg border border-border bg-surface px-4 py-1.5 text-label text-text-muted transition-colors hover:bg-bg-alt"
               >
                 <svg class="h-4 w-4 text-text-soft" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -141,33 +143,34 @@ async function toggleInfo() {
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
-              <div class="invisible absolute right-0 top-full z-40 mt-1 w-56 origin-top-right scale-95 rounded-xl border border-border bg-surface py-1 shadow-md transition-all duration-160 ease-out group-hover:visible group-hover:scale-100">
+              <div class="invisible absolute right-0 top-full z-40 mt-1 w-56 origin-top-right scale-95 dropdown-menu transition-all duration-160 ease-out group-hover:visible group-hover:scale-100">
                 <template v-if="hasAdmin">
                   <div class="admin-sidebar-section">Administrace</div>
-                  <RouterLink to="/admin/prihlaseni" class="admin-sidebar-item">Přihlášky</RouterLink>
-                  <RouterLink to="/admin/trasy" class="admin-sidebar-item">Trasy</RouterLink>
-                  <RouterLink to="/admin/stanoviste" class="admin-sidebar-item">Stanoviště</RouterLink>
-                  <RouterLink to="/admin/bodovani" class="admin-sidebar-item">Bodování</RouterLink>
-                  <RouterLink to="/admin/komunikace" class="admin-sidebar-item">Komunikace</RouterLink>
-                  <RouterLink to="/admin/changelog" class="admin-sidebar-item">ChangeLog</RouterLink>
-                  <RouterLink to="/admin/logovani" class="admin-sidebar-item">Logování</RouterLink>
-                  <RouterLink to="/admin/role" class="admin-sidebar-item">Role</RouterLink>
-                  <RouterLink to="/admin/uzivatele" class="admin-sidebar-item">Uživatelé</RouterLink>
-                  <button @click="showImpersonateModal = true" class="admin-sidebar-item w-full text-left">Přihlásit jako</button>
+                  <RouterLink to="/admin/prihlaseni" class="dropdown-item">Přihlášky</RouterLink>
+                  <RouterLink to="/admin/trasy" class="dropdown-item">Trasy</RouterLink>
+                  <RouterLink to="/admin/stanoviste" class="dropdown-item">Stanoviště</RouterLink>
+                  <RouterLink to="/admin/bodovani" class="dropdown-item">Bodování</RouterLink>
+                  <RouterLink to="/admin/komunikace" class="dropdown-item">Komunikace</RouterLink>
+                  <RouterLink to="/admin/changelog" class="dropdown-item">ChangeLog</RouterLink>
+                  <RouterLink to="/admin/logovani" class="dropdown-item">Logování</RouterLink>
+                  <RouterLink to="/admin/role" class="dropdown-item">Role</RouterLink>
+                  <RouterLink to="/admin/uzivatele" class="dropdown-item">Uživatelé</RouterLink>
+                  <button @click="showImpersonateModal = true" class="dropdown-item">Přihlásit jako</button>
                   <hr class="my-1 mx-3 border-border" />
                 </template>
                 <template v-if="hasJudge">
-                  <RouterLink to="/komisari" class="admin-sidebar-item">Komisaři</RouterLink>
+                  <RouterLink to="/komisari" class="dropdown-item">Komisaři</RouterLink>
                 </template>
                 <template v-if="hasRacer">
                   <div class="admin-sidebar-section">Závodník</div>
-                  <RouterLink to="/zavodnik/itinerar" class="admin-sidebar-item">Itinerář</RouterLink>
-                  <RouterLink to="/zavodnik/mapa" class="admin-sidebar-item">Mapa</RouterLink>
-                  <RouterLink to="/zavodnik/stav" class="admin-sidebar-item">Můj stav</RouterLink>
+                  <RouterLink to="/zavodnik/itinerar" class="dropdown-item">Itinerář</RouterLink>
+                  <RouterLink to="/zavodnik/mapa" class="dropdown-item">Mapa</RouterLink>
+                  <RouterLink to="/zavodnik/stav" class="dropdown-item">Můj stav</RouterLink>
+                  <RouterLink to="/zavodnik/vozidla" class="dropdown-item">Vozový park</RouterLink>
                 </template>
                 <hr class="my-1 mx-3 border-border" />
-                <RouterLink to="/ucet" class="admin-sidebar-item">Nastavení účtu</RouterLink>
-                <button @click="onLogout" class="admin-sidebar-item w-full text-left text-text-soft">Odhlásit</button>
+                <RouterLink to="/ucet" class="dropdown-item">Nastavení účtu</RouterLink>
+                <button @click="onLogout" class="dropdown-item text-text-soft">Odhlásit</button>
               </div>
             </div>
 
@@ -238,6 +241,7 @@ async function toggleInfo() {
                 <RouterLink to="/zavodnik/itinerar" class="mobile-nav-item" @click="closeMobileNav">Itinerář</RouterLink>
                 <RouterLink to="/zavodnik/mapa" class="mobile-nav-item" @click="closeMobileNav">Mapa</RouterLink>
                 <RouterLink to="/zavodnik/stav" class="mobile-nav-item" @click="closeMobileNav">Můj stav</RouterLink>
+                <RouterLink to="/zavodnik/vozidla" class="mobile-nav-item" @click="closeMobileNav">Vozový park</RouterLink>
               </template>
               <hr class="my-2 border-border" />
               <RouterLink to="/ucet" class="mobile-nav-item" @click="closeMobileNav">Nastavení účtu</RouterLink>
@@ -249,7 +253,7 @@ async function toggleInfo() {
     </header>
 
     <!-- Mobile menu button -->
-    <button v-if="showAdminSidebar" @click="mobileSidebarOpen = !mobileSidebarOpen" class="fixed bottom-4 right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white shadow-lg md:hidden">
+    <button v-if="showAdminSidebar" @click="mobileSidebarOpen = !mobileSidebarOpen" class="fixed bottom-4 right-4 z-50 flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-white shadow-lg md:hidden">
       <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path v-if="!mobileSidebarOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
         <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -260,20 +264,66 @@ async function toggleInfo() {
     <div v-if="mobileSidebarOpen && showAdminSidebar" class="fixed inset-0 z-30 bg-black/30 md:hidden" @click="mobileSidebarOpen = false"></div>
 
     <!-- Main content area -->
-    <div class="mx-auto w-full max-w-wide flex-1 flex flex-col">
+    <div class="mx-auto w-full flex-1 flex flex-col" :class="isAdminPage ? 'max-w-none' : 'max-w-wide'">
       <div v-if="showAdminSidebar" class="flex flex-1">
-        <aside :class="['w-56 shrink-0 admin-sidebar', mobileSidebarOpen ? 'fixed inset-y-0 left-0 z-40 block' : 'hidden md:block']">
-          <nav class="py-4">
-            <div class="admin-sidebar-section">Administrace</div>
-            <RouterLink to="/admin/prihlaseni" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Přihlášky</RouterLink>
-            <RouterLink to="/admin/trasy" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Trasy</RouterLink>
-            <RouterLink to="/admin/stanoviste" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Stanoviště</RouterLink>
-            <RouterLink to="/admin/bodovani" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Bodování</RouterLink>
-            <RouterLink to="/admin/komunikace" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Komunikace</RouterLink>
-            <RouterLink to="/admin/changelog" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">ChangeLog</RouterLink>
-            <RouterLink to="/admin/logovani" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Logování</RouterLink>
-            <RouterLink to="/admin/role" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Role</RouterLink>
-            <RouterLink to="/admin/uzivatele" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Uživatelé</RouterLink>
+        <aside :class="[
+          sidebarCollapsed ? 'w-14' : 'w-56',
+          'shrink-0 admin-sidebar transition-all duration-200',
+          mobileSidebarOpen ? 'fixed inset-y-0 left-0 z-40 block' : 'hidden md:block'
+        ]">
+          <div class="flex items-center justify-end p-2">
+            <button @click="sidebarCollapsed = !sidebarCollapsed"
+              class="flex h-8 w-8 items-center justify-center rounded-md text-text-soft hover:bg-surface-strong transition-colors max-md:hidden"
+              :title="sidebarCollapsed ? 'Rozbalit menu' : 'Sbalit menu'"
+            >
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path v-if="!sidebarCollapsed" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+          <nav class="py-2">
+            <template v-if="sidebarCollapsed">
+              <RouterLink to="/admin/prihlaseni" class="flex items-center justify-center h-12 text-text-soft hover:text-primary hover:bg-surface-2 transition-colors" title="Přihlášky" active-class="!text-primary" @click="mobileSidebarOpen = false">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+              </RouterLink>
+              <RouterLink to="/admin/trasy" class="flex items-center justify-center h-12 text-text-soft hover:text-primary hover:bg-surface-2 transition-colors" title="Trasy" active-class="!text-primary" @click="mobileSidebarOpen = false">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+              </RouterLink>
+              <RouterLink to="/admin/stanoviste" class="flex items-center justify-center h-12 text-text-soft hover:text-primary hover:bg-surface-2 transition-colors" title="Stanoviště" active-class="!text-primary" @click="mobileSidebarOpen = false">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              </RouterLink>
+              <RouterLink to="/admin/bodovani" class="flex items-center justify-center h-12 text-text-soft hover:text-primary hover:bg-surface-2 transition-colors" title="Bodování" active-class="!text-primary" @click="mobileSidebarOpen = false">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+              </RouterLink>
+              <RouterLink to="/admin/komunikace" class="flex items-center justify-center h-12 text-text-soft hover:text-primary hover:bg-surface-2 transition-colors" title="Komunikace" active-class="!text-primary" @click="mobileSidebarOpen = false">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+              </RouterLink>
+              <RouterLink to="/admin/changelog" class="flex items-center justify-center h-12 text-text-soft hover:text-primary hover:bg-surface-2 transition-colors" title="ChangeLog" active-class="!text-primary" @click="mobileSidebarOpen = false">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </RouterLink>
+              <RouterLink to="/admin/logovani" class="flex items-center justify-center h-12 text-text-soft hover:text-primary hover:bg-surface-2 transition-colors" title="Logování" active-class="!text-primary" @click="mobileSidebarOpen = false">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              </RouterLink>
+              <RouterLink to="/admin/role" class="flex items-center justify-center h-12 text-text-soft hover:text-primary hover:bg-surface-2 transition-colors" title="Role" active-class="!text-primary" @click="mobileSidebarOpen = false">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              </RouterLink>
+              <RouterLink to="/admin/uzivatele" class="flex items-center justify-center h-12 text-text-soft hover:text-primary hover:bg-surface-2 transition-colors" title="Uživatelé" active-class="!text-primary" @click="mobileSidebarOpen = false">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+              </RouterLink>
+            </template>
+            <template v-else>
+              <div class="admin-sidebar-section">Administrace</div>
+              <RouterLink to="/admin/prihlaseni" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Přihlášky</RouterLink>
+              <RouterLink to="/admin/trasy" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Trasy</RouterLink>
+              <RouterLink to="/admin/stanoviste" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Stanoviště</RouterLink>
+              <RouterLink to="/admin/bodovani" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Bodování</RouterLink>
+              <RouterLink to="/admin/komunikace" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Komunikace</RouterLink>
+              <RouterLink to="/admin/changelog" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">ChangeLog</RouterLink>
+              <RouterLink to="/admin/logovani" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Logování</RouterLink>
+              <RouterLink to="/admin/role" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Role</RouterLink>
+              <RouterLink to="/admin/uzivatele" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Uživatelé</RouterLink>
+            </template>
           </nav>
         </aside>
         <main class="flex-1 px-4 lg:px-8 py-8">
@@ -372,7 +422,7 @@ async function toggleInfo() {
   font-size: 0.875rem;
   color: var(--text-muted, #4B5563);
   text-decoration: none;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   transition: background 0.15s, color 0.15s;
 }
 .mobile-nav-item:hover,

@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { apiBaseUrl, sendNotify, type NotifyResult, type MessageLogEntry } from '@/api'
 
 const router = useRouter()
@@ -111,7 +112,7 @@ onMounted(loadHistory)
       <div>
         <div class="card">
           <h2 class="text-subsection text-text mb-4">Historie odeslaných zpráv</h2>
-          <p v-if="loadingHistory" class="text-body-sm text-text-soft">Načítám…</p>
+          <LoadingSpinner v-if="loadingHistory" :small="true" />
           <div v-else-if="history.length === 0" class="text-body-sm text-text-soft">Zatím žádné zprávy.</div>
           <div v-else class="space-y-3 max-h-96 overflow-y-auto">
             <div v-for="entry in history" :key="entry.id"

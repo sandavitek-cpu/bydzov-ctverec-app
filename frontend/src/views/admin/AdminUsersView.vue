@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { apiBaseUrl, fetchAdminUsers, impersonateUser } from '@/api'
 
 const router = useRouter()
@@ -240,7 +241,7 @@ onMounted(async () => {
       <p v-if="error" class="mt-2 text-body-sm text-error">{{ error }}</p>
     </div>
 
-    <p v-if="loading" class="text-body text-text-soft py-8 text-center">Načítám…</p>
+    <LoadingSpinner v-if="loading" />
 
     <div v-else-if="users.length === 0" class="py-12 text-center">
       <p class="text-section-title text-text-soft">Žádní uživatelé</p>

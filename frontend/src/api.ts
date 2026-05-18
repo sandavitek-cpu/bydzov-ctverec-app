@@ -383,3 +383,52 @@ export async function updateAccount(data: { name?: string; email?: string; phone
   if (!res.ok) throw new Error(body.error ?? `API ${res.status}`)
   return body
 }
+
+export interface VehicleData {
+  id: number
+  vehicleMake: string
+  vehiclePlate: string
+  vehicleYear: number
+  vehicleCategory: string
+  engineDisplacement: number | null
+  power: number | null
+  maxSpeed: number | null
+  vehicleNotes: string | null
+  createdAt: string
+}
+
+export async function fetchVehicles(headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/racer/vehicles`, { headers })
+  if (!res.ok) throw new Error(`API ${res.status}`)
+  return res.json() as Promise<VehicleData[]>
+}
+
+export async function createVehicle(data: Partial<VehicleData>, headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/racer/vehicles`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...headers },
+    body: JSON.stringify(data),
+  })
+  const body = await res.json()
+  if (!res.ok) throw new Error(body.error ?? `API ${res.status}`)
+  return body as VehicleData
+}
+
+export async function updateVehicle(id: number, data: Partial<VehicleData>, headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/racer/vehicles/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...headers },
+    body: JSON.stringify(data),
+  })
+  const body = await res.json()
+  if (!res.ok) throw new Error(body.error ?? `API ${res.status}`)
+  return body as VehicleData
+}
+
+export async function deleteVehicle(id: number, headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/racer/vehicles/${id}`, {
+    method: 'DELETE',
+    headers,
+  })
+  if (!res.ok) throw new Error(`API ${res.status}`)
+}

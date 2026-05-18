@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { apiBaseUrl } from '@/api'
 
 const router = useRouter()
@@ -143,7 +144,7 @@ onMounted(() => { load() })
       </form>
     </div>
 
-    <p v-if="loading" class="text-body text-text-soft py-8 text-center">Načítám…</p>
+    <LoadingSpinner v-if="loading" />
     <p v-else-if="roles.length === 0" class="py-12 text-center">
       <span class="text-section-title text-text-soft">Žádné role</span>
     </p>

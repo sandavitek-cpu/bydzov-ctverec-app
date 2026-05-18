@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { apiBaseUrl } from '@/api'
 
 const router = useRouter()
@@ -92,7 +93,7 @@ onMounted(load)
       </div>
 
       <div>
-        <p v-if="loading" class="text-body text-text-soft py-8 text-center">Načítám…</p>
+        <LoadingSpinner v-if="loading" />
         <div v-else-if="entries.length === 0" class="card text-center text-text-soft py-8">
           Žádné záznamy
         </div>

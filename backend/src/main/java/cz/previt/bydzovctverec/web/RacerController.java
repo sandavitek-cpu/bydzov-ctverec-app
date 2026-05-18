@@ -166,7 +166,7 @@ public class RacerController {
     User user = (User) auth.getPrincipal();
     var crewMember = crewMemberRepository.findByUser(user).orElse(null);
     if (crewMember == null) {
-      return ResponseEntity.ok(Map.of("error", "Nejste přihlášen k závodu"));
+      return ResponseEntity.badRequest().body(Map.of("error", "Nejste přihlášen k závodu"));
     }
     RacerRegistration reg = crewMember.getRegistration();
 
@@ -178,7 +178,7 @@ public class RacerController {
     Instant now = Instant.now();
     reg.setCancelledAt(now);
     reg.setStatus("CANCELLED");
-    reg.setPaidAt(null);
+    reg.setApproved(false);
 
     Integer paid = reg.getPaidAmount() != null ? reg.getPaidAmount() : 0;
     if (paid > 0) {
@@ -189,6 +189,11 @@ public class RacerController {
         reg.setRefundAmount(paid * 75 / 100);
       }
     }
+
+    reg.setPaidAt(null);
+    reg.setPaidAmount(0);
+    reg.setStartNumber(null);
+    reg.setPaymentReference(null);
 
     racerRegistrationRepository.save(reg);
 

@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { apiBaseUrl, impersonateRegistration, assignStartNumber } from '@/api'
 
 const router = useRouter()
@@ -267,11 +268,14 @@ async function handleCancel(reg: AdminReg) {
       method: 'POST',
       headers: authHeaders(),
     })
-    if (!res.ok) throw new Error()
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      throw new Error(body.error ?? 'Storno selhalo')
+    }
     showToast('Přihláška stornována', 'info')
     await fetchAll()
-  } catch {
-    showToast('Storno selhalo', 'error')
+  } catch (e) {
+    showToast(e instanceof Error ? e.message : 'Storno selhalo', 'error')
   }
 }
 
@@ -460,7 +464,7 @@ const variantLabel: Record<string, string> = {
       </div>
     </div>
 
-    <p v-if="loading" class="text-body text-text-soft py-12 text-center">Načítám…</p>
+    <LoadingSpinner v-if="loading" />
     <p v-else-if="error" class="alert alert-error mb-4">{{ error }}</p>
 
     <div v-else-if="filtered.length === 0" class="py-12 text-center">

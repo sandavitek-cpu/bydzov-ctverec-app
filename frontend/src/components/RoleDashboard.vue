@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { apiBaseUrl, lookupRacerByStartNumber, submitScore } from '@/api'
 
 const { hasAdmin, hasJudge, hasRacer, name, authHeaders } = useAuth()
@@ -126,7 +127,7 @@ async function quickSubmit() {
 </script>
 
 <template>
-  <div v-if="loading" class="text-body text-text-soft py-8 text-center">Načítám…</div>
+  <LoadingSpinner v-if="loading" />
 
   <div v-else-if="error" class="alert alert-error">{{ error }}</div>
 

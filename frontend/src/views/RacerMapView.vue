@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { apiBaseUrl } from '@/api'
 import { fetchRoadRoute, addLocateControl } from '@/utils/mapUtils'
 import L from 'leaflet'
@@ -168,9 +169,7 @@ if (!isLoggedIn.value) router.push('/admin/login')
       </div>
     </div>
 
-    <div v-if="loading" class="flex h-[60vh] items-center justify-center rounded-xl border border-border text-body-sm text-text-soft">
-      Načítám mapu…
-    </div>
+    <LoadingSpinner v-if="loading" />
 
     <div v-if="error" class="mb-3 rounded-lg border border-warning bg-warning/10 px-4 py-2 text-warning text-body-sm">
       {{ error }}

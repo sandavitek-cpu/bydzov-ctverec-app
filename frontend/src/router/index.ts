@@ -17,6 +17,7 @@ import ArchiveView from '../views/ArchiveView.vue'
 import RacerItineraryView from '../views/RacerItineraryView.vue'
 import RacerStandingView from '../views/RacerStandingView.vue'
 import RacerMapView from '../views/RacerMapView.vue'
+import RacerVehiclesView from '../views/RacerVehiclesView.vue'
 import AccountSettingsView from '../views/AccountSettingsView.vue'
 
 const router = createRouter({
@@ -42,6 +43,7 @@ const router = createRouter({
     { path: '/zavodnik/itinerar', name: 'racer-itinerary', component: RacerItineraryView },
     { path: '/zavodnik/stav', name: 'racer-standing', component: RacerStandingView },
     { path: '/zavodnik/mapa', name: 'racer-map', component: RacerMapView },
+    { path: '/zavodnik/vozidla', name: 'racer-vehicles', component: RacerVehiclesView },
     { path: '/ucet', name: 'account', component: AccountSettingsView },
   ],
 })

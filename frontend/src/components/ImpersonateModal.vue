@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { apiBaseUrl, impersonateUser } from '@/api'
 
 const router = useRouter()
@@ -76,7 +77,7 @@ onMounted(async () => {
         <input v-model="searchQuery" placeholder="Hledat podle jména nebo emailu…" class="input-field pl-10" />
       </div>
 
-      <div v-if="loading" class="text-body text-text-soft py-8 text-center">Načítám…</div>
+      <LoadingSpinner v-if="loading" :small="true" />
 
       <div v-else-if="error" class="text-body-sm text-error text-center py-4">{{ error }}</div>
 

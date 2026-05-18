@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { apiBaseUrl } from '@/api'
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { addLocateControl, fetchRoadRoute } from '@/utils/mapUtils'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -539,7 +540,7 @@ onUnmounted(() => {
     </div>
 
     <!-- Route list -->
-    <p v-if="loading" class="text-body text-text-soft py-8 text-center">Načítám…</p>
+    <LoadingSpinner v-if="loading" />
 
     <div v-else-if="routes.length === 0 && !editing" class="card text-center text-text-soft py-8">
       Žádné trasy

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { apiBaseUrl, fetchResults, type ResultRow } from '@/api'
 import { Client, type IFrame } from '@stomp/stompjs'
 
@@ -92,7 +93,7 @@ const categoryLabel: Record<string, string> = {
       </div>
     </div>
 
-    <p v-if="loading" class="text-body text-text-soft py-12 text-center">Načítám…</p>
+    <LoadingSpinner v-if="loading" />
     <p v-else-if="error" class="alert alert-error">{{ error }}</p>
 
     <div v-else-if="results.length === 0" class="py-12 text-center">

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { fetchArchive, type ArchiveRow } from '@/api'
 
 const route = useRoute()
@@ -55,7 +56,7 @@ onMounted(async () => {
       </div>
     </div>
 
-    <p v-if="loading" class="text-body text-text-soft py-12 text-center">Načítám…</p>
+    <LoadingSpinner v-if="loading" />
     <p v-else-if="error" class="alert alert-error mt-6">{{ error }}</p>
 
     <div v-else-if="filtered.length === 0" class="py-12 text-center">

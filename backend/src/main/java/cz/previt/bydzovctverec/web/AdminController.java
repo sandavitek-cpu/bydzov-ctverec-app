@@ -238,7 +238,7 @@ public class AdminController {
     Instant now = Instant.now();
     reg.setCancelledAt(now);
     reg.setStatus("CANCELLED");
-    reg.setPaidAt(null);
+    reg.setApproved(false);
 
     Integer paid = reg.getPaidAmount() != null ? reg.getPaidAmount() : 0;
     if (paid > 0) {
@@ -249,6 +249,11 @@ public class AdminController {
         reg.setRefundAmount(paid * 75 / 100);
       }
     }
+
+    reg.setPaidAt(null);
+    reg.setPaidAmount(0);
+    reg.setStartNumber(null);
+    reg.setPaymentReference(null);
 
     racerRegistrationRepository.save(reg);
     log.info("Registration {} cancelled, refund={}", id, reg.getRefundAmount());

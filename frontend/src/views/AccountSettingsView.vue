@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { apiBaseUrl, fetchAccount } from '@/api'
 
 const router = useRouter()
@@ -100,7 +101,7 @@ async function changePassword() {
     <h1 class="text-page-title text-text">Nastavení účtu</h1>
     <p class="mt-2 text-body-lg text-text-muted">Upravte své základní údaje</p>
 
-    <div v-if="loading" class="mt-8 text-body text-text-soft">Načítám…</div>
+    <LoadingSpinner v-if="loading" />
 
     <!-- Profile form -->
     <form v-else @submit.prevent="save" class="mt-6 space-y-5">

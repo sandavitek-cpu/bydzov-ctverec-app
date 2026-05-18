@@ -5,6 +5,7 @@ import { useAuth } from '@/composables/useAuth'
 import CheckpointMap from '@/components/CheckpointMap.vue'
 import UserPickerModal from '@/components/UserPickerModal.vue'
 import { apiBaseUrl, createAdminCheckpoint, updateAdminCheckpoint, deleteAdminCheckpoint, fetchAdminUsers, fetchAdminRoutes, type AdminUser, type CheckpointData, type RouteData } from '@/api'
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { reverseGeocode } from '@/utils/mapUtils'
 
 const router = useRouter()
@@ -211,7 +212,7 @@ onMounted(async () => {
 
       <!-- List + Map -->
       <div class="space-y-4">
-        <p v-if="loading" class="text-body text-text-soft py-8 text-center">Načítám…</p>
+        <LoadingSpinner v-if="loading" />
 
         <div v-else-if="checkpoints.length === 0" class="card text-center text-text-soft py-8">
           Žádná stanoviště

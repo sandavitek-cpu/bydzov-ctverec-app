@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { apiBaseUrl, fetchRacerStatus } from '@/api'
 import QrPayment from '@/components/QrPayment.vue'
 
@@ -164,7 +165,10 @@ async function handleCancel() {
       method: 'POST',
       headers: authHeaders(),
     })
-    if (!res.ok) throw new Error()
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      throw new Error(body.error ?? 'Storno selhalo')
+    }
     const result = await res.json()
     showToast('Přihláška stornována', 'info')
     if (regStatus.value) {
@@ -173,8 +177,8 @@ async function handleCancel() {
       regStatus.value.refundAmount = result.refundAmount
     }
     await load()
-  } catch {
-    showToast('Storno selhalo', 'error')
+  } catch (e) {
+    showToast(e instanceof Error ? e.message : 'Storno selhalo', 'error')
   }
 }
 
@@ -192,7 +196,7 @@ if (!isLoggedIn.value) {
       </span>
     </div>
 
-    <p v-if="loading" class="text-body text-text-soft py-8 text-center">Načítám…</p>
+    <LoadingSpinner v-if="loading" />
     <p v-else-if="error" class="alert alert-error">{{ error }}</p>
 
     <template v-else-if="data">

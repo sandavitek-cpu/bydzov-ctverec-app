@@ -44,10 +44,10 @@ export default {
         accent: ['"Merriweather"', 'serif'],
       },
       borderRadius: {
-        sm: '6px',
-        md: '10px',
-        lg: '14px',
-        xl: '18px',
+        sm: '4px',
+        md: '6px',
+        lg: '8px',
+        xl: '12px',
         pill: '999px',
       },
       boxShadow: {

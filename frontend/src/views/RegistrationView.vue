@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { submitRegistration, type RegistrationResult, type CrewMemberInput } from '@/api'
+import { ref, computed, watch, onMounted } from 'vue'
+import { submitRegistration, fetchVehicles, createVehicle, type RegistrationResult, type CrewMemberInput, type VehicleData } from '@/api'
+import { useAuth } from '@/composables/useAuth'
+
+const { isLoggedIn, authHeaders } = useAuth()
 
 const VARIANTS = [
   { value: 'JEDNODENNI', label: 'Jednodenní závod', deadline: '6. 6. 2026' },
@@ -63,6 +66,35 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 const result = ref<RegistrationResult | null>(null)
 
+const myVehicles = ref<VehicleData[]>([])
+const selectedVehicleId = ref<number | null>(null)
+const saveToFleet = ref(false)
+const vehiclesLoaded = ref(false)
+
+onMounted(async () => {
+  if (isLoggedIn.value) {
+    try {
+      myVehicles.value = await fetchVehicles(authHeaders())
+    } catch { /* not critical */ }
+    vehiclesLoaded.value = true
+  }
+})
+
+function selectVehicle(id: number | string) {
+  const v = myVehicles.value.find(x => x.id === Number(id))
+  if (!v) return
+  form.value.vehicleCategory = v.vehicleCategory
+  form.value.vehicleMake = v.vehicleMake
+  form.value.vehiclePlate = v.vehiclePlate
+  form.value.vehicleYear = v.vehicleYear
+}
+
+watch(selectedVehicleId, (id) => {
+  if (id) selectVehicle(id)
+})
+
+const hasVehicles = computed(() => myVehicles.value.length > 0)
+
 const selectedVariant = computed(() => VARIANTS.find(v => v.value === form.value.variant))
 
 const feeConfig = computed(() => FEE[form.value.variant])
@@ -104,6 +136,16 @@ async function handleSubmit() {
       crewMembers: crewMembers.value.filter(m => m.firstName && m.lastName && m.email),
     })
     submitted.value = true
+    if (saveToFleet.value && isLoggedIn.value) {
+      try {
+        await createVehicle({
+          vehicleCategory: form.value.vehicleCategory,
+          vehicleMake: form.value.vehicleMake,
+          vehiclePlate: form.value.vehiclePlate,
+          vehicleYear: form.value.vehicleYear,
+        }, authHeaders())
+      } catch { /* non-critical */ }
+    }
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Chyba při odesílání'
   } finally {
@@ -240,6 +282,16 @@ const qrUrl = computed(() => {
       </div>
 
       <!-- Vehicle -->
+      <div v-if="hasVehicles" class="rounded-lg border border-border bg-bg-alt p-4">
+        <label class="input-label">Vybrat z mých vozidel</label>
+        <select v-model="selectedVehicleId" class="input-field w-full mt-1">
+          <option :value="null">– Nové vozidlo –</option>
+          <option v-for="v in myVehicles" :key="v.id" :value="v.id">
+            {{ v.vehicleMake }} ({{ v.vehiclePlate }}) – {{ v.vehicleYear }}
+          </option>
+        </select>
+      </div>
+
       <div>
         <label class="input-label">Typ vozidla</label>
         <div class="flex flex-col sm:flex-row gap-3">
@@ -275,6 +327,11 @@ const qrUrl = computed(() => {
           <input v-model.number="form.crewCount" type="number" required min="1" max="10" class="input-field" />
         </div>
       </div>
+
+      <label v-if="isLoggedIn" class="flex items-center gap-2 cursor-pointer">
+        <input type="checkbox" v-model="saveToFleet" class="accent-primary" />
+        <span class="text-body-sm text-text-muted">Uložit vozidlo do mého vozového parku</span>
+      </label>
 
       <!-- Crew members -->
       <div v-if="crewMembers.length > 0" class="space-y-4">
