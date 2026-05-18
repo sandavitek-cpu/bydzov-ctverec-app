@@ -48,9 +48,7 @@ frontend-build:
   stage: build
   image: node:20-alpine
   variables:
-    # SPA volá API na Renderu (obejde DNS api.bydzov-ctverec.cz, dokud není hotová)
     VITE_API_BASE_URL: "https://bydzov-ctverec-api.onrender.com"
-    # Pokud není v CI/CD variables nastaveno, Google tlačítko se nezobrazí
     VITE_GOOGLE_CLIENT_ID: "$VITE_GOOGLE_CLIENT_ID"
   script:
     - cd frontend
@@ -91,29 +89,33 @@ deploy-backend:
     - apk add --no-cache curl jq
     - |
       if [ -z "$RENDER_DEPLOY_HOOK" ]; then
-        echo "RENDER_DEPLOY_HOOK not set — skipping backend deploy"
+        echo "RENDER_DEPLOY_HOOK not set — skipping"
         exit 0
       fi
 
       echo "=== Spouštím deploy na Renderu ==="
-      RESPONSE=$(curl -s -X POST "$RENDER_DEPLOY_HOOK")
-      echo "$RESPONSE"
+      DEPLOY_RESPONSE=$(curl -s -X POST "$RENDER_DEPLOY_HOOK")
+      echo "Deploy hook odpoved: $DEPLOY_RESPONSE"
 
       if [ -z "$RENDER_API_KEY" ] || [ -z "$RENDER_SERVICE_ID" ]; then
-        echo "RENDER_API_KEY nebo RENDER_SERVICE_ID není nastaveno — deploy hook byl odeslán, ale průběh deploye nelze sledovat"
+        echo "RENDER_API_KEY nebo RENDER_SERVICE_ID není nastaveno — nelze sledovat průběh"
         exit 0
       fi
 
       echo "=== Sleduji průběh deploye (max 15 min) ==="
       for i in $(seq 1 45); do
         sleep 20
-        DEPLOY=$(curl -s -H "Authorization: Bearer $RENDER_API_KEY" \
+        DEPLOY=$(curl -s \
+          -H "Authorization: Bearer $RENDER_API_KEY" \
+          -H "Accept: application/json" \
           "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys?limit=1")
 
-        STATUS=$(echo "$DEPLOY" | jq -r '.[0].deploy.status // empty')
+        echo "[$i/45] API odpoved: $DEPLOY"
+
+        STATUS=$(echo "$DEPLOY" | jq -r 'if type == "array" then .[0].deploy.status else .message end // empty' 2>/dev/null || true)
 
         if [ -z "$STATUS" ] || [ "$STATUS" = "null" ]; then
-          echo "[$i/45] Čekám na zahájení deploye..."
+          echo "[$i/45] Status nezjisten, čekám..."
           continue
         fi
 
@@ -126,14 +128,13 @@ deploy-backend:
             ;;
           build_failed|update_failed|canceled|deactivated)
             echo "Deploy selhal: $STATUS"
-            echo "$DEPLOY" | jq '.[0].deploy'
             exit 1
             ;;
           created|queued|pre_deploy_in_progress|building|update_in_progress)
             echo "-> Deploy stále běží"
             ;;
           *)
-            echo "-> Neznámý status: $STATUS"
+            echo "-> Status: $STATUS (pokračuji)"
             ;;
         esac
       done
