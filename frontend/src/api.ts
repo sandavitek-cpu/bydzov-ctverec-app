@@ -17,6 +17,7 @@ export interface CrewMemberInput {
   gender: string
   address: string
   clubMember: boolean
+  clubName: string
   firstTime: boolean
 }
 

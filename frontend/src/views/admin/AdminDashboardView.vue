@@ -12,7 +12,7 @@ const { show: showToast } = useToast()
 interface CrewInfo {
   firstName: string; lastName: string; email: string
   driverAge: number | null; gender: string | null; address: string | null
-  clubMember: boolean; firstTime: boolean
+  clubMember: boolean; clubName: string | null; firstTime: boolean
 }
 
 interface AdminReg {
@@ -481,7 +481,7 @@ const variantLabel: Record<string, string> = {
                   <span v-if="cm.driverAge">Věk: {{ cm.driverAge }}</span>
                   <span v-if="cm.gender">{{ cm.gender === 'M' ? 'Muž' : cm.gender === 'Z' ? 'Žena' : cm.gender }}</span>
                   <span v-if="cm.address">{{ cm.address }}</span>
-                  <span v-if="cm.clubMember" class="text-primary">Člen klubu</span>
+                  <span v-if="cm.clubMember" class="text-primary">{{ cm.clubName ? 'Klub: ' + cm.clubName : 'Člen klubu' }}</span>
                   <span v-if="cm.firstTime" class="text-red">Nováček</span>
                 </div>
               </div>

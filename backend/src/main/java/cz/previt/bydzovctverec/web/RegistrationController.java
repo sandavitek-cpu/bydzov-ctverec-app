@@ -109,7 +109,9 @@ public class RegistrationController {
     if (request.crewMembers() != null) {
       for (var cm : request.crewMembers()) {
         String cmEmail = cm.email().trim();
-        String cmClub = Boolean.TRUE.equals(cm.clubMember()) ? "ano" : "";
+        String cmClub = Boolean.TRUE.equals(cm.clubMember())
+            ? (cm.clubName() != null && !cm.clubName().isBlank() ? cm.clubName().trim() : "ano")
+            : "";
         String cmPwd = createUser(cmEmail, cm.firstName().trim(), cm.lastName().trim(), racerRole, reg,
             cm.driverAge(), cm.gender(), cm.address(), cmClub, cm.firstTime());
         emailService.sendCredentials(cmEmail, cm.firstName() + " " + cm.lastName(), cmEmail,
@@ -138,7 +140,8 @@ public class RegistrationController {
     crewMemberRepository.save(new CrewMember(reg, user, firstName, lastName, email,
         driverAge, gender, address,
         club != null && !club.isBlank(),
-        firstTime));
+        firstTime,
+        club));
     return rawPassword;
   }
 

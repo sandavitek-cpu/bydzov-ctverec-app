@@ -51,7 +51,7 @@ const crewMembers = ref<CrewMemberInput[]>([])
 watch(() => form.value.crewCount, (n) => {
   const target = Math.max(0, n - 1)
   while (crewMembers.value.length < target) {
-    crewMembers.value.push({ firstName: '', lastName: '', email: '', driverAge: 0, gender: '', address: '', clubMember: false, firstTime: false })
+    crewMembers.value.push({ firstName: '', lastName: '', email: '', driverAge: 0, gender: '', address: '', clubMember: false, clubName: '', firstTime: false })
   }
   if (crewMembers.value.length > target) {
     crewMembers.value.splice(target)
@@ -216,6 +216,10 @@ const qrUrl = computed(() => {
           <span class="text-body-sm text-text-muted">Jste členem klubu?</span>
         </label>
       </div>
+      <div v-if="driverClubMember">
+        <label class="input-label">Název klubu</label>
+        <input v-model="form.club" class="input-field" placeholder="např. AMK Pardubice" />
+      </div>
 
       <!-- Contact -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -314,6 +318,10 @@ const qrUrl = computed(() => {
               <input type="checkbox" v-model="cm.clubMember" class="accent-primary" />
               <span class="text-body-sm text-text-muted">Člen klubu?</span>
             </label>
+          </div>
+          <div v-if="cm.clubMember">
+            <label class="input-label">Název klubu</label>
+            <input v-model="cm.clubName" class="input-field" placeholder="např. AMK Pardubice" />
           </div>
         </div>
       </div>

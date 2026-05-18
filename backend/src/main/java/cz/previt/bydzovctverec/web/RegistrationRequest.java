@@ -43,5 +43,6 @@ public record RegistrationRequest(
       @NotBlank String gender,
       @NotBlank String address,
       @NotNull Boolean clubMember,
-      @NotNull Boolean firstTime) {}
+      @NotNull Boolean firstTime,
+      String clubName) {}
 }
