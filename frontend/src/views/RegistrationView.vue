@@ -145,6 +145,19 @@ const feeBreakdown = computed(() => {
 
 async function handleSubmit() {
   error.value = null
+
+  const crewList = crewMembers.value.filter(m => m.firstName && m.lastName && m.email)
+  const emails = [form.value.email.toLowerCase(), ...crewList.map(m => m.email.toLowerCase())]
+  const seen = new Set<string>()
+  for (const e of emails) {
+    if (seen.has(e)) {
+      error.value = `Email ${e} je použit vícekrát. Každý účastník musí mít vlastní email.`
+      loading.value = false
+      return
+    }
+    seen.add(e)
+  }
+
   loading.value = true
   try {
     result.value = await submitRegistration({

@@ -79,6 +79,18 @@ public class RegistrationController {
     String lastName = request.lastName() != null ? request.lastName().trim() : "";
     String email = request.email() != null ? request.email().trim() : "";
 
+    java.util.Set<String> allEmails = new java.util.HashSet<>();
+    allEmails.add(email);
+    if (request.crewMembers() != null) {
+      for (var cm : request.crewMembers()) {
+        String cmEmail = cm.email().trim().toLowerCase();
+        if (!allEmails.add(cmEmail)) {
+          return ResponseEntity.badRequest().body(Map.of("error",
+              "Email " + cm.email() + " je již použit v této přihlášce. Každý účastník musí mít vlastní email."));
+        }
+      }
+    }
+
     RacerRegistration reg = new RacerRegistration(
         edition, request.teamName(), email, request.phone(),
         request.vehicleCategory(), request.vehicleMake() != null ? request.vehicleMake() : "",
