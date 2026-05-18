@@ -434,6 +434,24 @@ function clearUserSelection() {
 const variantLabel: Record<string, string> = {
   JEDNODENNI: 'Jednodenní', DVODENNI: 'Dvoudenní',
 }
+
+const variantDeadline: Record<string, string> = {
+  JEDNODENNI: '2026-06-06',
+  DVODENNI_UZAVRENO: '2026-04-30',
+  DVODENNI_BEZ_UBYTOVANI: '2026-04-30',
+}
+
+function overdueInfo(reg: AdminReg) {
+  if (reg.status === 'PAID' || reg.status === 'CANCELLED' || !reg.variant) return null
+  const deadline = variantDeadline[reg.variant]
+  if (!deadline) return null
+  const d = new Date(deadline)
+  const now = new Date()
+  if (now <= d) return null
+  const days = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24))
+  if (days <= 0) return null
+  return days
+}
 </script>
 
 <template>
@@ -580,6 +598,8 @@ const variantLabel: Record<string, string> = {
                 >{{ r.status === 'PAID' ? 'Přihlášen a zaplaceno' : 'Přihlášen, nezaplaceno' }}</button>
                 <span v-if="r.arrived" class="badge !bg-info/10 !text-info">Přijel</span>
                 <span v-if="r.firstTime" class="badge !bg-red/10 !text-red">Nový</span>
+                <span v-if="overdueInfo(r) !== null" class="badge !bg-warning/10 !text-warning"
+                  :title="'Splatnost ' + (variantDeadline[r.variant ?? ''] ?? '?')">Po splatnosti {{ overdueInfo(r) }} dní</span>
               </div>
             </td>
             <td class="text-right whitespace-nowrap">
