@@ -1,15 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import { submitRegistration, fetchVehicles, createVehicle, fetchRacerProfile, lookupUserByEmail, type RegistrationResult, type CrewMemberInput, type VehicleData } from '@/api'
+import { submitRegistration, fetchVehicles, createVehicle, fetchRacerProfile, lookupUserByEmail, fetchPublicVariants, type RegistrationResult, type CrewMemberInput, type VehicleData, type PublicVariant } from '@/api'
 import { useAuth } from '@/composables/useAuth'
 
 const { isLoggedIn, authHeaders } = useAuth()
 
-const VARIANTS = [
-  { value: 'JEDNODENNI', label: 'Jednodenní závod', deadline: '6. 6. 2026' },
-  { value: 'DVODENNI_UZAVRENO', label: 'Dvoudenní závod – UZAVŘENO', deadline: '30. 4. 2026' },
-  { value: 'DVODENNI_BEZ_UBYTOVANI', label: 'Dvoudenní závod bez ubytování', deadline: '30. 4. 2026' },
-]
+const VARIANTS = ref<{ value: string; label: string; deadline: string }[]>([])
 
 const VEHICLE_TYPES = [
   { value: 'AUTO', label: 'Automobil' },
@@ -72,6 +68,14 @@ const saveToFleet = ref(false)
 const vehiclesLoaded = ref(false)
 
 onMounted(async () => {
+  try {
+    const publicVariants = await fetchPublicVariants()
+    VARIANTS.value = publicVariants.map(v => ({
+      value: v.variantCode,
+      label: v.label,
+      deadline: v.registrationDeadline ? new Date(v.registrationDeadline + 'T00:00:00').toLocaleDateString('cs', { day: 'numeric', month: 'numeric', year: 'numeric' }) : '',
+    }))
+  } catch { /* not critical */ }
   if (isLoggedIn.value) {
     try {
       const profile = await fetchRacerProfile(authHeaders())
@@ -121,7 +125,7 @@ function onEmailInput(email: string, target: { firstName: string; lastName: stri
   emailLookupTimer = setTimeout(() => lookupEmail(email, target), 500)
 }
 
-const selectedVariant = computed(() => VARIANTS.find(v => v.value === form.value.variant))
+const selectedVariant = computed(() => VARIANTS.value.find(v => v.value === form.value.variant))
 
 const feeConfig = computed(() => FEE[form.value.variant])
 

@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
-import { apiBaseUrl, impersonateRegistration, assignStartNumber, fetchAdminUsers, type AdminUser } from '@/api'
+import { apiBaseUrl, impersonateRegistration, assignStartNumber, fetchAdminUsers, fetchAdminVariants, type AdminUser, type VariantConfig } from '@/api'
 
 const router = useRouter()
 const { isAdmin, authHeaders, logout, impersonateAs } = useAuth()
@@ -384,6 +384,7 @@ async function saveEdit() {
 onMounted(() => {
   fetchAll()
   fetchRaceStatus()
+  loadVariantConfigs()
 })
 
 const categoryLabel: Record<string, string> = {
@@ -435,22 +436,32 @@ const variantLabel: Record<string, string> = {
   JEDNODENNI: 'Jednodenní', DVODENNI: 'Dvoudenní',
 }
 
-const variantDeadline: Record<string, string> = {
-  JEDNODENNI: '2026-06-06',
-  DVODENNI_UZAVRENO: '2026-04-30',
-  DVODENNI_BEZ_UBYTOVANI: '2026-04-30',
-}
+const variantConfigs = ref<VariantConfig[]>([])
+
+const variantDeadline = computed(() => {
+  const map: Record<string, string> = {}
+  for (const vc of variantConfigs.value) {
+    if (vc.registrationDeadline) map[vc.variantCode] = vc.registrationDeadline
+  }
+  return map
+})
 
 function overdueInfo(reg: AdminReg) {
   if (reg.status === 'PAID' || reg.status === 'CANCELLED' || !reg.variant) return null
-  const deadline = variantDeadline[reg.variant]
+  const deadline = variantDeadline.value[reg.variant]
   if (!deadline) return null
-  const d = new Date(deadline)
+  const d = new Date(deadline + 'T00:00:00')
   const now = new Date()
   if (now <= d) return null
   const days = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24))
   if (days <= 0) return null
   return days
+}
+
+async function loadVariantConfigs() {
+  try {
+    variantConfigs.value = await fetchAdminVariants(authHeaders())
+  } catch { /* ok */ }
 }
 </script>
 

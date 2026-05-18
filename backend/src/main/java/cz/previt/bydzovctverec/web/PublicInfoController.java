@@ -1,7 +1,12 @@
 package cz.previt.bydzovctverec.web;
 
 import cz.previt.bydzovctverec.domain.ChangeLogEntryRepository;
+import cz.previt.bydzovctverec.domain.Edition;
 import cz.previt.bydzovctverec.domain.EditionRepository;
+import cz.previt.bydzovctverec.domain.VariantConfig;
+import cz.previt.bydzovctverec.domain.VariantConfigRepository;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,12 +20,14 @@ public class PublicInfoController {
   private final BuildProperties buildProperties;
   private final ChangeLogEntryRepository changelogRepository;
   private final EditionRepository editionRepository;
+  private final VariantConfigRepository variantConfigRepository;
 
   public PublicInfoController(BuildProperties buildProperties, ChangeLogEntryRepository changelogRepository,
-      EditionRepository editionRepository) {
+      EditionRepository editionRepository, VariantConfigRepository variantConfigRepository) {
     this.buildProperties = buildProperties;
     this.changelogRepository = changelogRepository;
     this.editionRepository = editionRepository;
+    this.variantConfigRepository = variantConfigRepository;
   }
 
   @GetMapping("/info")
@@ -42,5 +49,21 @@ public class PublicInfoController {
         "finishedAt", edition != null && edition.getRaceFinishedAt() != null ? edition.getRaceFinishedAt().toString() : null
     );
     return Map.of("version", version, "deployedAt", deployedAt, "changelog", changelog, "race", race);
+  }
+
+  @GetMapping("/variants")
+  public List<Map<String, Object>> variants() {
+    Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
+    if (edition == null) return List.of();
+    return variantConfigRepository.findByEdition(edition).stream()
+        .filter(VariantConfig::isEnabled)
+        .map(vc -> {
+          Map<String, Object> m = new LinkedHashMap<>();
+          m.put("variantCode", vc.getVariantCode());
+          m.put("label", vc.getLabel());
+          m.put("registrationDeadline", vc.getRegistrationDeadline() != null ? vc.getRegistrationDeadline().toString() : null);
+          m.put("raceDate", vc.getRaceDate() != null ? vc.getRaceDate().toString() : null);
+          return m;
+        }).toList();
   }
 }

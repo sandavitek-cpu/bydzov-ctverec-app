@@ -346,6 +346,62 @@ export async function fetchAdminUsers(headers: Record<string, string>, q?: strin
   return res.json() as Promise<AdminUser[]>
 }
 
+export interface VariantConfig {
+  id: number
+  variantCode: string
+  label: string
+  registrationDeadline: string | null
+  raceDate: string | null
+  enabled: boolean
+}
+
+export async function fetchAdminVariants(headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/variants`, { headers })
+  if (!res.ok) throw new Error(`API ${res.status}`)
+  return res.json() as Promise<VariantConfig[]>
+}
+
+export async function createAdminVariant(data: Partial<VariantConfig>, headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/variants`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...headers },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) throw new Error(`API ${res.status}`)
+  return res.json() as Promise<VariantConfig>
+}
+
+export async function updateAdminVariant(id: number, data: Partial<VariantConfig>, headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/variants/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...headers },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) throw new Error(`API ${res.status}`)
+  return res.json() as Promise<VariantConfig>
+}
+
+export async function deleteAdminVariant(id: number, headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/variants/${id}`, {
+    method: 'DELETE',
+    headers,
+  })
+  if (!res.ok) throw new Error(`API ${res.status}`)
+}
+
+export interface PublicVariant {
+  variantCode: string
+  label: string
+  registrationDeadline: string | null
+  raceDate: string | null
+}
+
+export async function fetchPublicVariants() {
+  const res = await fetch(`${apiBaseUrl}/api/public/variants`)
+  if (!res.ok) throw new Error(`API ${res.status}`)
+  return res.json() as Promise<PublicVariant[]>
+}
+
 export async function submitScore(data: ScoreSubmit, headers: Record<string, string>) {
   const res = await fetch(`${apiBaseUrl}/api/scores`, {
     method: 'POST',

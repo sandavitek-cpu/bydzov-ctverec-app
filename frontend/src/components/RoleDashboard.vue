@@ -208,6 +208,7 @@ async function quickSubmit() {
       <RouterLink to="/admin/stanoviste" class="btn-secondary no-underline">Stanoviště</RouterLink>
       <RouterLink to="/admin/komunikace" class="btn-secondary no-underline">Komunikace</RouterLink>
       <RouterLink to="/admin/uzivatele" class="btn-secondary no-underline">Uživatelé</RouterLink>
+      <RouterLink to="/admin/varianty" class="btn-secondary no-underline">Varianty</RouterLink>
     </div>
   </template>
 
