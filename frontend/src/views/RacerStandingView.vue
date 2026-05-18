@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import { useToast } from '@/composables/useToast'
 import { apiBaseUrl, fetchRacerStatus } from '@/api'
 import QrPayment from '@/components/QrPayment.vue'
 
 const router = useRouter()
 const { isLoggedIn, authHeaders, logout } = useAuth()
+const { show: showToast } = useToast()
 
 interface ScoreRow {
   checkpointName: string
@@ -23,15 +25,26 @@ interface StandingData {
   scores: ScoreRow[]
 }
 
+const FEE: Record<string, { baseDo1945: number; baseOd1946: number; extraPerson: number }> = {
+  JEDNODENNI: { baseDo1945: 500, baseOd1946: 800, extraPerson: 500 },
+  DVODENNI_UZAVRENO: { baseDo1945: 1000, baseOd1946: 1200, extraPerson: 1000 },
+  DVODENNI_BEZ_UBYTOVANI: { baseDo1945: 600, baseOd1946: 900, extraPerson: 600 },
+}
+
 const data = ref<StandingData | null>(null)
 const regStatus = ref<{
-  id: number; paymentReference: number; startFee: number; status: string; variant: string
-  startNumber: number; teamName: string
+  id: number; paymentReference: number; startFee: number; paidAmount: number | null; status: string; variant: string
+  startNumber: number; teamName: string; vehicleYear: number; vehicleMake: string; crewCount: number
+  vehicleCategory: string; vehiclePlate: string
 } | null>(null)
 const raceStatus = ref<{ started: boolean; finished: boolean } | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
 const registered = ref(true)
+const editing = ref(false)
+const editForm = ref<Record<string, any>>({})
+const saving = ref(false)
+const editMessage = ref<string | null>(null)
 let interval: ReturnType<typeof setInterval> | null = null
 
 async function load() {
@@ -84,6 +97,66 @@ onUnmounted(() => {
   if (interval) clearInterval(interval)
 })
 
+const previewFee = computed(() => {
+  const variant = editForm.value.variant
+  const cfg = variant && FEE[variant] ? FEE[variant] : null
+  if (!cfg) return 0
+  const year = editForm.value.vehicleYear || 0
+  const base = year < 1945 ? cfg.baseDo1945 : cfg.baseOd1946
+  return base + cfg.extraPerson * Math.max(0, (editForm.value.crewCount || 1) - 1)
+})
+
+function startEdit() {
+  if (!regStatus.value) return
+  editForm.value = {
+    variant: regStatus.value.variant,
+    vehicleMake: regStatus.value.vehicleMake,
+    vehicleYear: regStatus.value.vehicleYear,
+    crewCount: regStatus.value.crewCount,
+  }
+  editMessage.value = null
+  editing.value = true
+}
+
+function cancelEdit() {
+  editing.value = false
+  editMessage.value = null
+}
+
+async function saveEdit() {
+  saving.value = true
+  editMessage.value = null
+  try {
+    const res = await fetch(`${apiBaseUrl}/api/racer/registration`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify(editForm.value),
+    })
+    if (!res.ok) throw new Error()
+    const result = await res.json()
+    if (regStatus.value) {
+      regStatus.value.startFee = result.startFee
+      regStatus.value.status = result.status
+      regStatus.value.variant = result.variant || ''
+      regStatus.value.vehicleMake = result.vehicleMake || ''
+      regStatus.value.vehicleYear = result.vehicleYear
+      regStatus.value.crewCount = result.crewCount
+    }
+    if (result.message) {
+      editMessage.value = result.message
+      showToast(result.message, result.feeChanged ? 'info' : 'success')
+    } else {
+      showToast('Údaje uloženy', 'success')
+    }
+    editing.value = false
+    await load()
+  } catch {
+    showToast('Nepodařilo se uložit změny', 'error')
+  } finally {
+    saving.value = false
+  }
+}
+
 if (!isLoggedIn.value) {
   router.push('/admin/login')
 }
@@ -133,6 +206,60 @@ if (!isLoggedIn.value) {
         </div>
       </div>
       <p v-else class="text-body text-text-soft text-center py-8 mb-6">Zatím žádné body.</p>
+
+      <!-- Edit message -->
+      <div v-if="editMessage" class="alert" :class="editMessage.includes('pozastavena') ? 'alert-warning' : 'alert-success'">
+        {{ editMessage }}
+      </div>
+
+      <!-- Registration details & edit -->
+      <div v-if="regStatus" class="card !p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-subsection text-text">Přihláška</h2>
+          <button v-if="!editing" @click="startEdit" class="btn-secondary btn-xs">Upravit</button>
+        </div>
+
+        <div v-if="!editing" class="space-y-2 text-body-sm">
+          <div class="flex justify-between"><span class="text-text-soft">Varianta</span><span class="text-text">{{ regStatus.variant === 'JEDNODENNI' ? 'Jednodenní' : regStatus.variant === 'DVODENNI_UZAVRENO' ? 'Dvoudenní' : regStatus.variant === 'DVODENNI_BEZ_UBYTOVANI' ? 'Dvoudenní bez ubytování' : regStatus.variant }}</span></div>
+          <div class="flex justify-between"><span class="text-text-soft">Vozidlo</span><span class="text-text">{{ regStatus.vehicleMake }} ({{ regStatus.vehiclePlate }})</span></div>
+          <div class="flex justify-between"><span class="text-text-soft">Ročník</span><span class="text-text">{{ regStatus.vehicleYear }}</span></div>
+          <div class="flex justify-between"><span class="text-text-soft">Počet osob</span><span class="text-text">{{ regStatus.crewCount }}</span></div>
+        </div>
+
+        <div v-else class="space-y-3">
+          <div>
+            <label class="text-label text-text-soft mb-1 block">Varianta</label>
+            <select v-model="editForm.variant" class="input-field w-full">
+              <option value="JEDNODENNI">Jednodenní</option>
+              <option value="DVODENNI_UZAVRENO">Dvoudenní</option>
+              <option value="DVODENNI_BEZ_UBYTOVANI">Dvoudenní bez ubytování</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-label text-text-soft mb-1 block">Značka / typ</label>
+            <input v-model="editForm.vehicleMake" class="input-field w-full" />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-label text-text-soft mb-1 block">Ročník</label>
+              <input type="number" v-model.number="editForm.vehicleYear" class="input-field w-full" />
+            </div>
+            <div>
+              <label class="text-label text-text-soft mb-1 block">Počet osob</label>
+              <input type="number" v-model.number="editForm.crewCount" class="input-field w-full" min="1" max="10" />
+            </div>
+          </div>
+          <p v-if="previewFee !== regStatus.startFee" class="text-body-sm text-warning font-medium">
+            Nová cena: {{ previewFee }} Kč
+          </p>
+          <div class="flex gap-2 pt-2">
+            <button @click="saveEdit" :disabled="saving" class="btn-primary flex-1">
+              {{ saving ? 'Ukládám…' : 'Uložit' }}
+            </button>
+            <button @click="cancelEdit" class="btn-ghost">Zrušit</button>
+          </div>
+        </div>
+      </div>
 
       <!-- Payment -->
       <div v-if="regStatus" class="card !p-6">

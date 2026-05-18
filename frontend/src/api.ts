@@ -367,7 +367,7 @@ export async function fetchRacerStatus(headers: Record<string, string>) {
   if (!res.ok) throw new Error(`API ${res.status}`)
   return res.json() as Promise<{
     id: number; paymentReference: number; teamName: string; startNumber: number; startFee: number
-    status: string; variant: string; vehicleCategory: string; vehiclePlate: string
+    paidAmount: number | null; status: string; variant: string; vehicleCategory: string; vehiclePlate: string
     vehicleYear: number; vehicleMake: string; crewCount: number; approved: boolean
   }>
 }

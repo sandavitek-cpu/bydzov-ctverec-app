@@ -104,6 +104,9 @@ public class AdminController {
     reg.setStatus(newStatus);
     if ("PAID".equals(newStatus) && reg.getPaidAt() == null) {
       reg.setPaidAt(Instant.now());
+      if (reg.getPaidAmount() == null) {
+        reg.setPaidAmount(reg.getStartFee());
+      }
     } else if ("PENDING".equals(newStatus)) {
       reg.setPaidAt(null);
     }

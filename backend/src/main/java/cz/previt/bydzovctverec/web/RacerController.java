@@ -19,6 +19,7 @@ import cz.previt.bydzovctverec.domain.User;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -26,6 +27,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -84,6 +87,77 @@ public class RacerController {
         reg.getEmail(), reg.getVehiclePlate(), reg.getVehicleCategory()));
   }
 
+  @PutMapping("/registration")
+  @Transactional
+  public ResponseEntity<?> updateRegistration(Authentication auth, @RequestBody Map<String, Object> body) {
+    User user = (User) auth.getPrincipal();
+    var crewMember = crewMemberRepository.findByUser(user).orElse(null);
+    if (crewMember == null) {
+      return ResponseEntity.ok(Map.of("error", "Nejste přihlášen k závodu"));
+    }
+    RacerRegistration reg = crewMember.getRegistration();
+
+    Integer oldFee = reg.getStartFee();
+    Integer oldYear = reg.getVehicleYear();
+    String oldVariant = reg.getVariant();
+
+    if (body.containsKey("variant")) reg.setVariant((String) body.get("variant"));
+    if (body.containsKey("vehicleMake")) reg.setVehicleMake((String) body.get("vehicleMake"));
+    if (body.containsKey("vehicleYear")) reg.setVehicleYear(toInt(body.get("vehicleYear")));
+    if (body.containsKey("crewCount")) reg.setCrewCount(toInt(body.get("crewCount")));
+    if (body.containsKey("firstTime")) reg.setFirstTime((Boolean) body.get("firstTime"));
+    if (body.containsKey("gender")) reg.setGender((String) body.get("gender"));
+    if (body.containsKey("driverAge")) reg.setDriverAge(toInt(body.get("driverAge")));
+    if (body.containsKey("club")) reg.setClub((String) body.get("club"));
+    if (body.containsKey("address")) reg.setAddress((String) body.get("address"));
+    if (body.containsKey("youngestAge")) reg.setYoungestAge(toInt(body.get("youngestAge")));
+    if (body.containsKey("youngestName")) reg.setYoungestName((String) body.get("youngestName"));
+    if (body.containsKey("engineDisplacement")) reg.setEngineDisplacement(toInt(body.get("engineDisplacement")));
+    if (body.containsKey("power")) reg.setPower(toInt(body.get("power")));
+    if (body.containsKey("maxSpeed")) reg.setMaxSpeed(toInt(body.get("maxSpeed")));
+    if (body.containsKey("vehicleNotes")) reg.setVehicleNotes((String) body.get("vehicleNotes"));
+
+    String currentVariant = reg.getVariant();
+    Integer currentYear = reg.getVehicleYear() != null ? reg.getVehicleYear() : 0;
+    Integer currentCrew = reg.getCrewCount() != null ? reg.getCrewCount() : 1;
+    int newFee = RegistrationController.calculateFee(currentVariant, currentYear, currentCrew);
+
+    String message = null;
+    boolean feeChanged = false;
+
+    if (newFee != oldFee) {
+      feeChanged = true;
+      reg.setStartFee(newFee);
+
+      Integer paid = reg.getPaidAmount() != null ? reg.getPaidAmount() : 0;
+      if (newFee > paid) {
+        if ("PAID".equals(reg.getStatus())) {
+          reg.setPaidAt(null);
+        }
+        reg.setStatus("PENDING");
+        message = "Vaše přihláška byla pozastavena, protože jste provedl změnu údajů a je potřeba doplatit "
+            + (newFee - paid) + " Kč.";
+      } else if (newFee < paid) {
+        message = "Cena byla snížena. Kontaktujte organizátora pro vrácení přeplatku "
+            + (paid - newFee) + " Kč.";
+      }
+    }
+
+    racerRegistrationRepository.save(reg);
+
+    var m = new LinkedHashMap<String, Object>();
+    m.put("startFee", reg.getStartFee());
+    m.put("paidAmount", reg.getPaidAmount());
+    m.put("status", reg.getStatus());
+    m.put("variant", reg.getVariant());
+    m.put("vehicleMake", reg.getVehicleMake());
+    m.put("vehicleYear", reg.getVehicleYear());
+    m.put("crewCount", reg.getCrewCount());
+    m.put("feeChanged", feeChanged);
+    m.put("message", message);
+    return ResponseEntity.ok(m);
+  }
+
   @GetMapping("/status")
   public ResponseEntity<?> myStatus(Authentication auth) {
     User user = (User) auth.getPrincipal();
@@ -98,6 +172,7 @@ public class RacerController {
     m.put("teamName", reg.getTeamName());
     m.put("startNumber", reg.getStartNumber());
     m.put("startFee", reg.getStartFee());
+    m.put("paidAmount", reg.getPaidAmount());
     m.put("status", reg.getStatus());
     m.put("variant", reg.getVariant() != null ? reg.getVariant() : "");
     m.put("vehicleCategory", reg.getVehicleCategory());
@@ -194,6 +269,12 @@ public class RacerController {
         routePoints, checkpointData, totalDistance,
         totalScore, rank, sorted.size(),
         reg.getTeamName(), reg.getStartNumber()));
+  }
+
+  private Integer toInt(Object v) {
+    if (v == null) return null;
+    if (v instanceof Number n) return n.intValue();
+    try { return Integer.parseInt(v.toString()); } catch (NumberFormatException e) { return null; }
   }
 
   public record ScoreResponse(Long id, String checkpointName, Integer checkpointOrder, Integer points, String note) {}

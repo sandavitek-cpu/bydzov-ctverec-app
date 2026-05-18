@@ -62,6 +62,9 @@ public class RacerRegistration {
   @Column(name = "start_fee")
   private Integer startFee;
 
+  @Column(name = "paid_amount")
+  private Integer paidAmount;
+
   @Column(length = 20)
   private String status;
 
@@ -232,8 +235,10 @@ public class RacerRegistration {
   public String getVehiclePlate() { return vehiclePlate; }
 
   public Integer getVehicleYear() { return vehicleYear; }
+  public void setVehicleYear(Integer vehicleYear) { this.vehicleYear = vehicleYear; }
 
   public Integer getCrewCount() { return crewCount; }
+  public void setCrewCount(Integer crewCount) { this.crewCount = crewCount; }
 
   public Integer getStartNumber() { return startNumber; }
   public void setStartNumber(Integer startNumber) { this.startNumber = startNumber; }
@@ -241,6 +246,10 @@ public class RacerRegistration {
   public void setPaymentReference(Integer paymentReference) { this.paymentReference = paymentReference; }
 
   public Integer getStartFee() { return startFee; }
+  public void setStartFee(Integer startFee) { this.startFee = startFee; }
+
+  public Integer getPaidAmount() { return paidAmount; }
+  public void setPaidAmount(Integer paidAmount) { this.paidAmount = paidAmount; }
 
   public String getStatus() { return status; }
   public void setStatus(String status) { this.status = status; }
