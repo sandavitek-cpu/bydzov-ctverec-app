@@ -1,31 +1,75 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { fetchCeremonyCategories, type CeremonyCategory } from '@/api'
+import { fetchCeremonyCategories, fetchResults, type CeremonyCategory, type ResultRow } from '@/api'
 
 const route = useRoute()
 const year = ref(Number(route.params.rok) || new Date().getFullYear())
 const categories = ref<CeremonyCategory[]>([])
 const loading = ref(true)
-const revealed = ref<Set<number>>(new Set())
-const animating = ref<number | null>(null)
-const countdown = ref(0)
 const error = ref<string | null>(null)
 
-const currentCat = computed(() => {
-  return categories.value.find(c => c.id === animating.value) ?? null
-})
+interface CeremonyItem {
+  id: string
+  name: string
+  winnerName: string | null
+  winnerNumber: number | null
+  winnerPoints: number | null
+  rank?: number
+}
 
-const allRevealed = computed(() => {
-  return categories.value.length > 0 && categories.value.every(c => revealed.value.has(c.id))
-})
+const items = ref<CeremonyItem[]>([])
+const done = ref<Set<string>>(new Set())
+
+// Fullscreen ceremony state
+const fullscreen = ref(false)
+const fsCategory = ref<string>('')
+const fsCountdown = ref(0)
+const fsName = ref<string | null>(null)
+const fsNumber = ref<number | null>(null)
+const fsPoints = ref<number | null>(null)
+const fsPhase = ref<'idle' | 'countdown' | 'reveal'>('idle')
+let fsTimer: ReturnType<typeof setInterval> | null = null
 
 async function load() {
   loading.value = true
   error.value = null
   try {
-    const data = await fetchCeremonyCategories(year.value)
-    categories.value = data.categories
+    const [catData, resData] = await Promise.all([
+      fetchCeremonyCategories(year.value),
+      fetchResults(year.value).catch(() => null),
+    ])
+    categories.value = catData.categories
+
+    const all: CeremonyItem[] = []
+
+    // Top 3 from overall results
+    if (resData?.results) {
+      const sorted = [...resData.results].sort((a, b) => a.rank - b.rank).slice(0, 3)
+      for (const r of sorted) {
+        all.push({
+          id: `rank-${r.rank}`,
+          name: r.rank === 1 ? '1. místo' : r.rank === 2 ? '2. místo' : '3. místo',
+          winnerName: r.teamName,
+          winnerNumber: r.startNumber,
+          winnerPoints: r.totalPoints,
+          rank: r.rank,
+        })
+      }
+    }
+
+    // Categories
+    for (const c of catData.categories) {
+      all.push({
+        id: `cat-${c.id}`,
+        name: c.name,
+        winnerName: c.winnerName,
+        winnerNumber: c.winnerNumber,
+        winnerPoints: c.winnerPoints,
+      })
+    }
+
+    items.value = all
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Chyba načítání'
   } finally {
@@ -33,36 +77,87 @@ async function load() {
   }
 }
 
-function reveal(cat: CeremonyCategory) {
-  if (revealed.value.has(cat.id)) return
-  if (animating.value !== null) return
-  animating.value = cat.id
-  countdown.value = 3
-  const timer = setInterval(() => {
-    countdown.value--
-    if (countdown.value <= 0) {
-      clearInterval(timer)
-      revealed.value = new Set([...revealed.value, cat.id])
-      animating.value = null
+function announce(item: CeremonyItem) {
+  if (fsTimer) return
+  fullscreen.value = true
+  fsCategory.value = item.name
+  fsName.value = item.winnerName
+  fsNumber.value = item.winnerNumber
+  fsPoints.value = item.winnerPoints
+  fsPhase.value = 'countdown'
+  fsCountdown.value = 3
+
+  fsTimer = setInterval(() => {
+    fsCountdown.value--
+    if (fsCountdown.value <= 0) {
+      if (fsTimer) clearInterval(fsTimer)
+      fsTimer = null
+      fsPhase.value = 'reveal'
+      done.value = new Set([...done.value, item.id])
     }
   }, 800)
 }
 
-function resetAll() {
-  revealed.value = new Set()
-  animating.value = null
-  countdown.value = 0
+function closeFullscreen() {
+  if (fsTimer) {
+    clearInterval(fsTimer)
+    fsTimer = null
+  }
+  fullscreen.value = false
+  fsPhase.value = 'idle'
 }
+
+function resetAll() {
+  closeFullscreen()
+  done.value = new Set()
+}
+
+const podiumLabel: Record<number, string> = { 1: '🏆', 2: '🥈', 3: '🥉' }
 
 onMounted(load)
 </script>
 
 <template>
+  <!-- Fullscreen overlay -->
+  <Teleport to="body">
+    <div v-if="fullscreen"
+      class="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/90 transition-all duration-500"
+      @click="fsPhase === 'reveal' && closeFullscreen()"
+    >
+      <!-- Countdown phase -->
+      <template v-if="fsPhase === 'countdown'">
+        <div class="text-[15vw] font-black text-white animate-pulse select-none">
+          {{ fsCountdown }}
+        </div>
+        <p class="text-xl sm:text-2xl text-white/60 mt-4 tracking-widest uppercase">
+          {{ fsCountdown === 3 ? 'Připravte se…' : fsCountdown === 2 ? 'Bubnování… 🥁' : 'A vítězem se stává…' }}
+        </p>
+        <p class="text-lg sm:text-xl text-white/40 mt-2">{{ fsCategory }}</p>
+      </template>
+
+      <!-- Reveal phase -->
+      <template v-else>
+        <div class="text-8xl sm:text-[10vw] mb-6 animate-bounce">🏆</div>
+        <h2 class="text-xl sm:text-3xl text-white/60 mb-2">{{ fsCategory }}</h2>
+        <p v-if="fsName" class="text-5xl sm:text-[8vw] font-black text-white text-center px-4 leading-tight">
+          {{ fsName }}
+        </p>
+        <p v-else class="text-3xl text-white/40">Bez vítěze</p>
+        <div class="flex gap-6 mt-6 text-xl sm:text-2xl text-white/50">
+          <span v-if="fsNumber">#{{ fsNumber }}</span>
+          <span v-if="fsPoints != null">{{ fsPoints }} bodů</span>
+        </div>
+        <p class="mt-12 text-sm text-white/30">Kliknutím zavřete</p>
+      </template>
+    </div>
+  </Teleport>
+
+  <!-- Page content -->
   <div class="min-h-screen flex flex-col items-center justify-center px-4 py-8">
     <div class="w-full max-w-2xl">
       <div class="text-center mb-8">
         <h1 class="text-3xl font-bold text-text tracking-tight">Vyhlášení výsledků {{ year }}</h1>
-        <p class="text-body-sm text-text-soft mt-1">Kliknutím na kategorii odhalíte vítěze</p>
+        <p class="text-body-sm text-text-soft mt-1">Kliknutím na tlačítko Vyhlásit spustíte ceremoniál</p>
       </div>
 
       <div v-if="loading" class="text-center py-16">
@@ -72,60 +167,36 @@ onMounted(load)
       <p v-else-if="error" class="alert alert-error">{{ error }}</p>
 
       <div v-else class="space-y-4">
-        <button v-for="cat in categories" :key="cat.id"
-          @click="reveal(cat)"
-          :disabled="animating !== null && animating !== cat.id"
-          class="w-full text-left transition-all duration-500"
-          :class="revealed.has(cat.id)
-            ? 'opacity-100 cursor-default'
-            : 'hover:scale-[1.02] cursor-pointer'"
+        <div v-for="item in items" :key="item.id"
+          class="ceremony-card rounded-2xl border-2 p-6 text-center transition-all duration-300"
+          :class="done.has(item.id)
+            ? 'bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/30 dark:to-emerald-800/20 border-green-400'
+            : 'bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 border-gray-300 dark:border-gray-600'"
         >
-          <!-- Animated fanfare card -->
-          <div v-if="animating === cat.id"
-            class="ceremony-card bg-gradient-to-br from-yellow-50 to-amber-100 dark:from-yellow-900/30 dark:to-amber-800/20 border-2 border-yellow-400 rounded-2xl p-8 text-center"
-          >
-            <div class="text-6xl mb-4 animate-bounce">{{ countdown > 0 ? countdown : '🎉' }}</div>
-            <p v-if="countdown > 0" class="text-2xl font-bold text-yellow-700 dark:text-yellow-300 animate-pulse">
-              {{ cat.name }}
-            </p>
-            <p v-if="countdown === 3" class="text-lg text-yellow-600 dark:text-yellow-400 mt-2">Připravte se…</p>
-            <p v-if="countdown === 2" class="text-lg text-yellow-600 dark:text-yellow-400 mt-2">Bubnování… 🥁</p>
-            <p v-if="countdown === 1" class="text-lg text-yellow-600 dark:text-yellow-400 mt-2">A vítězem se stává…</p>
-          </div>
+          <div v-if="item.rank" class="text-5xl mb-2">{{ podiumLabel[item.rank] ?? '🏅' }}</div>
+          <h2 class="text-xl font-bold text-text mb-1">{{ item.name }}</h2>
 
-          <!-- Revealed card -->
-          <div v-else-if="revealed.has(cat.id)"
-            class="ceremony-card bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/30 dark:to-emerald-800/20 border-2 border-green-400 rounded-2xl p-8 text-center"
-          >
-            <div class="text-5xl mb-3">🏆</div>
-            <h2 class="text-xl font-bold text-text mb-1">{{ cat.name }}</h2>
-            <p v-if="cat.winnerName" class="text-3xl font-black text-green-700 dark:text-green-300 mt-2">
-              {{ cat.winnerName }}
-            </p>
-            <p v-else class="text-lg text-text-soft">Bez vítěze</p>
-            <div v-if="cat.winnerNumber" class="mt-2 text-lg text-text-soft">
-              Startovní číslo #{{ cat.winnerNumber }}
-            </div>
-            <div v-if="cat.winnerPoints != null" class="text-sm text-text-soft mt-1">
-              {{ cat.winnerPoints }} bodů
+          <div v-if="done.has(item.id)" class="mt-2">
+            <p class="text-2xl font-black text-green-700 dark:text-green-300">{{ item.winnerName || 'Bez vítěze' }}</p>
+            <div class="flex justify-center gap-4 mt-1 text-sm text-text-soft">
+              <span v-if="item.winnerNumber">#{{ item.winnerNumber }}</span>
+              <span v-if="item.winnerPoints != null">{{ item.winnerPoints }} b.</span>
             </div>
           </div>
 
-          <!-- Hidden card -->
-          <div v-else
-            class="ceremony-card bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded-2xl p-8 text-center hover:shadow-lg transition-shadow"
+          <button v-if="!done.has(item.id)" @click="announce(item)"
+            :disabled="fullscreen"
+            class="mt-4 btn-primary"
           >
-            <div class="text-4xl mb-2 opacity-40">❓</div>
-            <h2 class="text-lg font-bold text-text-muted">{{ cat.name }}</h2>
-            <p class="text-sm text-text-soft mt-1">Klikni pro odhalení</p>
-          </div>
-        </button>
+            {{ fullscreen ? 'Probíhá…' : 'Vyhlásit' }}
+          </button>
+        </div>
 
-        <p v-if="categories.length === 0" class="text-center text-text-soft py-8">
-          Žádné kategorie pro tento ročník.
+        <p v-if="items.length === 0" class="text-center text-text-soft py-8">
+          Žádné výsledky ani kategorie.
         </p>
 
-        <div v-if="allRevealed" class="text-center pt-6">
+        <div v-if="done.size === items.length && items.length > 0" class="text-center pt-6">
           <button @click="resetAll" class="btn-secondary">Resetovat</button>
         </div>
       </div>
