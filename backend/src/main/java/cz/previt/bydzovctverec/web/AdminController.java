@@ -558,6 +558,150 @@ Tým Novobydžovského čtverce
     }
   }
 
+  @GetMapping("/{id}/export/pdf")
+  public ResponseEntity<byte[]> exportSinglePdf(@PathVariable Long id) {
+    RacerRegistration r = racerRegistrationRepository.findById(id).orElse(null);
+    if (r == null) return ResponseEntity.badRequest().build();
+    Edition edition = r.getEdition();
+    List<CrewMember> crew = crewMemberRepository.findByRegistration(r);
+    String variantLabel = r.getVariant() != null ? switch (r.getVariant()) {
+      case "JEDNODENNI" -> "Jednodenní závod";
+      case "DVODENNI_UZAVRENO" -> "Dvoudenní závod – UZAVŘENO";
+      case "DVODENNI_BEZ_UBYTOVANI" -> "Dvoudenní závod bez ubytování";
+      default -> r.getVariant();
+    } : "—";
+    String catLabel = "AUTO".equals(r.getVehicleCategory()) ? "Automobil" : "Motocykl";
+    String stLabel = "PAID".equals(r.getStatus()) ? "Zaplaceno" : "Nezaplaceno";
+
+    StringBuilder crewHtml = new StringBuilder();
+    if (crew != null) {
+      for (CrewMember cm : crew) {
+        crewHtml.append("""
+          <tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td class="sign-col"></td></tr>
+        """.formatted(
+            escHtml(cm.getFirstName()), escHtml(cm.getLastName()), escHtml(cm.getEmail()),
+            cm.getDriverAge() != null ? cm.getDriverAge() : "",
+            "M".equals(cm.getGender()) ? "Muž" : "Z".equals(cm.getGender()) ? "Žena" : "",
+            escHtml(cm.getAddress())
+        ));
+      }
+    }
+
+    String html = """
+        <html><head><meta charset="UTF-8">
+        <style>
+          @page { margin: 1.8cm 1.5cm; }
+          body { font-family: sans-serif; font-size: 10pt; color: #1a1a2e; }
+          h1 { text-align: center; font-size: 14pt; margin: 0 0 2pt; }
+          .edition { text-align: center; font-size: 9pt; color: #666; margin-bottom: 16pt; }
+          .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12pt; }
+          .start-number { font-size: 18pt; font-weight: bold; background: #1a1a2e; color: white; padding: 6pt 14pt; border-radius: 4pt; }
+          .team-name { font-size: 13pt; font-weight: bold; }
+          .section { border: 1px solid #ccc; border-radius: 4pt; padding: 10pt; margin-bottom: 10pt; }
+          .section-title { font-size: 9pt; font-weight: bold; text-transform: uppercase; color: #666; margin-bottom: 6pt; letter-spacing: 0.5pt; }
+          .row { display: flex; gap: 12pt; margin-bottom: 3pt; }
+          .field { flex: 1; }
+          .label { font-size: 7.5pt; color: #999; text-transform: uppercase; }
+          .value { font-size: 10pt; font-weight: 500; }
+          .status-badge { display: inline-block; padding: 2pt 8pt; border-radius: 3pt; font-size: 8pt; font-weight: bold; }
+          .paid { background: #d4edda; color: #155724; }
+          .unpaid { background: #fff3cd; color: #856404; }
+          table { width: 100%%; border-collapse: collapse; font-size: 9pt; }
+          th { background: #f0f0f0; padding: 4pt 6pt; text-align: left; font-size: 7.5pt; text-transform: uppercase; color: #666; }
+          td { padding: 4pt 6pt; border-bottom: 1px solid #eee; }
+          .signature { margin-top: 16pt; }
+          .signature .line { border-top: 1px solid #333; width: 250pt; margin-top: 30pt; padding-top: 3pt; font-size: 8pt; color: #999; }
+          .footer { text-align: center; font-size: 7.5pt; color: #999; margin-top: 20pt; }
+        </style></head><body>
+        <h1>Novobydžovský čtverec</h1>
+        <p class="edition">%s — přihláška k prezenci</p>
+
+        <div class="header">
+          <div><span class="team-name">%s</span></div>
+          <div class="start-number">#%s</div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Údaje o vozidle a závodu</div>
+          <div class="row">
+            <div class="field"><div class="label">Varianta</div><div class="value">%s</div></div>
+            <div class="field"><div class="label">Kategorie</div><div class="value">%s</div></div>
+            <div class="field"><div class="label">Značka</div><div class="value">%s</div></div>
+          </div>
+          <div class="row">
+            <div class="field"><div class="label">SPZ</div><div class="value">%s</div></div>
+            <div class="field"><div class="label">Ročník</div><div class="value">%s</div></div>
+            <div class="field"><div class="label">Počet osob</div><div class="value">%s</div></div>
+          </div>
+          <div class="row">
+            <div class="field"><div class="label">Stav platby</div><div class="value"><span class="status-badge %s">%s</span></div></div>
+            <div class="field"><div class="label">Startovné</div><div class="value">%s Kč</div></div>
+            <div class="field"><div class="label">VS</div><div class="value">%s</div></div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Řidič</div>
+          <div class="row">
+            <div class="field"><div class="label">Jméno</div><div class="value">%s %s</div></div>
+            <div class="field"><div class="label">Věk</div><div class="value">%s</div></div>
+            <div class="field"><div class="label">Telefon</div><div class="value">%s</div></div>
+          </div>
+          <div class="row">
+            <div class="field"><div class="label">Email</div><div class="value">%s</div></div>
+            <div class="field"><div class="label">Bydliště</div><div class="value">%s</div></div>
+            <div class="field"><div class="label">Klub</div><div class="value">%s</div></div>
+          </div>
+        </div>
+        """.formatted(
+            edition.getLabel(),
+            escHtml(r.getTeamName()), r.getStartNumber(),
+            variantLabel, catLabel, escHtml(r.getVehicleMake()),
+            escHtml(r.getVehiclePlate()), r.getVehicleYear(), r.getCrewCount(),
+            "PAID".equals(r.getStatus()) ? "paid" : "unpaid", stLabel,
+            r.getStartFee(), r.getPaymentReference(),
+            escHtml(r.getFirstName()), escHtml(r.getLastName()),
+            r.getDriverAge(), escHtml(r.getPhone()),
+            escHtml(r.getEmail()), escHtml(r.getAddress()), escHtml(r.getClub())
+        );
+
+    if (!crewHtml.isEmpty()) {
+      html += """
+        <div class="section">
+          <div class="section-title">Ostatní členové posádky</div>
+          <table>
+          <tr><th>Jméno</th><th>Příjmení</th><th>Email</th><th>Věk</th><th>Pohlaví</th><th>Bydliště</th><th>Podpis</th></tr>
+          %s
+          </table>
+        </div>
+        """.formatted(crewHtml.toString());
+    }
+
+    html += """
+        <div class="signature">
+          <div class="line">Podpis řidiče</div>
+        </div>
+        <div class="footer">Vygenerováno z aplikace Novobydžovský čtverec</div>
+        </body></html>
+        """;
+
+    try {
+      ByteArrayOutputStream bos = new ByteArrayOutputStream();
+      ITextRenderer renderer = new ITextRenderer();
+      renderer.setDocumentFromString(html);
+      renderer.layout();
+      renderer.createPDF(bos);
+      String filename = "prihlaska_%d_%s.pdf".formatted(r.getStartNumber(), r.getTeamName().replaceAll("\\s+", "_"));
+      return ResponseEntity.ok()
+          .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"%s\"".formatted(filename))
+          .contentType(MediaType.APPLICATION_PDF)
+          .body(bos.toByteArray());
+    } catch (Exception e) {
+      log.error("Single PDF generation failed for registration {}", id, e);
+      return ResponseEntity.internalServerError().build();
+    }
+  }
+
   @GetMapping("/export")
   public ResponseEntity<String> exportCsv() {
     Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);

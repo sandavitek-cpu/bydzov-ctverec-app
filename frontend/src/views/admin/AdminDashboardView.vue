@@ -239,6 +239,21 @@ async function handleSendReminder(reg: AdminReg) {
   }
 }
 
+function downloadRegPdf(reg: AdminReg) {
+  const a = document.createElement('a')
+  a.href = `${apiBaseUrl}/api/admin/registrations/${reg.id}/export/pdf`
+  a.download = `prihlaska_${reg.startNumber}_${reg.teamName.replace(/\s+/g, '_')}.pdf`
+  fetch(a.href, { headers: authHeaders() })
+    .then(r => r.blob())
+    .then(blob => {
+      const url = URL.createObjectURL(blob)
+      a.href = url
+      a.click()
+      URL.revokeObjectURL(url)
+    })
+    .catch(() => showToast('Nepodařilo se stáhnout PDF', 'error'))
+}
+
 async function handleImpersonate(reg: AdminReg) {
   try {
     const result = await impersonateRegistration(reg.id, authHeaders())
@@ -621,6 +636,8 @@ async function loadVariantConfigs() {
                 <button v-if="r.status !== 'PAID'" @click="handleSendReminder(r)" :disabled="remindingId === r.id"
                   class="btn-ghost btn-xs whitespace-nowrap" title="Odeslat upomínku o nezaplacení"
                 >{{ remindingId === r.id ? '…' : 'Upomínka' }}</button>
+                <button @click="downloadRegPdf(r)" class="btn-ghost btn-xs whitespace-nowrap" title="Stáhnout přihlášku k prezenci (PDF)"
+                >PDF</button>
                 <button @click="handleImpersonate(r)"
                   class="btn-ghost btn-xs"
                   title="Přihlásit jako tento tým"
@@ -758,6 +775,9 @@ async function loadVariantConfigs() {
             <button v-if="selected.status !== 'PAID'" @click="handleSendReminder(selected)" :disabled="remindingId === selected.id"
               class="btn-secondary btn-xs">
               {{ remindingId === selected.id ? '…' : 'Poslat upomínku platby' }}
+            </button>
+            <button @click="downloadRegPdf(selected)" class="btn-secondary btn-xs">
+              PDF k prezenci
             </button>
           </div>
 
