@@ -53,6 +53,7 @@ export interface RegistrationResult {
   startFee: number
   status: string
   variant: string
+  paymentReference: number
 }
 
 export async function submitRegistration(data: RegistrationData) {
@@ -365,7 +366,7 @@ export async function fetchRacerStatus(headers: Record<string, string>) {
   const res = await fetch(`${apiBaseUrl}/api/racer/status`, { headers })
   if (!res.ok) throw new Error(`API ${res.status}`)
   return res.json() as Promise<{
-    id: number; teamName: string; startNumber: number; startFee: number
+    id: number; paymentReference: number; teamName: string; startNumber: number; startFee: number
     status: string; variant: string; vehicleCategory: string; vehiclePlate: string
     vehicleYear: number; vehicleMake: string; crewCount: number; approved: boolean
   }>

@@ -173,10 +173,8 @@ public class AdminController {
     reg.setApproved(true);
     racerRegistrationRepository.save(reg);
 
-    int paymentRef = reg.getStartNumber() != null && reg.getStartNumber() > 0
-        ? reg.getStartNumber() : reg.getId().intValue();
     emailService.sendCredentials(email, personName, email, rawPassword,
-        paymentRef, reg.getStartFee());
+        reg.getPaymentReference(), reg.getStartFee(), reg.getStartNumber());
 
     log.info("Registration {} approved, user {} created", id, email);
     return ResponseEntity.ok(Map.of("approved", true, "email", email));
@@ -202,10 +200,8 @@ public class AdminController {
       u.setPassword(passwordEncoder.encode(rawPassword));
       userRepository.save(u);
       String personName = cm.getFirstName() + " " + cm.getLastName();
-      int ref = reg.getStartNumber() != null && reg.getStartNumber() > 0
-          ? reg.getStartNumber() : reg.getId().intValue();
       emailService.sendCredentials(cm.getEmail(), personName, cm.getEmail(), rawPassword,
-          ref, reg.getStartFee());
+          reg.getPaymentReference(), reg.getStartFee(), reg.getStartNumber());
       sent++;
     }
     log.info("Credentials resent for registration {} ({} users)", id, sent);

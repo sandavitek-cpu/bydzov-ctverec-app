@@ -56,6 +56,9 @@ public class RacerRegistration {
   @Column(name = "start_number")
   private Integer startNumber;
 
+  @Column(name = "payment_reference")
+  private Integer paymentReference;
+
   @Column(name = "start_fee")
   private Integer startFee;
 
@@ -231,6 +234,8 @@ public class RacerRegistration {
 
   public Integer getStartNumber() { return startNumber; }
   public void setStartNumber(Integer startNumber) { this.startNumber = startNumber; }
+  public Integer getPaymentReference() { return paymentReference; }
+  public void setPaymentReference(Integer paymentReference) { this.paymentReference = paymentReference; }
 
   public Integer getStartFee() { return startFee; }
 

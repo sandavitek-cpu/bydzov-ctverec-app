@@ -19,7 +19,7 @@ interface AdminReg {
   id: number; teamName: string; email: string; phone: string
   vehicleCategory: string; vehicleMake: string; vehiclePlate: string
   vehicleYear: number; crewCount: number; startNumber: number
-  startFee: number; status: string; variant: string | null
+  startFee: number; paymentReference: number | null; status: string; variant: string | null
   firstName: string | null; lastName: string | null; firstTime: boolean
   gender: string | null; driverAge: number | null; club: string | null
   address: string | null; youngestAge: number | null; youngestName: string | null
@@ -547,6 +547,7 @@ const variantLabel: Record<string, string> = {
           <div class="grid grid-cols-2 gap-4 text-body-sm">
             <div><span class="text-text-soft">Email:</span><br /><span class="text-text">{{ selected.email }}</span></div>
             <div><span class="text-text-soft">Telefon:</span><br /><span class="text-text">{{ selected.phone }}</span></div>
+            <div v-if="selected.paymentReference"><span class="text-text-soft">VS:</span><br /><span class="text-text font-mono">{{ selected.paymentReference }}</span></div>
           </div>
 
           <!-- Fee -->

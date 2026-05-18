@@ -12,4 +12,5 @@ public record RegistrationResponse(
     Integer startNumber,
     Integer startFee,
     String status,
-    String variant) {}
+    String variant,
+    Integer paymentReference) {}

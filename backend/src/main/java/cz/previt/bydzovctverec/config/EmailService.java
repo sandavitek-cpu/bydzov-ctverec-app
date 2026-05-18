@@ -31,8 +31,12 @@ public class EmailService {
   }
 
   public void sendCredentials(String to, String personName, String login, String password, Integer paymentReference, Integer startFee) {
-    String startNumberLine = paymentReference > 0
-        ? "Startovní číslo Vaší posádky: %d".formatted(paymentReference)
+    sendCredentials(to, personName, login, password, paymentReference, startFee, null);
+  }
+
+  public void sendCredentials(String to, String personName, String login, String password, Integer paymentReference, Integer startFee, Integer startNumber) {
+    String startNumberLine = startNumber != null && startNumber > 0
+        ? "Startovní číslo Vaší posádky: %d".formatted(startNumber)
         : "Startovní číslo bude přiděleno po zaplacení.";
     String body = """
 Dobrý den %s,
@@ -46,6 +50,7 @@ Vaše přihlašovací údaje:
 %s
 Startovné: %d Kč
 Variabilní symbol: %d
+(Pro platbu použijte variabilní symbol výše.)
 
 Po přihlášení uvidíte itinerář, mapu a stav Vaší přihlášky:
 https://app.bydzov-ctverec.cz

@@ -143,7 +143,7 @@ const qrUrl = computed(() => {
         <div class="mt-4 space-y-2">
           <p class="text-body text-text-muted">Částka: <strong class="text-text">{{ result.startFee }} Kč</strong></p>
           <p class="text-body text-text-muted">Bankovní účet: <span class="font-mono font-semibold text-text">1086360369/0800</span></p>
-          <p class="text-body text-text-muted">Variabilní symbol: <span class="font-mono font-semibold text-text">{{ result.id }}</span></p>
+          <p class="text-body text-text-muted">Variabilní symbol: <span class="font-mono font-semibold text-text">{{ result.paymentReference }}</span></p>
           <p class="text-meta text-text-soft mt-2">Splatnost startovného je 14 dnů od vyplnění přihlášky, nejpozději však do uzávěrky přihlášky.</p>
         </div>
       </div>

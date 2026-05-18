@@ -97,13 +97,17 @@ public class RegistrationController {
 
     racerRegistrationRepository.save(reg);
 
+    int paymentRef = generatePaymentReference(edition);
+    reg.setPaymentReference(paymentRef);
+    racerRegistrationRepository.save(reg);
+
     var racerRole = appRoleRepository.findByName("RACER").orElse(null);
 
     String driverPwd = createUser(email, firstName, lastName, racerRole, reg,
         request.driverAge(), request.gender(), request.address(),
         request.club(), request.firstTime());
     emailService.sendCredentials(email, firstName + " " + lastName, email, driverPwd,
-        reg.getId().intValue(), startFee);
+        paymentRef, startFee);
 
     if (request.crewMembers() != null) {
       for (var cm : request.crewMembers()) {
@@ -114,7 +118,7 @@ public class RegistrationController {
         String cmPwd = createUser(cmEmail, cm.firstName().trim(), cm.lastName().trim(), racerRole, reg,
             cm.driverAge(), cm.gender(), cm.address(), cmClub, cm.firstTime());
         emailService.sendCredentials(cmEmail, cm.firstName() + " " + cm.lastName(), cmEmail,
-            cmPwd, reg.getId().intValue(), startFee);
+            cmPwd, paymentRef, startFee);
       }
     }
 
@@ -125,7 +129,7 @@ public class RegistrationController {
         reg.getId(), reg.getTeamName(), email, reg.getPhone(),
         reg.getVehicleCategory(), reg.getVehiclePlate(), reg.getVehicleYear(),
         reg.getCrewCount(), reg.getStartNumber(), reg.getStartFee(),
-        reg.getStatus(), reg.getVariant()));
+        reg.getStatus(), reg.getVariant(), paymentRef));
   }
 
   private String createUser(String email, String firstName, String lastName, AppRole racerRole,
@@ -159,6 +163,16 @@ public class RegistrationController {
             "vehicleCategory", r.getVehicleCategory(),
             "vehiclePlate", r.getVehiclePlate())))
         .orElse(ResponseEntity.notFound().build());
+  }
+
+  private int generatePaymentReference(Edition edition) {
+    return racerRegistrationRepository
+        .findTopByEditionOrderByPaymentReferenceDesc(edition)
+        .map(r -> {
+          Integer ref = r.getPaymentReference();
+          return ref != null ? ref + 1 : edition.getEditionYear() * 1000 + 1;
+        })
+        .orElse(edition.getEditionYear() * 1000 + 1);
   }
 
   public static int calculateFee(String variant, int vehicleYear, int crewCount) {

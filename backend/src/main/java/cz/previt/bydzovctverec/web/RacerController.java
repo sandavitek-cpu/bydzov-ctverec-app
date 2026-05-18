@@ -94,6 +94,7 @@ public class RacerController {
     RacerRegistration reg = crewMember.getRegistration();
     var m = new java.util.LinkedHashMap<String, Object>();
     m.put("id", reg.getId());
+    m.put("paymentReference", reg.getPaymentReference());
     m.put("teamName", reg.getTeamName());
     m.put("startNumber", reg.getStartNumber());
     m.put("startFee", reg.getStartFee());
