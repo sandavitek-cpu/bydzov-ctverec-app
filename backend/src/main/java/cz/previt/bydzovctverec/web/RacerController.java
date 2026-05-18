@@ -250,7 +250,9 @@ public class RacerController {
       return ResponseEntity.ok(List.of());
     }
     List<ScheduleItem> items = scheduleItemRepository.findByEditionOrderBySortOrder(edition);
-    return ResponseEntity.ok(items.stream().map(i -> new ScheduleItemResponse(i.getTime(), i.getLabel(), i.getDescription())).toList());
+    return ResponseEntity.ok(items.stream()
+        .map(i -> new ScheduleItemResponse(i.getId(), i.getTime(), i.getLabel(), i.getDescription(), i.getSortOrder()))
+        .toList());
   }
 
   @GetMapping("/checkpoints")
@@ -337,7 +339,7 @@ public class RacerController {
   }
 
   public record ScoreResponse(Long id, String checkpointName, Integer checkpointOrder, Integer points, String note) {}
-  public record ScheduleItemResponse(String time, String label, String description) {}
+  public record ScheduleItemResponse(Long id, String time, String label, String description, Integer sortOrder) {}
   public record StandingResponse(String teamName, Integer startNumber, int totalPoints, int rank, int totalRacers, List<ScoreResponse> scores, String email, String vehiclePlate, String vehicleCategory) {}
   public record CheckpointResponse(Long id, String name, Double lat, Double lng, Integer radius, Integer sortOrder, String taskDescription, Integer maxPoints, List<String> volunteers) {}
   public record RoutePointData(double lat, double lng, Double distanceFromStart) {}

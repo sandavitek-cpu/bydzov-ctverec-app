@@ -583,3 +583,47 @@ export async function fetchCeremonyCategories(year: number) {
   if (!res.ok) throw new Error(`API ${res.status}`)
   return res.json() as Promise<{ year: number; categories: CeremonyCategory[] }>
 }
+
+export interface ScheduleItemData {
+  id?: number
+  time: string
+  label: string
+  description: string | null
+  sortOrder: number
+}
+
+export async function fetchAdminSchedule(headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/schedule`, { headers })
+  if (!res.ok) throw new Error(`API ${res.status}`)
+  return res.json() as Promise<ScheduleItemData[]>
+}
+
+export async function createAdminScheduleItem(data: Partial<ScheduleItemData>, headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/schedule`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...headers },
+    body: JSON.stringify(data),
+  })
+  const body = await res.json()
+  if (!res.ok) throw new Error(body.error ?? `API ${res.status}`)
+  return body as ScheduleItemData
+}
+
+export async function updateAdminScheduleItem(id: number, data: Partial<ScheduleItemData>, headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/schedule/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...headers },
+    body: JSON.stringify(data),
+  })
+  const body = await res.json()
+  if (!res.ok) throw new Error(body.error ?? `API ${res.status}`)
+  return body as ScheduleItemData
+}
+
+export async function deleteAdminScheduleItem(id: number, headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/schedule/${id}`, {
+    method: 'DELETE',
+    headers,
+  })
+  if (!res.ok) throw new Error(`API ${res.status}`)
+}

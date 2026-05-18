@@ -47,7 +47,11 @@ public class ScheduleItem {
   public Long getId() { return id; }
   public Edition getEdition() { return edition; }
   public String getTime() { return time; }
+  public void setTime(String time) { this.time = time; }
   public String getLabel() { return label; }
+  public void setLabel(String label) { this.label = label; }
   public String getDescription() { return description; }
+  public void setDescription(String description) { this.description = description; }
   public Integer getSortOrder() { return sortOrder; }
+  public void setSortOrder(Integer sortOrder) { this.sortOrder = sortOrder; }
 }

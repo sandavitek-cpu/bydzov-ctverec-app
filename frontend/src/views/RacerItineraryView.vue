@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
@@ -9,15 +9,18 @@ const router = useRouter()
 const { isLoggedIn, authHeaders } = useAuth()
 
 interface ScheduleItem {
+  id?: number
   time: string
   label: string
   description: string | null
+  sortOrder?: number
 }
 
 const items = ref<ScheduleItem[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const reg = ref<{ teamName: string | null; startNumber: number | null } | null>(null)
+let ws: WebSocket | null = null
 
 const now = new Date()
 const today = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
@@ -43,7 +46,45 @@ async function load() {
   }
 }
 
-onMounted(load)
+function connectWebSocket() {
+  const wsUrl = apiBaseUrl.replace(/^http/, 'ws') + '/ws/results'
+  ws = new WebSocket(wsUrl)
+  ws.onopen = () => {
+    const connectFrame = `CONNECT\naccept-version:1.2\nhost:${new URL(apiBaseUrl).host}\n\n\x00`
+    ws?.send(connectFrame)
+    const subFrame = `SUBSCRIBE\nid:sub-schedule\ndestination:/topic/schedule\n\n\x00`
+    ws?.send(subFrame)
+  }
+  ws.onmessage = (event: MessageEvent) => {
+    const data = event.data as string
+    if (data.includes('/topic/schedule') || data.includes('MESSAGE')) {
+      try {
+        const bodyMatch = data.match(/({.*})/)
+        if (bodyMatch) {
+          const parsed = JSON.parse(bodyMatch[1])
+          if (parsed.items) {
+            items.value = parsed.items
+          }
+        }
+      } catch { /* ignore parse errors */ }
+    }
+  }
+  ws.onclose = () => {
+    setTimeout(connectWebSocket, 3000)
+  }
+}
+
+onMounted(() => {
+  load()
+  connectWebSocket()
+})
+
+onUnmounted(() => {
+  if (ws) {
+    ws.onclose = null
+    ws.close()
+  }
+})
 
 if (!isLoggedIn.value) {
   router.push('/admin/login')
@@ -63,11 +104,9 @@ if (!isLoggedIn.value) {
     <p v-else-if="error" class="alert alert-error">{{ error }}</p>
 
     <div v-else class="relative">
-      <!-- Timeline line -->
       <div class="absolute left-5 top-0 bottom-0 w-px bg-border"></div>
 
-      <div v-for="(item, i) in items" :key="i" class="relative flex gap-5 pb-8">
-        <!-- Time circle -->
+      <div v-for="(item, i) in items" :key="item.id ?? i" class="relative flex gap-5 pb-8">
         <div class="relative z-10 flex flex-col items-center">
           <div
             class="flex h-10 w-10 items-center justify-center rounded-full text-label font-bold border-2 transition-all"
@@ -78,7 +117,6 @@ if (!isLoggedIn.value) {
                 : 'bg-surface-2 border-border text-text-muted'"
           >{{ item.time.replace(':', '') }}</div>
         </div>
-        <!-- Content -->
         <div class="flex-1 pt-1.5">
           <p
             class="font-semibold"
