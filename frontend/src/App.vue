@@ -224,6 +224,7 @@ async function toggleInfo() {
                 <div class="mobile-nav-section">Administrace</div>
                 <RouterLink to="/admin/prihlaseni" class="mobile-nav-item" @click="closeMobileNav">Přihlášky</RouterLink>
                 <RouterLink to="/admin/varianty" class="mobile-nav-item" @click="closeMobileNav">Závod</RouterLink>
+                <RouterLink to="/admin/kategorie" class="mobile-nav-item" @click="closeMobileNav">Kategorie</RouterLink>
                 <RouterLink to="/admin/trasy" class="mobile-nav-item" @click="closeMobileNav">Trasy</RouterLink>
                 <RouterLink to="/admin/stanoviste" class="mobile-nav-item" @click="closeMobileNav">Stanoviště</RouterLink>
                 <RouterLink to="/admin/bodovani" class="mobile-nav-item" @click="closeMobileNav">Bodování</RouterLink>
@@ -292,6 +293,9 @@ async function toggleInfo() {
               <RouterLink to="/admin/varianty" class="flex items-center justify-center h-12 text-text-soft hover:text-primary hover:bg-surface-2 transition-colors" title="Závod" active-class="!text-primary" @click="mobileSidebarOpen = false">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
               </RouterLink>
+              <RouterLink to="/admin/kategorie" class="flex items-center justify-center h-12 text-text-soft hover:text-primary hover:bg-surface-2 transition-colors" title="Kategorie" active-class="!text-primary" @click="mobileSidebarOpen = false">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              </RouterLink>
               <RouterLink to="/admin/trasy" class="flex items-center justify-center h-12 text-text-soft hover:text-primary hover:bg-surface-2 transition-colors" title="Trasy" active-class="!text-primary" @click="mobileSidebarOpen = false">
                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
               </RouterLink>
@@ -321,6 +325,7 @@ async function toggleInfo() {
               <div class="admin-sidebar-section">Administrace</div>
               <RouterLink to="/admin/prihlaseni" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Přihlášky</RouterLink>
               <RouterLink to="/admin/varianty" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Závod</RouterLink>
+              <RouterLink to="/admin/kategorie" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Kategorie</RouterLink>
               <RouterLink to="/admin/trasy" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Trasy</RouterLink>
               <RouterLink to="/admin/stanoviste" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Stanoviště</RouterLink>
               <RouterLink to="/admin/bodovani" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Bodování</RouterLink>

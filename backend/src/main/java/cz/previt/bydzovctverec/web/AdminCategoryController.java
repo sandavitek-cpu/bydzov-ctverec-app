@@ -1,0 +1,224 @@
+package cz.previt.bydzovctverec.web;
+
+import cz.previt.bydzovctverec.domain.Edition;
+import cz.previt.bydzovctverec.domain.EditionRepository;
+import cz.previt.bydzovctverec.domain.RaceCategory;
+import cz.previt.bydzovctverec.domain.RaceCategoryRepository;
+import cz.previt.bydzovctverec.domain.RacerRegistration;
+import cz.previt.bydzovctverec.domain.RacerRegistrationRepository;
+import cz.previt.bydzovctverec.domain.Score;
+import cz.previt.bydzovctverec.domain.ScoreRepository;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/admin/categories")
+public class AdminCategoryController {
+
+  private final RaceCategoryRepository raceCategoryRepository;
+  private final EditionRepository editionRepository;
+  private final ScoreRepository scoreRepository;
+  private final RacerRegistrationRepository racerRegistrationRepository;
+
+  public AdminCategoryController(RaceCategoryRepository raceCategoryRepository,
+      EditionRepository editionRepository, ScoreRepository scoreRepository,
+      RacerRegistrationRepository racerRegistrationRepository) {
+    this.raceCategoryRepository = raceCategoryRepository;
+    this.editionRepository = editionRepository;
+    this.scoreRepository = scoreRepository;
+    this.racerRegistrationRepository = racerRegistrationRepository;
+  }
+
+  @GetMapping
+  public ResponseEntity<?> list() {
+    Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
+    if (edition == null) {
+      return ResponseEntity.ok(List.of());
+    }
+    return ResponseEntity.ok(
+        raceCategoryRepository.findByEditionOrderBySortOrder(edition).stream()
+            .map(this::toMap).toList());
+  }
+
+  @PostMapping
+  @Transactional
+  public ResponseEntity<?> create(@RequestBody Map<String, Object> body) {
+    Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
+    if (edition == null) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Žádný aktivní ročník"));
+    }
+    String name = (String) body.get("name");
+    if (name == null || name.isBlank()) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Název kategorie je povinný"));
+    }
+    RaceCategory cat = new RaceCategory(edition, name,
+        (String) body.get("code"),
+        (String) body.get("variant"),
+        (String) body.get("determination"),
+        body.get("sortOrder") instanceof Number n ? n.intValue() : 0);
+    raceCategoryRepository.save(cat);
+    return ResponseEntity.ok(toMap(cat));
+  }
+
+  @PutMapping("/{id}")
+  @Transactional
+  public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+    RaceCategory cat = raceCategoryRepository.findById(id).orElse(null);
+    if (cat == null) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Kategorie nenalezena"));
+    }
+    if (body.containsKey("name")) cat.setName((String) body.get("name"));
+    if (body.containsKey("code")) cat.setCode((String) body.get("code"));
+    if (body.containsKey("variant")) cat.setVariant((String) body.get("variant"));
+    if (body.containsKey("determination")) cat.setDetermination((String) body.get("determination"));
+    if (body.containsKey("sortOrder")) cat.setSortOrder(((Number) body.get("sortOrder")).intValue());
+    if (body.containsKey("winnerRegistrationId")) {
+      cat.setWinnerRegistrationId(body.get("winnerRegistrationId") != null
+          ? ((Number) body.get("winnerRegistrationId")).longValue() : null);
+    }
+    if (body.containsKey("winnerName")) cat.setWinnerName((String) body.get("winnerName"));
+    if (body.containsKey("winnerTeam")) cat.setWinnerTeam((String) body.get("winnerTeam"));
+    if (body.containsKey("winnerNumber")) {
+      cat.setWinnerNumber(body.get("winnerNumber") != null
+          ? ((Number) body.get("winnerNumber")).intValue() : null);
+    }
+    if (body.containsKey("winnerPoints")) {
+      cat.setWinnerPoints(body.get("winnerPoints") != null
+          ? ((Number) body.get("winnerPoints")).intValue() : null);
+    }
+    raceCategoryRepository.save(cat);
+    return ResponseEntity.ok(toMap(cat));
+  }
+
+  @DeleteMapping("/{id}")
+  @Transactional
+  public ResponseEntity<?> delete(@PathVariable Long id) {
+    RaceCategory cat = raceCategoryRepository.findById(id).orElse(null);
+    if (cat == null) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Kategorie nenalezena"));
+    }
+    raceCategoryRepository.delete(cat);
+    return ResponseEntity.ok(Map.of("deleted", true));
+  }
+
+  @PostMapping("/compute")
+  @Transactional
+  public ResponseEntity<?> computeWinners() {
+    Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
+    if (edition == null) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Žádný aktivní ročník"));
+    }
+    List<RaceCategory> cats = raceCategoryRepository.findByEditionOrderBySortOrder(edition);
+    Integer year = edition.getEditionYear();
+
+    List<Score> allScores = scoreRepository.findByEditionYearWithRacer(year);
+    Map<Long, Integer> pointsByRacerId = allScores.stream()
+        .collect(Collectors.groupingBy(
+            s -> s.getRacerRegistration().getId(),
+            Collectors.summingInt(Score::getPoints)));
+
+    List<RacerRegistration> allRegs = racerRegistrationRepository.findByEditionId(edition.getId());
+
+    for (RaceCategory cat : cats) {
+      List<RacerRegistration> pool = allRegs;
+
+      String variant = cat.getVariant();
+      if (variant != null && !variant.isBlank()) {
+        pool = pool.stream()
+            .filter(r -> variant.equals(r.getVariant()))
+            .toList();
+      }
+
+      String code = cat.getCode();
+      if (code != null && !code.isBlank()) {
+        pool = pool.stream()
+            .filter(r -> code.equalsIgnoreCase(r.getVehicleCategory())
+                || r.getVehicleCategory() != null
+                && r.getVehicleCategory().toLowerCase().contains(code.toLowerCase()))
+            .toList();
+      }
+
+      RacerRegistration winner = switch (cat.getDetermination()) {
+        case "RANKING_TOP" -> {
+          yield pool.stream()
+              .filter(r -> r.getCancelledAt() == null)
+              .max(Comparator.comparingInt(r -> pointsByRacerId.getOrDefault(r.getId(), 0)))
+              .orElse(null);
+        }
+        case "RANKING_LAST" -> {
+          yield pool.stream()
+              .filter(r -> r.getCancelledAt() == null)
+              .min(Comparator.comparingInt(r -> pointsByRacerId.getOrDefault(r.getId(), 0)))
+              .orElse(null);
+        }
+        case "OLDEST_VEHICLE" -> {
+          yield pool.stream()
+              .filter(r -> r.getVehicleYear() != null && r.getCancelledAt() == null)
+              .min(Comparator.comparingInt(RacerRegistration::getVehicleYear))
+              .orElse(null);
+        }
+        case "YOUNGEST_DRIVER" -> {
+          yield pool.stream()
+              .filter(r -> r.getDriverAge() != null && r.getCancelledAt() == null)
+              .min(Comparator.comparingInt(RacerRegistration::getDriverAge))
+              .orElse(null);
+        }
+        case "OLDEST_DRIVER" -> {
+          yield pool.stream()
+              .filter(r -> r.getDriverAge() != null && r.getCancelledAt() == null)
+              .max(Comparator.comparingInt(RacerRegistration::getDriverAge))
+              .orElse(null);
+        }
+        default -> null;
+      };
+
+      if (winner != null) {
+        cat.setWinnerRegistrationId(winner.getId());
+        cat.setWinnerName(winner.getTeamName() != null ? winner.getTeamName() :
+            (winner.getFirstName() + " " + winner.getLastName()).trim());
+        cat.setWinnerTeam(winner.getTeamName());
+        cat.setWinnerNumber(winner.getStartNumber());
+        cat.setWinnerPoints(pointsByRacerId.getOrDefault(winner.getId(), 0));
+      } else {
+        cat.setWinnerRegistrationId(null);
+        cat.setWinnerName(null);
+        cat.setWinnerTeam(null);
+        cat.setWinnerNumber(null);
+        cat.setWinnerPoints(null);
+      }
+      raceCategoryRepository.save(cat);
+    }
+
+    return ResponseEntity.ok(Map.of("computed", true, "count", cats.size()));
+  }
+
+  private Map<String, Object> toMap(RaceCategory cat) {
+    Map<String, Object> m = new LinkedHashMap<>();
+    m.put("id", cat.getId());
+    m.put("name", cat.getName());
+    m.put("code", cat.getCode());
+    m.put("variant", cat.getVariant());
+    m.put("determination", cat.getDetermination());
+    m.put("sortOrder", cat.getSortOrder());
+    m.put("winnerRegistrationId", cat.getWinnerRegistrationId());
+    m.put("winnerName", cat.getWinnerName());
+    m.put("winnerTeam", cat.getWinnerTeam());
+    m.put("winnerNumber", cat.getWinnerNumber());
+    m.put("winnerPoints", cat.getWinnerPoints());
+    return m;
+  }
+}

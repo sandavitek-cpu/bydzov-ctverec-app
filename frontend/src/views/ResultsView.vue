@@ -102,6 +102,9 @@ const categoryLabel: Record<string, string> = {
     </div>
 
     <div v-else class="overflow-x-auto rounded-xl border border-border">
+      <div class="p-3 border-b border-border bg-surface-2 flex justify-end">
+        <RouterLink :to="`/ceremoniál/${year}`" class="btn-secondary btn-xs">Vyhlášení výsledků 🏆</RouterLink>
+      </div>
       <table class="w-full">
         <thead class="table-header">
           <tr>

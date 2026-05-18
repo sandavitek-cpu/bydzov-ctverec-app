@@ -10,6 +10,8 @@ import cz.previt.bydzovctverec.domain.Checkpoint;
 import cz.previt.bydzovctverec.domain.CheckpointRepository;
 import cz.previt.bydzovctverec.domain.Edition;
 import cz.previt.bydzovctverec.domain.EditionRepository;
+import cz.previt.bydzovctverec.domain.RaceCategory;
+import cz.previt.bydzovctverec.domain.RaceCategoryRepository;
 import cz.previt.bydzovctverec.domain.ScheduleItem;
 import cz.previt.bydzovctverec.domain.ScheduleItemRepository;
 import cz.previt.bydzovctverec.domain.User;
@@ -247,6 +249,32 @@ public class DataSeeder {
         log.info("Archive data seeded (3 years)");
       } catch (Exception e) {
         log.error("seedArchiveData failed: {}", e.getMessage());
+      }
+    };
+  }
+
+  @Bean
+  @org.springframework.core.annotation.Order(5)
+  CommandLineRunner seedRaceCategories(RaceCategoryRepository raceCategoryRepository,
+      EditionRepository editionRepository) {
+    return args -> {
+      try {
+        Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
+        if (edition == null) return;
+        var existing = raceCategoryRepository.findByEditionOrderBySortOrder(edition);
+        if (!existing.isEmpty()) return;
+        raceCategoryRepository.saveAll(List.of(
+            new RaceCategory(edition, "Nejmladší účastník", null, null, "YOUNGEST_DRIVER", 1),
+            new RaceCategory(edition, "Nejstarší účastník", null, null, "OLDEST_DRIVER", 2),
+            new RaceCategory(edition, "Nejstarší automobil", "AUTO", null, "OLDEST_VEHICLE", 3),
+            new RaceCategory(edition, "Nejstarší motocykl", "MOTO", null, "OLDEST_VEHICLE", 4),
+            new RaceCategory(edition, "Hlavní kategorie – Auto (jednodenní)", "AUTO", "JEDNODENNI", "RANKING_TOP", 5),
+            new RaceCategory(edition, "Hlavní kategorie – Moto (jednodenní)", "MOTO", "JEDNODENNI", "RANKING_TOP", 6),
+            new RaceCategory(edition, "Hlavní kategorie – dvoudenní závod", null, null, "RANKING_TOP", 7),
+            new RaceCategory(edition, "Speciální cena pro posledního", null, null, "RANKING_LAST", 8)));
+        log.info("Race categories seeded");
+      } catch (Exception e) {
+        log.error("seedRaceCategories failed: {}", e.getMessage());
       }
     };
   }

@@ -17,6 +17,8 @@ public interface RacerRegistrationRepository extends JpaRepository<RacerRegistra
 
   List<RacerRegistration> findByEditionOrderByStartNumber(Edition edition);
 
+  List<RacerRegistration> findByEditionId(Long editionId);
+
   Optional<RacerRegistration> findByEditionAndStartNumber(Edition edition, Integer startNumber);
 
   @Modifying

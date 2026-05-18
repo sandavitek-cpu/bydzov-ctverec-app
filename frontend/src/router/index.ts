@@ -12,6 +12,8 @@ import AdminRoutesView from '../views/admin/AdminRoutesView.vue'
 import AdminChangelogView from '../views/admin/AdminChangelogView.vue'
 import AdminCheckpointScoresView from '../views/admin/AdminCheckpointScoresView.vue'
 import AdminVariantsView from '../views/admin/AdminVariantsView.vue'
+import AdminCategoriesView from '../views/admin/AdminCategoriesView.vue'
+import CeremonyView from '../views/CeremonyView.vue'
 import JudgeScoringView from '../views/JudgeScoringView.vue'
 import ResultsView from '../views/ResultsView.vue'
 import ArchiveView from '../views/ArchiveView.vue'
@@ -37,6 +39,8 @@ const router = createRouter({
     { path: '/admin/changelog', name: 'admin-changelog', component: AdminChangelogView, meta: { requiresAdmin: true } },
     { path: '/admin/bodovani', name: 'admin-scores', component: AdminCheckpointScoresView, meta: { requiresAdmin: true } },
     { path: '/admin/varianty', name: 'admin-variants', component: AdminVariantsView, meta: { requiresAdmin: true } },
+    { path: '/admin/kategorie', name: 'admin-categories', component: AdminCategoriesView, meta: { requiresAdmin: true } },
+    { path: '/ceremoniál/:rok', name: 'ceremony', component: CeremonyView },
     { path: '/rozhodci', redirect: '/komisari' },
     { path: '/komisari', name: 'judge-scoring', component: JudgeScoringView },
     { path: '/vysledky/:rok', name: 'results', component: ResultsView },

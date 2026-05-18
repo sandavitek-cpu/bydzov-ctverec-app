@@ -507,3 +507,79 @@ export async function deleteVehicle(id: number, headers: Record<string, string>)
   })
   if (!res.ok) throw new Error(`API ${res.status}`)
 }
+
+export interface RaceCategory {
+  id: number
+  name: string
+  code: string | null
+  variant: string | null
+  determination: string
+  sortOrder: number
+  winnerRegistrationId: number | null
+  winnerName: string | null
+  winnerTeam: string | null
+  winnerNumber: number | null
+  winnerPoints: number | null
+}
+
+export interface CeremonyCategory {
+  id: number
+  name: string
+  sortOrder: number
+  winnerName: string | null
+  winnerTeam: string | null
+  winnerNumber: number | null
+  winnerPoints: number | null
+}
+
+export async function fetchAdminCategories(headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/categories`, { headers })
+  if (!res.ok) throw new Error(`API ${res.status}`)
+  return res.json() as Promise<RaceCategory[]>
+}
+
+export async function createAdminCategory(data: Partial<RaceCategory>, headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/categories`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...headers },
+    body: JSON.stringify(data),
+  })
+  const body = await res.json()
+  if (!res.ok) throw new Error(body.error ?? `API ${res.status}`)
+  return body as RaceCategory
+}
+
+export async function updateAdminCategory(id: number, data: Partial<RaceCategory>, headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/categories/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...headers },
+    body: JSON.stringify(data),
+  })
+  const body = await res.json()
+  if (!res.ok) throw new Error(body.error ?? `API ${res.status}`)
+  return body as RaceCategory
+}
+
+export async function deleteAdminCategory(id: number, headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/categories/${id}`, {
+    method: 'DELETE',
+    headers,
+  })
+  if (!res.ok) throw new Error(`API ${res.status}`)
+}
+
+export async function computeCategoryWinners(headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/categories/compute`, {
+    method: 'POST',
+    headers,
+  })
+  const body = await res.json()
+  if (!res.ok) throw new Error(body.error ?? `API ${res.status}`)
+  return body as { computed: boolean; count: number }
+}
+
+export async function fetchCeremonyCategories(year: number) {
+  const res = await fetch(`${apiBaseUrl}/api/public/ceremony/${year}`)
+  if (!res.ok) throw new Error(`API ${res.status}`)
+  return res.json() as Promise<{ year: number; categories: CeremonyCategory[] }>
+}
