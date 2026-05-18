@@ -327,8 +327,9 @@ export interface AdminUser {
   appRoles: { id: number; name: string; displayName: string }[]
 }
 
-export async function fetchAdminUsers(headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/users`, { headers })
+export async function fetchAdminUsers(headers: Record<string, string>, q?: string) {
+  const url = q ? `${apiBaseUrl}/api/admin/users?q=${encodeURIComponent(q)}` : `${apiBaseUrl}/api/admin/users`
+  const res = await fetch(url, { headers })
   if (!res.ok) throw new Error(`API ${res.status}`)
   return res.json() as Promise<AdminUser[]>
 }

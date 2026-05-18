@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
-import { apiBaseUrl, impersonateRegistration, assignStartNumber } from '@/api'
+import { apiBaseUrl, impersonateRegistration, assignStartNumber, fetchAdminUsers, type AdminUser } from '@/api'
 
 const router = useRouter()
 const { isAdmin, authHeaders, logout, impersonateAs } = useAuth()
@@ -373,6 +373,47 @@ const categoryLabel: Record<string, string> = {
   MOTOCYKL: 'Motocykl', OSOBNI: 'Osobní', CLASSIC: 'Historické', NAKLADNI: 'Nákladní',
 }
 
+const userQuery = ref('')
+const userResults = ref<AdminUser[]>([])
+const userSearchLoading = ref(false)
+let userSearchTimer: ReturnType<typeof setTimeout> | null = null
+
+async function searchUsers() {
+  const q = userQuery.value.trim()
+  if (q.length < 2) { userResults.value = []; return }
+  userSearchLoading.value = true
+  try {
+    userResults.value = await fetchAdminUsers(authHeaders(), q)
+  } catch {
+    userResults.value = []
+  } finally {
+    userSearchLoading.value = false
+  }
+}
+
+function onUserInput() {
+  if (userSearchTimer) clearTimeout(userSearchTimer)
+  userSearchTimer = setTimeout(searchUsers, 300)
+}
+
+function selectUser(user: AdminUser) {
+  editForm.value.firstName = user.firstName
+  editForm.value.lastName = user.lastName
+  editForm.value.email = user.email
+  editForm.value.phone = user.phone
+  userQuery.value = `${user.firstName} ${user.lastName} (${user.email})`
+  userResults.value = []
+}
+
+function clearUserSelection() {
+  userQuery.value = ''
+  userResults.value = []
+  editForm.value.firstName = ''
+  editForm.value.lastName = ''
+  editForm.value.email = ''
+  editForm.value.phone = ''
+}
+
 const variantLabel: Record<string, string> = {
   JEDNODENNI: 'Jednodenní', DVODENNI: 'Dvoudenní',
 }
@@ -676,6 +717,34 @@ const variantLabel: Record<string, string> = {
 
         <!-- Edit form -->
         <div v-else class="space-y-4">
+          <!-- User lookup -->
+          <div class="relative">
+            <label class="text-label text-text-soft mb-1 block">Vybrat existujícího uživatele</label>
+            <input
+              v-model="userQuery"
+              @input="onUserInput"
+              placeholder="Hledat podle jména nebo emailu…"
+              class="input-field w-full"
+            />
+            <button v-if="editForm.firstName && !userQuery" @click="clearUserSelection" class="absolute right-2 top-8 text-text-soft hover:text-text text-body-sm">
+              Zrušit výběr
+            </button>
+            <div v-if="userSearchLoading" class="text-body-sm text-text-soft mt-1">Vyhledávám…</div>
+            <ul v-else-if="userResults.length > 0" class="absolute z-20 left-0 right-0 mt-1 bg-bg border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+              <li
+                v-for="u in userResults"
+                :key="u.id"
+                @click="selectUser(u)"
+                class="px-3 py-2 text-body-sm hover:bg-bg-alt cursor-pointer border-b border-border last:border-b-0"
+              >
+                <span class="text-text">{{ u.firstName }} {{ u.lastName }}</span>
+                <span class="text-text-soft ml-2">{{ u.email }}</span>
+                <span v-if="u.phone" class="text-text-soft ml-2">{{ u.phone }}</span>
+              </li>
+            </ul>
+          </div>
+          <hr class="border-border" />
+
           <div class="flex flex-col gap-3 max-h-[60vh] overflow-y-auto pr-1">
             <div>
               <label class="text-label text-text-soft mb-1 block">Varianta</label>
