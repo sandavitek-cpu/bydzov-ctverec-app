@@ -41,6 +41,8 @@ public record AdminRegistrationResponse(
     Boolean approved,
     Instant createdAt,
     Instant paidAt,
+    Instant cancelledAt,
+    Integer refundAmount,
     List<CrewMemberInfo> crewMembers) {
 
   public record CrewMemberInfo(String firstName, String lastName, String email,
@@ -61,6 +63,6 @@ public record AdminRegistrationResponse(
         r.getVehicleNotes(), r.getNotes(), r.getContacted(),
         r.getProperlyRegistered(), r.getArrived(), r.getConsent(),
         r.getApproved(),
-        r.getCreatedAt(), r.getPaidAt(), cmList);
+        r.getCreatedAt(), r.getPaidAt(), r.getCancelledAt(), r.getRefundAmount(), cmList);
   }
 }

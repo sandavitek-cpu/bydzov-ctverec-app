@@ -223,6 +223,38 @@ public class AdminController {
     return ResponseEntity.ok(Map.of("approved", true, "email", email));
   }
 
+  @PostMapping("/{id}/cancel")
+  @Transactional
+  public ResponseEntity<?> cancel(@PathVariable Long id) {
+    RacerRegistration reg = racerRegistrationRepository.findById(id).orElse(null);
+    if (reg == null) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Přihláška nenalezena"));
+    }
+    if (reg.getCancelledAt() != null) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Přihláška již byla stornována"));
+    }
+
+    Edition edition = reg.getEdition();
+    Instant now = Instant.now();
+    reg.setCancelledAt(now);
+    reg.setStatus("CANCELLED");
+    reg.setPaidAt(null);
+
+    Integer paid = reg.getPaidAmount() != null ? reg.getPaidAmount() : 0;
+    if (paid > 0) {
+      Instant deadline = edition.getCancellationDeadline();
+      if (deadline != null && now.isBefore(deadline)) {
+        reg.setRefundAmount(paid);
+      } else {
+        reg.setRefundAmount(paid * 75 / 100);
+      }
+    }
+
+    racerRegistrationRepository.save(reg);
+    log.info("Registration {} cancelled, refund={}", id, reg.getRefundAmount());
+    return ResponseEntity.ok(AdminRegistrationResponse.from(reg, crewMemberRepository.findByRegistration(reg)));
+  }
+
   @PostMapping("/{id}/resend-credentials")
   @Transactional
   public ResponseEntity<?> resendCredentials(@PathVariable Long id) {

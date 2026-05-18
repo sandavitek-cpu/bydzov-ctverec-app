@@ -16,6 +16,7 @@ import cz.previt.bydzovctverec.domain.ScheduleItemRepository;
 import cz.previt.bydzovctverec.domain.Score;
 import cz.previt.bydzovctverec.domain.ScoreRepository;
 import cz.previt.bydzovctverec.domain.User;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -158,6 +160,45 @@ public class RacerController {
     return ResponseEntity.ok(m);
   }
 
+  @PostMapping("/registration/cancel")
+  @Transactional
+  public ResponseEntity<?> cancelRegistration(Authentication auth) {
+    User user = (User) auth.getPrincipal();
+    var crewMember = crewMemberRepository.findByUser(user).orElse(null);
+    if (crewMember == null) {
+      return ResponseEntity.ok(Map.of("error", "Nejste přihlášen k závodu"));
+    }
+    RacerRegistration reg = crewMember.getRegistration();
+
+    if (reg.getCancelledAt() != null) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Přihláška již byla stornována"));
+    }
+
+    Edition edition = reg.getEdition();
+    Instant now = Instant.now();
+    reg.setCancelledAt(now);
+    reg.setStatus("CANCELLED");
+    reg.setPaidAt(null);
+
+    Integer paid = reg.getPaidAmount() != null ? reg.getPaidAmount() : 0;
+    if (paid > 0) {
+      Instant deadline = edition.getCancellationDeadline();
+      if (deadline != null && now.isBefore(deadline)) {
+        reg.setRefundAmount(paid);
+      } else {
+        reg.setRefundAmount(paid * 75 / 100);
+      }
+    }
+
+    racerRegistrationRepository.save(reg);
+
+    var m = new LinkedHashMap<String, Object>();
+    m.put("status", "CANCELLED");
+    m.put("cancelledAt", reg.getCancelledAt());
+    m.put("refundAmount", reg.getRefundAmount());
+    return ResponseEntity.ok(m);
+  }
+
   @GetMapping("/status")
   public ResponseEntity<?> myStatus(Authentication auth) {
     User user = (User) auth.getPrincipal();
@@ -181,6 +222,8 @@ public class RacerController {
     m.put("vehicleMake", reg.getVehicleMake() != null ? reg.getVehicleMake() : "");
     m.put("crewCount", reg.getCrewCount());
     m.put("approved", reg.getApproved() != null ? reg.getApproved() : false);
+    m.put("cancelledAt", reg.getCancelledAt());
+    m.put("refundAmount", reg.getRefundAmount());
     return ResponseEntity.ok(m);
   }
 

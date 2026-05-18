@@ -74,6 +74,12 @@ public class RacerRegistration {
   @Column(name = "paid_at")
   private Instant paidAt;
 
+  @Column(name = "cancelled_at")
+  private Instant cancelledAt;
+
+  @Column(name = "refund_amount")
+  private Integer refundAmount;
+
   @Column(length = 20)
   private String variant;
 
@@ -298,6 +304,12 @@ public class RacerRegistration {
   public Boolean getArrived() { return arrived; }
 
   public Boolean getConsent() { return consent; }
+
+  public Instant getCancelledAt() { return cancelledAt; }
+  public void setCancelledAt(Instant cancelledAt) { this.cancelledAt = cancelledAt; }
+
+  public Integer getRefundAmount() { return refundAmount; }
+  public void setRefundAmount(Integer refundAmount) { this.refundAmount = refundAmount; }
 
   public void setVariant(String variant) { this.variant = variant; }
 

@@ -35,7 +35,7 @@ const data = ref<StandingData | null>(null)
 const regStatus = ref<{
   id: number; paymentReference: number; startFee: number; paidAmount: number | null; status: string; variant: string
   startNumber: number; teamName: string; vehicleYear: number; vehicleMake: string; crewCount: number
-  vehicleCategory: string; vehiclePlate: string
+  vehicleCategory: string; vehiclePlate: string; cancelledAt: string | null; refundAmount: number | null
 } | null>(null)
 const raceStatus = ref<{ started: boolean; finished: boolean } | null>(null)
 const loading = ref(true)
@@ -157,6 +157,27 @@ async function saveEdit() {
   }
 }
 
+async function handleCancel() {
+  if (!confirm('Opravdu chcete stornovat přihlášku? Tuto akci nelze vrátit.')) return
+  try {
+    const res = await fetch(`${apiBaseUrl}/api/racer/registration/cancel`, {
+      method: 'POST',
+      headers: authHeaders(),
+    })
+    if (!res.ok) throw new Error()
+    const result = await res.json()
+    showToast('Přihláška stornována', 'info')
+    if (regStatus.value) {
+      regStatus.value.status = result.status
+      regStatus.value.cancelledAt = result.cancelledAt
+      regStatus.value.refundAmount = result.refundAmount
+    }
+    await load()
+  } catch {
+    showToast('Storno selhalo', 'error')
+  }
+}
+
 if (!isLoggedIn.value) {
   router.push('/admin/login')
 }
@@ -264,34 +285,54 @@ if (!isLoggedIn.value) {
       <!-- Payment -->
       <div v-if="regStatus" class="card !p-6">
         <h2 class="text-subsection text-text mb-4">Startovné</h2>
-        <div class="flex items-center justify-between mb-4">
-          <span class="text-body text-text-muted">Částka k úhradě</span>
-          <span class="text-kpi text-primary">{{ regStatus.startFee }} Kč</span>
-        </div>
-        <div class="flex items-center justify-between mb-4">
-          <span class="text-body text-text-muted">Stav platby</span>
-          <span v-if="regStatus.status === 'PAID'" class="badge !bg-success/10 !text-success">Přihlášen a zaplaceno</span>
-          <span v-else class="badge badge-admin">Přihlášen, nezaplaceno</span>
-        </div>
 
-        <template v-if="regStatus.status !== 'PAID'">
-          <div class="flex flex-col items-center gap-4 mt-4 pt-4 border-t border-border">
-            <QrPayment
-              :amount="regStatus.startFee"
-              :variable-symbol="regStatus.paymentReference"
-              :message="'VS:' + regStatus.paymentReference"
-            />
-            <p class="text-body-sm text-text-soft text-center">
-              Načtěte QR kód v mobilním bankovnictví nebo zašlete platbu na účet
-              <strong class="text-text">1086360369/0800</strong>
-              s variabilním symbolem <strong class="text-text">{{ regStatus.paymentReference }}</strong>.
-            </p>
-            <button disabled class="btn-primary w-full opacity-50 cursor-not-allowed py-4">
-              Zaplatit kartou
-            </button>
-            <p class="text-meta text-text-soft text-center">Online platba bude brzy dostupná.</p>
+        <template v-if="regStatus.status === 'CANCELLED'">
+          <div class="flex items-center justify-between mb-4">
+            <span class="text-body text-text-muted">Stav</span>
+            <span class="badge !bg-red/10 !text-red">Stornováno</span>
+          </div>
+          <div v-if="regStatus.refundAmount" class="flex items-center justify-between">
+            <span class="text-body text-text-muted">Vráceno</span>
+            <span class="text-kpi text-primary">{{ regStatus.refundAmount }} Kč</span>
           </div>
         </template>
+
+        <template v-else>
+          <div class="flex items-center justify-between mb-4">
+            <span class="text-body text-text-muted">Částka k úhradě</span>
+            <span class="text-kpi text-primary">{{ regStatus.startFee }} Kč</span>
+          </div>
+          <div class="flex items-center justify-between mb-4">
+            <span class="text-body text-text-muted">Stav platby</span>
+            <span v-if="regStatus.status === 'PAID'" class="badge !bg-success/10 !text-success">Přihlášen a zaplaceno</span>
+            <span v-else class="badge badge-admin">Přihlášen, nezaplaceno</span>
+          </div>
+
+          <template v-if="regStatus.status !== 'PAID'">
+            <div class="flex flex-col items-center gap-4 mt-4 pt-4 border-t border-border">
+              <QrPayment
+                :amount="regStatus.startFee"
+                :variable-symbol="regStatus.paymentReference"
+                :message="'VS:' + regStatus.paymentReference"
+              />
+              <p class="text-body-sm text-text-soft text-center">
+                Načtěte QR kód v mobilním bankovnictví nebo zašlete platbu na účet
+                <strong class="text-text">1086360369/0800</strong>
+                s variabilním symbolem <strong class="text-text">{{ regStatus.paymentReference }}</strong>.
+              </p>
+              <button disabled class="btn-primary w-full opacity-50 cursor-not-allowed py-4">
+                Zaplatit kartou
+              </button>
+              <p class="text-meta text-text-soft text-center">Online platba bude brzy dostupná.</p>
+            </div>
+          </template>
+        </template>
+
+        <div v-if="regStatus.status !== 'CANCELLED'" class="mt-4 pt-4 border-t border-border">
+          <button @click="handleCancel" class="text-body-sm text-red hover:text-red/80">
+            Stornovat přihlášku
+          </button>
+        </div>
       </div>
     </template>
 

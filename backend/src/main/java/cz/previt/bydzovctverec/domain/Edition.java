@@ -28,6 +28,9 @@ public class Edition {
   @Column(name = "race_finished_at")
   private Instant raceFinishedAt;
 
+  @Column(name = "cancellation_deadline")
+  private Instant cancellationDeadline;
+
   protected Edition() {}
 
   public Edition(Integer editionYear, String label) {
@@ -48,4 +51,8 @@ public class Edition {
   public Instant getRaceFinishedAt() { return raceFinishedAt; }
 
   public void setRaceFinishedAt(Instant raceFinishedAt) { this.raceFinishedAt = raceFinishedAt; }
+
+  public Instant getCancellationDeadline() { return cancellationDeadline; }
+
+  public void setCancellationDeadline(Instant cancellationDeadline) { this.cancellationDeadline = cancellationDeadline; }
 }

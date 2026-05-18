@@ -369,6 +369,7 @@ export async function fetchRacerStatus(headers: Record<string, string>) {
     id: number; paymentReference: number; teamName: string; startNumber: number; startFee: number
     paidAmount: number | null; status: string; variant: string; vehicleCategory: string; vehiclePlate: string
     vehicleYear: number; vehicleMake: string; crewCount: number; approved: boolean
+    cancelledAt: string | null; refundAmount: number | null
   }>
 }
 

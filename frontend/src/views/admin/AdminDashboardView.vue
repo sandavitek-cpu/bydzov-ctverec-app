@@ -19,14 +19,14 @@ interface AdminReg {
   id: number; teamName: string; email: string; phone: string
   vehicleCategory: string; vehicleMake: string; vehiclePlate: string
   vehicleYear: number; crewCount: number; startNumber: number
-  startFee: number; paymentReference: number | null; status: string; variant: string | null
+  startFee: number; paidAmount: number | null; paymentReference: number | null; status: string; variant: string | null
   firstName: string | null; lastName: string | null; firstTime: boolean
   gender: string | null; driverAge: number | null; club: string | null
   address: string | null; youngestAge: number | null; youngestName: string | null
   engineDisplacement: number | null; power: number | null; maxSpeed: number | null
   vehicleNotes: string | null; notes: string | null; contacted: boolean
   properlyRegistered: boolean; arrived: boolean; consent: boolean
-  approved: boolean; createdAt: string; paidAt: string | null; crewMembers: CrewInfo[]
+  approved: boolean; createdAt: string; paidAt: string | null; cancelledAt: string | null; refundAmount: number | null; crewMembers: CrewInfo[]
 }
 
 interface AdminStats {
@@ -254,6 +254,24 @@ async function downloadPdf() {
     URL.revokeObjectURL(url)
   } catch {
     showToast('Nepodařilo se stáhnout PDF', 'error')
+  }
+}
+
+async function handleCancel(reg: AdminReg) {
+  const msg = reg.paidAmount
+    ? 'Tým již zaplatil ' + reg.paidAmount + ' Kč. Po stornu bude vypočtena částka k vrácení (100 % před uzávěrkou, 75 % po uzávěrce). Pokračovat?'
+    : 'Opravdu chcete stornovat tuto přihlášku?'
+  if (!confirm(msg)) return
+  try {
+    const res = await fetch(`${apiBaseUrl}/api/admin/registrations/${reg.id}/cancel`, {
+      method: 'POST',
+      headers: authHeaders(),
+    })
+    if (!res.ok) throw new Error()
+    showToast('Přihláška stornována', 'info')
+    await fetchAll()
+  } catch {
+    showToast('Storno selhalo', 'error')
   }
 }
 
@@ -493,7 +511,8 @@ const variantLabel: Record<string, string> = {
             </td>
             <td>
               <div class="flex flex-wrap gap-1.5">
-                <button @click.stop="toggleStatus(r)"
+                <span v-if="r.status === 'CANCELLED'" class="badge !bg-red/10 !text-red">Stornováno</span>
+                <button v-else @click.stop="toggleStatus(r)"
                   class="badge cursor-pointer transition-colors"
                   :class="r.status === 'PAID' ? '!bg-success/10 !text-success' : 'badge-admin'"
                 >{{ r.status === 'PAID' ? 'Přihlášen a zaplaceno' : 'Přihlášen, nezaplaceno' }}</button>
@@ -534,7 +553,12 @@ const variantLabel: Record<string, string> = {
 
         <div v-if="!editing" class="space-y-4">
           <!-- Payment status toggle -->
-          <div>
+          <div v-if="selected.status === 'CANCELLED'">
+            <p class="text-label text-text-soft mb-1.5">Stav</p>
+            <span class="badge !bg-red/10 !text-red">Stornováno</span>
+            <p v-if="selected.refundAmount" class="text-body-sm text-text-soft mt-1">Vráceno: {{ selected.refundAmount }} Kč</p>
+          </div>
+          <div v-else>
             <p class="text-label text-text-soft mb-1.5">Stav platby</p>
             <div class="flex rounded-lg border border-border overflow-hidden">
               <button @click.stop="toggleStatus(selected)"
@@ -621,6 +645,13 @@ const variantLabel: Record<string, string> = {
           <p v-if="selected.notes" class="rounded-lg border border-border bg-bg-alt p-4 text-body-sm text-text-muted italic">
             {{ selected.notes }}
           </p>
+
+          <!-- Cancel -->
+          <div v-if="selected.status !== 'CANCELLED'" class="pt-2">
+            <button @click="handleCancel(selected)" class="btn-ghost btn-xs text-red hover:text-red">
+              Stornovat přihlášku
+            </button>
+          </div>
 
           <!-- Contact -->
           <div class="grid grid-cols-2 gap-4 text-body-sm">
