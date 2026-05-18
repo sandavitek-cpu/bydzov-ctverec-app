@@ -173,8 +173,10 @@ public class AdminController {
     reg.setApproved(true);
     racerRegistrationRepository.save(reg);
 
+    int paymentRef = reg.getStartNumber() != null && reg.getStartNumber() > 0
+        ? reg.getStartNumber() : reg.getId().intValue();
     emailService.sendCredentials(email, personName, email, rawPassword,
-        reg.getStartNumber(), reg.getStartFee());
+        paymentRef, reg.getStartFee());
 
     log.info("Registration {} approved, user {} created", id, email);
     return ResponseEntity.ok(Map.of("approved", true, "email", email));
@@ -200,8 +202,10 @@ public class AdminController {
       u.setPassword(passwordEncoder.encode(rawPassword));
       userRepository.save(u);
       String personName = cm.getFirstName() + " " + cm.getLastName();
+      int ref = reg.getStartNumber() != null && reg.getStartNumber() > 0
+          ? reg.getStartNumber() : reg.getId().intValue();
       emailService.sendCredentials(cm.getEmail(), personName, cm.getEmail(), rawPassword,
-          reg.getStartNumber(), reg.getStartFee());
+          ref, reg.getStartFee());
       sent++;
     }
     log.info("Credentials resent for registration {} ({} users)", id, sent);
@@ -223,6 +227,43 @@ public class AdminController {
         ? user.getRole().name()
         : user.getAppRoles().stream().map(AppRole::getName).collect(java.util.stream.Collectors.joining(","));
     return ResponseEntity.ok(Map.of("accessToken", accessToken, "username", user.getUsername(), "name", user.getName(), "role", roleStr));
+  }
+
+  @PostMapping("/{id}/assign-start-number")
+  @Transactional
+  public ResponseEntity<?> assignStartNumber(@PathVariable Long id) {
+    RacerRegistration reg = racerRegistrationRepository.findById(id).orElse(null);
+    if (reg == null) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Přihláška nenalezena"));
+    }
+    String variant = reg.getVariant();
+    if (variant == null) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Přihláška nemá variantu"));
+    }
+    int rangeStart, rangeEnd;
+    if ("JEDNODENNI".equals(variant)) {
+      rangeStart = 1;
+      rangeEnd = 99;
+    } else {
+      rangeStart = 101;
+      rangeEnd = 130;
+    }
+    Edition edition = reg.getEdition();
+    List<RacerRegistration> all = racerRegistrationRepository.findByEditionOrderByStartNumber(edition);
+    var taken = all.stream()
+        .map(RacerRegistration::getStartNumber)
+        .filter(n -> n != null && n >= rangeStart && n <= rangeEnd)
+        .collect(java.util.stream.Collectors.toSet());
+    int assigned = 0;
+    for (int i = rangeStart; i <= rangeEnd; i++) {
+      if (!taken.contains(i)) { assigned = i; break; }
+    }
+    if (assigned == 0) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Vyčerpána kapacita startovních čísel v rozsahu " + rangeStart + "–" + rangeEnd));
+    }
+    reg.setStartNumber(assigned);
+    log.info("Start number {} assigned to registration {}", assigned, id);
+    return ResponseEntity.ok(Map.of("startNumber", assigned));
   }
 
   @GetMapping("/stats")

@@ -25,7 +25,7 @@ interface StandingData {
 
 const data = ref<StandingData | null>(null)
 const regStatus = ref<{
-  startFee: number; status: string; variant: string
+  id: number; startFee: number; status: string; variant: string
   startNumber: number; teamName: string
 } | null>(null)
 const raceStatus = ref<{ started: boolean; finished: boolean } | null>(null)
@@ -151,13 +151,13 @@ if (!isLoggedIn.value) {
           <div class="flex flex-col items-center gap-4 mt-4 pt-4 border-t border-border">
             <QrPayment
               :amount="regStatus.startFee"
-              :variable-symbol="regStatus.startNumber"
-              :message="'VS:' + regStatus.startNumber"
+              :variable-symbol="regStatus.startNumber > 0 ? regStatus.startNumber : regStatus.id"
+              :message="'VS:' + (regStatus.startNumber > 0 ? regStatus.startNumber : regStatus.id)"
             />
             <p class="text-body-sm text-text-soft text-center">
               Načtěte QR kód v mobilním bankovnictví nebo zašlete platbu na účet
               <strong class="text-text">1086360369/0800</strong>
-              s variabilním symbolem <strong class="text-text">{{ regStatus.startNumber }}</strong>.
+              s variabilním symbolem <strong class="text-text">{{ regStatus.startNumber > 0 ? regStatus.startNumber : regStatus.id }}</strong>.
             </p>
             <button disabled class="btn-primary w-full opacity-50 cursor-not-allowed py-4">
               Zaplatit kartou

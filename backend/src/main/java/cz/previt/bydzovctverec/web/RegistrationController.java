@@ -73,7 +73,6 @@ public class RegistrationController {
       edition = editionRepository.save(new Edition(2026, "30. ročník Novobydžovského čtverce – Memoriál Elišky Junkové"));
     }
 
-    int startNumber = generateStartNumber(edition);
     int startFee = calculateFee(request.variant(), request.vehicleYear(), request.crewCount());
 
     String firstName = request.firstName() != null ? request.firstName().trim() : "";
@@ -84,7 +83,7 @@ public class RegistrationController {
         edition, request.teamName(), email, request.phone(),
         request.vehicleCategory(), request.vehicleMake() != null ? request.vehicleMake() : "",
         request.vehiclePlate(), request.vehicleYear(),
-        request.crewCount(), startNumber, startFee,
+        request.crewCount(), 0, startFee,
         request.variant(), firstName, lastName,
         request.firstTime() != null ? request.firstTime() : false,
         request.gender(), request.driverAge(),
@@ -104,7 +103,7 @@ public class RegistrationController {
         request.driverAge(), request.gender(), request.address(),
         request.club(), request.firstTime());
     emailService.sendCredentials(email, firstName + " " + lastName, email, driverPwd,
-        startNumber, startFee);
+        reg.getId().intValue(), startFee);
 
     if (request.crewMembers() != null) {
       for (var cm : request.crewMembers()) {
@@ -115,7 +114,7 @@ public class RegistrationController {
         String cmPwd = createUser(cmEmail, cm.firstName().trim(), cm.lastName().trim(), racerRole, reg,
             cm.driverAge(), cm.gender(), cm.address(), cmClub, cm.firstTime());
         emailService.sendCredentials(cmEmail, cm.firstName() + " " + cm.lastName(), cmEmail,
-            cmPwd, startNumber, startFee);
+            cmPwd, reg.getId().intValue(), startFee);
       }
     }
 
@@ -166,13 +165,6 @@ public class RegistrationController {
     FeeConfig cfg = FEE.getOrDefault(variant, new FeeConfig(0, 0, 0));
     int baseFee = vehicleYear < 1945 ? cfg.baseDo1945 : cfg.baseOd1946;
     return baseFee + cfg.extraPerson * Math.max(0, crewCount - 1);
-  }
-
-  private int generateStartNumber(Edition edition) {
-    return racerRegistrationRepository
-        .findTopByEditionOrderByStartNumberDesc(edition)
-        .map(r -> r.getStartNumber() + 1)
-        .orElse(1);
   }
 
   private static String generatePassword() {

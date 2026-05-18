@@ -230,6 +230,7 @@ public class RacerRegistration {
   public Integer getCrewCount() { return crewCount; }
 
   public Integer getStartNumber() { return startNumber; }
+  public void setStartNumber(Integer startNumber) { this.startNumber = startNumber; }
 
   public Integer getStartFee() { return startFee; }
 

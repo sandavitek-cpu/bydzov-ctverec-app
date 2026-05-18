@@ -30,7 +30,10 @@ public class EmailService {
     }
   }
 
-  public void sendCredentials(String to, String personName, String login, String password, Integer startNumber, Integer startFee) {
+  public void sendCredentials(String to, String personName, String login, String password, Integer paymentReference, Integer startFee) {
+    String startNumberLine = paymentReference > 0
+        ? "Startovní číslo Vaší posádky: %d".formatted(paymentReference)
+        : "Startovní číslo bude přiděleno po zaplacení.";
     String body = """
 Dobrý den %s,
 
@@ -40,15 +43,16 @@ Vaše přihlašovací údaje:
   Přihlašovací jméno: %s
   Heslo: %s
 
-Startovní číslo Vaší posádky: %d
+%s
 Startovné: %d Kč
+Variabilní symbol: %d
 
 Po přihlášení uvidíte itinerář, mapu a stav Vaší přihlášky:
 https://app.bydzov-ctverec.cz
 
 S pozdravem
 Tým Novobydžovského čtverce
-""".formatted(personName, login, password, startNumber, startFee);
+""".formatted(personName, login, password, startNumberLine, startFee, paymentReference);
     send(to, "Novobydžovský čtverec 2026 – vytvořen účet", body);
   }
 }

@@ -351,6 +351,16 @@ export async function fetchAccount(headers: Record<string, string>) {
   return res.json() as Promise<AdminUser>
 }
 
+export async function assignStartNumber(id: number, headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/registrations/${id}/assign-start-number`, {
+    method: 'POST',
+    headers,
+  })
+  const body = await res.json()
+  if (!res.ok) throw new Error(body.error ?? `API ${res.status}`)
+  return body as { startNumber: number }
+}
+
 export async function fetchRacerStatus(headers: Record<string, string>) {
   const res = await fetch(`${apiBaseUrl}/api/racer/status`, { headers })
   if (!res.ok) throw new Error(`API ${res.status}`)

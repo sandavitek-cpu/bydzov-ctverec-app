@@ -113,7 +113,8 @@ async function handleSubmit() {
 
 const qrUrl = computed(() => {
   if (!result.value) return ''
-  const data = `bydzov-ctverec:${result.value.startNumber}:${result.value.id}`
+  const sn = result.value.startNumber > 0 ? result.value.startNumber : result.value.id
+  const data = `bydzov-ctverec:${sn}:${result.value.id}`
   return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(data)}`
 })
 </script>
@@ -127,8 +128,13 @@ const qrUrl = computed(() => {
     <div v-if="submitted && result" class="mt-8 space-y-6 max-w-form">
       <div class="alert alert-success">
         <p class="font-semibold">Přihláška přijata ✓</p>
-        <p class="mt-1">Děkujeme za přihlášení. Vaše startovní číslo:</p>
-        <p class="mt-2 text-kpi text-primary">#{{ result.startNumber }}</p>
+        <p class="mt-1">Děkujeme za přihlášení.</p>
+        <p class="mt-2" v-if="result.startNumber > 0">
+          Vaše startovní číslo: <span class="text-kpi text-primary">#{{ result.startNumber }}</span>
+        </p>
+        <p class="mt-2" v-else>
+          Startovní číslo bude přiděleno po zaplacení.
+        </p>
         <p class="mt-2">Všem členům posádky byl vytvořen uživatelský účet. Přihlašovací údaje byly odeslány na jejich e-maily.</p>
       </div>
 
@@ -137,7 +143,7 @@ const qrUrl = computed(() => {
         <div class="mt-4 space-y-2">
           <p class="text-body text-text-muted">Částka: <strong class="text-text">{{ result.startFee }} Kč</strong></p>
           <p class="text-body text-text-muted">Bankovní účet: <span class="font-mono font-semibold text-text">1086360369/0800</span></p>
-          <p class="text-body text-text-muted">Variabilní symbol: <span class="font-mono font-semibold text-text">{{ result.startNumber }}</span></p>
+          <p class="text-body text-text-muted">Variabilní symbol: <span class="font-mono font-semibold text-text">{{ result.id }}</span></p>
           <p class="text-meta text-text-soft mt-2">Splatnost startovného je 14 dnů od vyplnění přihlášky, nejpozději však do uzávěrky přihlášky.</p>
         </div>
       </div>

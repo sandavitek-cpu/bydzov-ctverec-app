@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
-import { apiBaseUrl, impersonateRegistration } from '@/api'
+import { apiBaseUrl, impersonateRegistration, assignStartNumber } from '@/api'
 
 const router = useRouter()
 const { isAdmin, authHeaders, logout, impersonateAs } = useAuth()
@@ -225,6 +225,16 @@ async function handleImpersonate(reg: AdminReg) {
   }
 }
 
+async function handleAssignStartNumber(reg: AdminReg) {
+  try {
+    const result = await assignStartNumber(reg.id, authHeaders())
+    reg.startNumber = result.startNumber
+    showToast(`Startovní číslo #${result.startNumber} přiděleno`, 'success')
+  } catch (e) {
+    showToast(e instanceof Error ? e.message : 'Přidělení selhalo', 'error')
+  }
+}
+
 async function downloadPdf() {
   try {
     const res = await fetch(`${apiBaseUrl}/api/admin/registrations/export/pdf`, {
@@ -440,6 +450,10 @@ const variantLabel: Record<string, string> = {
                   class="btn-ghost btn-xs"
                   title="Přihlásit jako tento tým"
                 >👁</button>
+                <button v-if="r.status === 'PAID' && (!r.startNumber || r.startNumber === 0)" @click.stop="handleAssignStartNumber(r)"
+                  class="btn-secondary btn-xs whitespace-nowrap"
+                  title="Přidělit startovní číslo"
+                >#</button>
               </div>
             </td>
           </tr>
