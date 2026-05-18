@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
-import { apiBaseUrl, fetchVehicles, createVehicle, updateVehicle, deleteVehicle, type VehicleData } from '@/api'
+import { fetchVehicles, createVehicle, updateVehicle, deleteVehicle, type VehicleData } from '@/api'
 
 const router = useRouter()
-const { isLoggedIn, authHeaders, logout } = useAuth()
+const { isLoggedIn, authHeaders } = useAuth()
 const { show: showToast } = useToast()
 
 const vehicles = ref<VehicleData[]>([])

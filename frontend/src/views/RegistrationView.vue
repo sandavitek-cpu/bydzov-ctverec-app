@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import { submitRegistration, fetchVehicles, createVehicle, fetchRacerProfile, lookupUserByEmail, fetchPublicVariants, type RegistrationResult, type CrewMemberInput, type VehicleData, type PublicVariant } from '@/api'
+import { submitRegistration, fetchVehicles, createVehicle, fetchRacerProfile, lookupUserByEmail, fetchPublicVariants, type RegistrationResult, type CrewMemberInput, type VehicleData } from '@/api'
 import { useAuth } from '@/composables/useAuth'
 
 const { isLoggedIn, authHeaders } = useAuth()
@@ -108,19 +108,19 @@ const hasVehicles = computed(() => myVehicles.value.length > 0)
 
 let emailLookupTimer: ReturnType<typeof setTimeout> | null = null
 
-async function lookupEmail(email: string, target: { firstName: string; lastName: string; phone: string }) {
+async function lookupEmail(email: string, target: { firstName: string; lastName: string; phone?: string }) {
   if (!email || !email.includes('@')) return
   try {
     const user = await lookupUserByEmail(email)
     if (user && user.firstName) {
       target.firstName = target.firstName || user.firstName
       target.lastName = target.lastName || user.lastName
-      target.phone = target.phone || user.phone
+      if (target.phone !== undefined) target.phone = target.phone || user.phone
     }
   } catch { /* ignore */ }
 }
 
-function onEmailInput(email: string, target: { firstName: string; lastName: string; phone: string }) {
+function onEmailInput(email: string, target: { firstName: string; lastName: string; phone?: string }) {
   if (emailLookupTimer) clearTimeout(emailLookupTimer)
   emailLookupTimer = setTimeout(() => lookupEmail(email, target), 500)
 }
