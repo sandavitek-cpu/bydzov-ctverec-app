@@ -473,12 +473,27 @@ const variantLabel: Record<string, string> = {
         </div>
 
         <div class="space-y-4">
-          <!-- Status badges -->
+          <!-- Payment status toggle -->
+          <div>
+            <p class="text-label text-text-soft mb-1.5">Stav platby</p>
+            <div class="flex rounded-lg border border-border overflow-hidden">
+              <button @click.stop="toggleStatus(selected)"
+                class="flex-1 px-3 py-1.5 text-body-sm font-medium transition-colors"
+                :class="selected.status === 'PENDING'
+                  ? 'bg-warning/10 text-warning'
+                  : 'bg-surface text-text-soft hover:text-text'"
+              >Přihlášen, nezaplaceno</button>
+              <button @click.stop="toggleStatus(selected)"
+                class="flex-1 px-3 py-1.5 text-body-sm font-medium transition-colors"
+                :class="selected.status === 'PAID'
+                  ? 'bg-success/10 text-success'
+                  : 'bg-surface text-text-soft hover:text-text'"
+              >Přihlášen a zaplaceno</button>
+            </div>
+          </div>
+
+          <!-- Other badges -->
           <div class="flex flex-wrap gap-2">
-            <button @click.stop="toggleStatus(selected)"
-              class="badge cursor-pointer transition-colors"
-              :class="selected.status === 'PAID' ? '!bg-success/10 !text-success' : 'badge-admin'"
-            >{{ selected.status === 'PAID' ? 'Přihlášen a zaplaceno' : 'Přihlášen, nezaplaceno' }}</button>
             <span v-if="selected.arrived" class="badge !bg-info/10 !text-info">Přijel</span>
             <span v-if="selected.contacted" class="badge !bg-info/10 !text-info">Kontaktován</span>
             <span v-if="selected.firstTime" class="badge !bg-red/10 !text-red">Nováček</span>
