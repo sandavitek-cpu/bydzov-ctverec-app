@@ -315,7 +315,8 @@ async function toggleInfo() {
                 <span class="font-mono text-text">1086360369/0800</span> (Česká spořitelna)
               </p>
               <a
-                href="#"
+                href="https://previt.atlassian.net/servicedesk/customer/portal/100"
+                target="_blank" rel="noopener noreferrer"
                 class="inline-flex items-center gap-1.5 mt-2 rounded-md border border-red/30 px-3 py-1.5 text-meta text-red no-underline hover:bg-red-light transition-colors"
                 title="Helpdesk – technická podpora"
               >
