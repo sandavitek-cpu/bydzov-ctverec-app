@@ -50,6 +50,7 @@ const editing = ref(false)
 const editForm = ref<Record<string, any>>({})
 const saving = ref(false)
 const resendingId = ref<number | null>(null)
+const remindingId = ref<number | null>(null)
 
 const filterVariant = ref('all')
 const filterStatus = ref('all')
@@ -219,6 +220,22 @@ async function handleResend(reg: AdminReg) {
     error.value = e instanceof Error ? e.message : 'Odeslání selhalo'
   } finally {
     resendingId.value = null
+  }
+}
+
+async function handleSendReminder(reg: AdminReg) {
+  remindingId.value = reg.id
+  try {
+    const res = await fetch(`${apiBaseUrl}/api/admin/registrations/${reg.id}/remind`, {
+      method: 'POST', headers: authHeaders(),
+    })
+    const body = await res.json()
+    if (!res.ok) throw new Error(body.error ?? 'Chyba')
+    showToast(`Upomínka odeslána na ${reg.email}`, 'success')
+  } catch (e) {
+    showToast(e instanceof Error ? e.message : 'Odeslání selhalo', 'error')
+  } finally {
+    remindingId.value = null
   }
 }
 
@@ -570,6 +587,9 @@ const variantLabel: Record<string, string> = {
                 <button @click="handleResend(r)" :disabled="resendingId === r.id"
                   class="btn-ghost btn-xs whitespace-nowrap" title="Znovu odeslat přihlašovací údaje"
                 >{{ resendingId === r.id ? '…' : 'Poslat údaje' }}</button>
+                <button v-if="r.status !== 'PAID'" @click="handleSendReminder(r)" :disabled="remindingId === r.id"
+                  class="btn-ghost btn-xs whitespace-nowrap" title="Odeslat upomínku o nezaplacení"
+                >{{ remindingId === r.id ? '…' : 'Upomínka' }}</button>
                 <button @click="handleImpersonate(r)"
                   class="btn-ghost btn-xs"
                   title="Přihlásit jako tento tým"
@@ -695,6 +715,18 @@ const variantLabel: Record<string, string> = {
           <div v-if="selected.status !== 'CANCELLED'" class="pt-2">
             <button @click="handleCancel(selected)" class="btn-ghost btn-xs text-red hover:text-red">
               Stornovat přihlášku
+            </button>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex flex-wrap gap-2 pt-1">
+            <button @click="handleResend(selected)" :disabled="resendingId === selected.id"
+              class="btn-secondary btn-xs">
+              {{ resendingId === selected.id ? '…' : 'Poslat přihlašovací údaje' }}
+            </button>
+            <button v-if="selected.status !== 'PAID'" @click="handleSendReminder(selected)" :disabled="remindingId === selected.id"
+              class="btn-secondary btn-xs">
+              {{ remindingId === selected.id ? '…' : 'Poslat upomínku platby' }}
             </button>
           </div>
 

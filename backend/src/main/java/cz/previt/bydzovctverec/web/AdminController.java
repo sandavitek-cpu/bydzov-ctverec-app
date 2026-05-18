@@ -288,6 +288,37 @@ public class AdminController {
     return ResponseEntity.ok(Map.of("resent", sent));
   }
 
+  @PostMapping("/{id}/remind")
+  public ResponseEntity<?> remindPayment(@PathVariable Long id) {
+    RacerRegistration reg = racerRegistrationRepository.findById(id).orElse(null);
+    if (reg == null) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Přihláška nenalezena"));
+    }
+    if ("PAID".equals(reg.getStatus())) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Přihláška je již zaplacena"));
+    }
+    Integer fee = reg.getStartFee();
+    Integer ref = reg.getPaymentReference();
+    String name = reg.getTeamName();
+    String body = """
+Dobrý den,
+
+zatím jsme neobdrželi platbu startovného pro tým "%s".
+
+  Startovné: %d Kč
+  Variabilní symbol: %d
+
+Pokud jste již platbu provedli, tuto zprávu prosím ignorujte.
+V případě dotazů nás kontaktujte na info@bydzov-ctverec.cz.
+
+Děkujeme za Vaši účast.
+Tým Novobydžovského čtverce
+""".formatted(name, fee, ref);
+    emailService.send(reg.getEmail(), "Novobydžovský čtverec – upomínka nezaplaceného startovného", body);
+    log.info("Payment reminder sent to registration {} ({})", id, reg.getEmail());
+    return ResponseEntity.ok(Map.of("sent", true));
+  }
+
   @PostMapping("/{id}/impersonate")
   public ResponseEntity<?> impersonate(@PathVariable Long id) {
     RacerRegistration reg = racerRegistrationRepository.findById(id).orElse(null);
