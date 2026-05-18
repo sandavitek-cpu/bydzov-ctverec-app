@@ -245,7 +245,9 @@ if (!isLoggedIn.value) {
         </div>
 
         <div v-if="!editing" class="space-y-2 text-body-sm">
-          <div class="flex justify-between"><span class="text-text-soft">Varianta</span><span class="text-text">{{ regStatus.variant === 'JEDNODENNI' ? 'Jednodenní' : regStatus.variant === 'DVODENNI_UZAVRENO' ? 'Dvoudenní' : regStatus.variant === 'DVODENNI_BEZ_UBYTOVANI' ? 'Dvoudenní bez ubytování' : regStatus.variant }}</span></div>
+          <div class="flex justify-between"><span class="text-text-soft">Startovní číslo</span><span class="text-text font-bold text-primary">{{ regStatus.startNumber || '—' }}</span></div>
+          <div class="flex justify-between"><span class="text-text-soft">Varianta</span><span class="text-text">{{ { JEDNODENNI: 'Jednodenní', DVODENNI_UZAVRENO: 'Dvoudenní', DVODENNI_BEZ_UBYTOVANI: 'Dvoudenní bez ubytování' }[regStatus.variant] || regStatus.variant }}</span></div>
+          <div class="flex justify-between"><span class="text-text-soft">Kategorie</span><span class="text-text">{{ regStatus.vehicleCategory === 'AUTO' ? 'Automobil' : regStatus.vehicleCategory === 'MOTO' ? 'Motocykl' : regStatus.vehicleCategory }}</span></div>
           <div class="flex justify-between"><span class="text-text-soft">Vozidlo</span><span class="text-text">{{ regStatus.vehicleMake }} ({{ regStatus.vehiclePlate }})</span></div>
           <div class="flex justify-between"><span class="text-text-soft">Ročník</span><span class="text-text">{{ regStatus.vehicleYear }}</span></div>
           <div class="flex justify-between"><span class="text-text-soft">Počet osob</span><span class="text-text">{{ regStatus.crewCount }}</span></div>
