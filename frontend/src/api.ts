@@ -13,6 +13,11 @@ export interface CrewMemberInput {
   firstName: string
   lastName: string
   email: string
+  driverAge: number
+  gender: string
+  address: string
+  clubMember: boolean
+  firstTime: boolean
 }
 
 export interface RegistrationData {
@@ -26,6 +31,11 @@ export interface RegistrationData {
   variant: string
   firstName: string
   lastName: string
+  driverAge: number
+  gender: string
+  address: string
+  club: string
+  firstTime: boolean
   crewMembers: CrewMemberInput[]
 }
 

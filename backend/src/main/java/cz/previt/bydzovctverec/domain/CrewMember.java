@@ -36,6 +36,21 @@ public class CrewMember {
   @Column(nullable = false)
   private String email;
 
+  @Column(name = "driver_age")
+  private Integer driverAge;
+
+  @Column(length = 10)
+  private String gender;
+
+  @Column(length = 300)
+  private String address;
+
+  @Column(name = "club_member")
+  private Boolean clubMember;
+
+  @Column(name = "first_time")
+  private Boolean firstTime;
+
   protected CrewMember() {}
 
   public CrewMember(RacerRegistration registration, User user, String firstName, String lastName, String email) {
@@ -46,10 +61,25 @@ public class CrewMember {
     this.email = email;
   }
 
+  public CrewMember(RacerRegistration registration, User user, String firstName, String lastName,
+      String email, Integer driverAge, String gender, String address, Boolean clubMember, Boolean firstTime) {
+    this(registration, user, firstName, lastName, email);
+    this.driverAge = driverAge;
+    this.gender = gender;
+    this.address = address;
+    this.clubMember = clubMember;
+    this.firstTime = firstTime;
+  }
+
   public Long getId() { return id; }
   public RacerRegistration getRegistration() { return registration; }
   public User getUser() { return user; }
   public String getFirstName() { return firstName; }
   public String getLastName() { return lastName; }
   public String getEmail() { return email; }
+  public Integer getDriverAge() { return driverAge; }
+  public String getGender() { return gender; }
+  public String getAddress() { return address; }
+  public Boolean getClubMember() { return clubMember; }
+  public Boolean getFirstTime() { return firstTime; }
 }

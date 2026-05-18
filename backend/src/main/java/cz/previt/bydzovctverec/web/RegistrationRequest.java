@@ -38,5 +38,10 @@ public record RegistrationRequest(
   public record CrewMemberInput(
       @NotBlank String firstName,
       @NotBlank String lastName,
-      @NotBlank @Email String email) {}
+      @NotBlank @Email String email,
+      @NotNull Integer driverAge,
+      @NotBlank String gender,
+      @NotBlank String address,
+      @NotNull Boolean clubMember,
+      @NotNull Boolean firstTime) {}
 }

@@ -11,6 +11,8 @@ const { show: showToast } = useToast()
 
 interface CrewInfo {
   firstName: string; lastName: string; email: string
+  driverAge: number | null; gender: string | null; address: string | null
+  clubMember: boolean; firstTime: boolean
 }
 
 interface AdminReg {
@@ -468,10 +470,20 @@ const variantLabel: Record<string, string> = {
           <!-- Crew Members -->
           <div v-if="selected.crewMembers?.length" class="rounded-lg border border-border bg-bg-alt p-4">
             <h3 class="text-label text-text mb-2">Členové posádky</h3>
-            <div class="space-y-1.5">
-              <div v-for="(cm, i) in selected.crewMembers" :key="i" class="flex items-center justify-between text-body-sm">
-                <span class="text-text">{{ cm.firstName }} {{ cm.lastName }}</span>
-                <span class="text-text-soft text-meta">{{ cm.email }}</span>
+            <div class="space-y-2">
+              <div v-for="(cm, i) in selected.crewMembers" :key="i"
+                class="rounded-md border border-border/50 bg-surface p-3 text-body-sm space-y-1">
+                <div class="flex items-center justify-between">
+                  <span class="font-medium text-text">{{ cm.firstName }} {{ cm.lastName }}</span>
+                  <span class="text-text-soft text-meta">{{ cm.email }}</span>
+                </div>
+                <div class="flex flex-wrap gap-x-4 gap-y-1 text-meta text-text-muted">
+                  <span v-if="cm.driverAge">Věk: {{ cm.driverAge }}</span>
+                  <span v-if="cm.gender">{{ cm.gender === 'M' ? 'Muž' : cm.gender === 'Z' ? 'Žena' : cm.gender }}</span>
+                  <span v-if="cm.address">{{ cm.address }}</span>
+                  <span v-if="cm.clubMember" class="text-primary">Člen klubu</span>
+                  <span v-if="cm.firstTime" class="text-red">Nováček</span>
+                </div>
               </div>
             </div>
           </div>

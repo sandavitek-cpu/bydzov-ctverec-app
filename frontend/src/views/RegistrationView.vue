@@ -36,16 +36,22 @@ const form = ref({
   variant: '',
   firstName: '',
   lastName: '',
+  driverAge: 0,
+  gender: '',
+  address: '',
+  club: '',
+  firstTime: false,
   vehicleMake: '',
   consent: false,
 })
 
+const driverClubMember = ref(false)
 const crewMembers = ref<CrewMemberInput[]>([])
 
 watch(() => form.value.crewCount, (n) => {
   const target = Math.max(0, n - 1)
   while (crewMembers.value.length < target) {
-    crewMembers.value.push({ firstName: '', lastName: '', email: '' })
+    crewMembers.value.push({ firstName: '', lastName: '', email: '', driverAge: 0, gender: '', address: '', clubMember: false, firstTime: false })
   }
   if (crewMembers.value.length > target) {
     crewMembers.value.splice(target)
@@ -90,6 +96,11 @@ async function handleSubmit() {
       variant: form.value.variant,
       firstName: form.value.firstName,
       lastName: form.value.lastName,
+      driverAge: form.value.driverAge,
+      gender: form.value.gender,
+      address: form.value.address,
+      club: driverClubMember.value ? 'ano' : '',
+      firstTime: form.value.firstTime,
       crewMembers: crewMembers.value.filter(m => m.firstName && m.lastName && m.email),
     })
     submitted.value = true
@@ -164,7 +175,6 @@ const qrUrl = computed(() => {
       </div>
 
       <!-- Driver name -->
-      <!-- Driver name -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label class="input-label">Jméno řidiče</label>
@@ -174,6 +184,37 @@ const qrUrl = computed(() => {
           <label class="input-label">Příjmení</label>
           <input v-model="form.lastName" required class="input-field" placeholder="Novák" />
         </div>
+      </div>
+
+      <!-- Driver mandatory info -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div>
+          <label class="input-label">Věk v den závodu</label>
+          <input v-model.number="form.driverAge" type="number" required min="1" class="input-field" placeholder="např. 35" />
+        </div>
+        <div>
+          <label class="input-label">Pohlaví</label>
+          <select v-model="form.gender" required class="input-field">
+            <option value="" disabled>Vyberte</option>
+            <option value="M">Muž</option>
+            <option value="Z">Žena</option>
+          </select>
+        </div>
+        <div>
+          <label class="input-label">Bydliště</label>
+          <input v-model="form.address" required class="input-field" placeholder="Město" />
+        </div>
+      </div>
+
+      <div class="flex flex-wrap gap-6">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" v-model="form.firstTime" class="accent-primary" />
+          <span class="text-body-sm text-text-muted">Jedete závod poprvé?</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" v-model="driverClubMember" class="accent-primary" />
+          <span class="text-body-sm text-text-muted">Jste členem klubu?</span>
+        </label>
       </div>
 
       <!-- Contact -->
@@ -245,6 +286,34 @@ const qrUrl = computed(() => {
           <div>
             <label class="input-label">E-mail</label>
             <input v-model="cm.email" type="email" required class="input-field" placeholder="clen@example.cz" />
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="input-label">Věk v den závodu</label>
+              <input v-model.number="cm.driverAge" type="number" required min="1" class="input-field" />
+            </div>
+            <div>
+              <label class="input-label">Pohlaví</label>
+              <select v-model="cm.gender" required class="input-field">
+                <option value="" disabled>Vyberte</option>
+                <option value="M">Muž</option>
+                <option value="Z">Žena</option>
+              </select>
+            </div>
+            <div>
+              <label class="input-label">Bydliště</label>
+              <input v-model="cm.address" required class="input-field" placeholder="Město" />
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-6">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" v-model="cm.firstTime" class="accent-primary" />
+              <span class="text-body-sm text-text-muted">První účast?</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" v-model="cm.clubMember" class="accent-primary" />
+              <span class="text-body-sm text-text-muted">Člen klubu?</span>
+            </label>
           </div>
         </div>
       </div>

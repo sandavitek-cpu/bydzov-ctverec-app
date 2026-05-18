@@ -100,14 +100,18 @@ public class RegistrationController {
 
     var racerRole = appRoleRepository.findByName("RACER").orElse(null);
 
-    String driverPwd = createUser(email, firstName, lastName, racerRole, reg);
+    String driverPwd = createUser(email, firstName, lastName, racerRole, reg,
+        request.driverAge(), request.gender(), request.address(),
+        request.club(), request.firstTime());
     emailService.sendCredentials(email, firstName + " " + lastName, email, driverPwd,
         startNumber, startFee);
 
     if (request.crewMembers() != null) {
       for (var cm : request.crewMembers()) {
         String cmEmail = cm.email().trim();
-        String cmPwd = createUser(cmEmail, cm.firstName().trim(), cm.lastName().trim(), racerRole, reg);
+        String cmClub = Boolean.TRUE.equals(cm.clubMember()) ? "ano" : "";
+        String cmPwd = createUser(cmEmail, cm.firstName().trim(), cm.lastName().trim(), racerRole, reg,
+            cm.driverAge(), cm.gender(), cm.address(), cmClub, cm.firstTime());
         emailService.sendCredentials(cmEmail, cm.firstName() + " " + cm.lastName(), cmEmail,
             cmPwd, startNumber, startFee);
       }
@@ -123,13 +127,18 @@ public class RegistrationController {
         reg.getStatus(), reg.getVariant()));
   }
 
-  private String createUser(String email, String firstName, String lastName, AppRole racerRole, RacerRegistration reg) {
+  private String createUser(String email, String firstName, String lastName, AppRole racerRole,
+      RacerRegistration reg, Integer driverAge, String gender, String address,
+      String club, Boolean firstTime) {
     String rawPassword = generatePassword();
     User user = new User(email, email, passwordEncoder.encode(rawPassword), UserRole.RACER,
         firstName, lastName, Instant.now());
     if (racerRole != null) user.getAppRoles().add(racerRole);
     userRepository.save(user);
-    crewMemberRepository.save(new CrewMember(reg, user, firstName, lastName, email));
+    crewMemberRepository.save(new CrewMember(reg, user, firstName, lastName, email,
+        driverAge, gender, address,
+        club != null && !club.isBlank(),
+        firstTime));
     return rawPassword;
   }
 

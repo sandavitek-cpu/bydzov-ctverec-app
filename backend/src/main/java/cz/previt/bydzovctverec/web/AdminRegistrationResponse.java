@@ -41,11 +41,13 @@ public record AdminRegistrationResponse(
     Instant createdAt,
     List<CrewMemberInfo> crewMembers) {
 
-  public record CrewMemberInfo(String firstName, String lastName, String email) {}
+  public record CrewMemberInfo(String firstName, String lastName, String email,
+      Integer driverAge, String gender, String address, Boolean clubMember, Boolean firstTime) {}
 
   public static AdminRegistrationResponse from(RacerRegistration r, List<CrewMember> crewMembers) {
     List<CrewMemberInfo> cmList = crewMembers == null ? List.of()
-        : crewMembers.stream().map(cm -> new CrewMemberInfo(cm.getFirstName(), cm.getLastName(), cm.getEmail())).toList();
+        : crewMembers.stream().map(cm -> new CrewMemberInfo(cm.getFirstName(), cm.getLastName(), cm.getEmail(),
+            cm.getDriverAge(), cm.getGender(), cm.getAddress(), cm.getClubMember(), cm.getFirstTime())).toList();
     return new AdminRegistrationResponse(
         r.getId(), r.getTeamName(), r.getEmail(), r.getPhone(),
         r.getVehicleCategory(), r.getVehicleMake(), r.getVehiclePlate(),
