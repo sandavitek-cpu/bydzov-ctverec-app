@@ -192,6 +192,9 @@ async function toggleStatus(reg: AdminReg) {
     })
     if (!res.ok) throw new Error()
     reg.status = newStatus
+    if (selected.value?.id === reg.id) {
+      selected.value = reg
+    }
     await fetchAll()
   } catch {
     error.value = 'Nepodařilo se změnit stav'
@@ -472,9 +475,10 @@ const variantLabel: Record<string, string> = {
         <div class="space-y-4">
           <!-- Status badges -->
           <div class="flex flex-wrap gap-2">
-            <span class="badge" :class="selected.status === 'PAID' ? '!bg-success/10 !text-success' : 'badge-admin'">
-              {{ selected.status === 'PAID' ? 'Přihlášen a zaplaceno' : 'Přihlášen, nezaplaceno' }}
-            </span>
+            <button @click.stop="toggleStatus(selected)"
+              class="badge cursor-pointer transition-colors"
+              :class="selected.status === 'PAID' ? '!bg-success/10 !text-success' : 'badge-admin'"
+            >{{ selected.status === 'PAID' ? 'Přihlášen a zaplaceno' : 'Přihlášen, nezaplaceno' }}</button>
             <span v-if="selected.arrived" class="badge !bg-info/10 !text-info">Přijel</span>
             <span v-if="selected.contacted" class="badge !bg-info/10 !text-info">Kontaktován</span>
             <span v-if="selected.firstTime" class="badge !bg-red/10 !text-red">Nováček</span>
