@@ -125,11 +125,61 @@ public class RegistrationController {
     log.info("Registration {} created with {} crew members", reg.getId(),
         1 + (request.crewMembers() != null ? request.crewMembers().size() : 0));
 
+    String summary = buildSummaryEmail(request, startFee, paymentRef);
+    emailService.send(email, "Novobydžovský čtverec – potvrzení přihlášky", summary);
+
     return ResponseEntity.ok(new RegistrationResponse(
         reg.getId(), reg.getTeamName(), email, reg.getPhone(),
         reg.getVehicleCategory(), reg.getVehiclePlate(), reg.getVehicleYear(),
         reg.getCrewCount(), reg.getStartNumber(), reg.getStartFee(),
         reg.getStatus(), reg.getVariant(), paymentRef));
+  }
+
+  private String buildSummaryEmail(RegistrationRequest r, int startFee, int paymentRef) {
+    var sb = new StringBuilder();
+    sb.append("Dobrý den,\n\n");
+    sb.append("děkujeme za Vaši přihlášku na Novobydžovský čtverec 2026.\n\n");
+    sb.append("Rekapitulace přihlášky:\n");
+    sb.append("  Název týmu: ").append(r.teamName()).append("\n");
+    String variantLabel = switch (r.variant()) {
+      case "JEDNODENNI" -> "Jednodenní závod";
+      case "DVODENNI_UZAVRENO" -> "Dvoudenní závod – UZAVŘENO";
+      case "DVODENNI_BEZ_UBYTOVANI" -> "Dvoudenní závod bez ubytování";
+      default -> r.variant();
+    };
+    sb.append("  Varianta: ").append(variantLabel).append("\n");
+    String catLabel = "AUTO".equals(r.vehicleCategory()) ? "Automobil" : "Motocykl";
+    sb.append("  Vozidlo: ").append(catLabel);
+    if (r.vehicleMake() != null && !r.vehicleMake().isBlank()) {
+      sb.append(" ").append(r.vehicleMake());
+    }
+    sb.append(" (").append(r.vehiclePlate()).append(", ").append(r.vehicleYear()).append(")\n");
+    sb.append("  Počet členů posádky: ").append(r.crewCount()).append("\n\n");
+
+    sb.append("Řidič:\n");
+    sb.append("  Jméno: ").append(r.firstName()).append(" ").append(r.lastName()).append("\n");
+    if (r.driverAge() != null) sb.append("  Věk: ").append(r.driverAge()).append(" let\n");
+    if (r.gender() != null) sb.append("  Pohlaví: ").append("M".equals(r.gender()) ? "Muž" : "Žena").append("\n");
+    if (r.address() != null && !r.address().isBlank()) sb.append("  Bydliště: ").append(r.address()).append("\n");
+    if (r.club() != null && !r.club().isBlank()) sb.append("  Klub: ").append(r.club()).append("\n\n");
+
+    if (r.crewMembers() != null && !r.crewMembers().isEmpty()) {
+      sb.append("Ostatní členové posádky:\n");
+      for (int i = 0; i < r.crewMembers().size(); i++) {
+        var cm = r.crewMembers().get(i);
+        sb.append("  ").append(i + 1).append(". ").append(cm.firstName()).append(" ").append(cm.lastName());
+        sb.append(" (").append(cm.email()).append(")\n");
+      }
+      sb.append("\n");
+    }
+
+    sb.append("Startovné: ").append(startFee).append(" Kč\n");
+    sb.append("Variabilní symbol: ").append(paymentRef).append("\n\n");
+    sb.append("Po přihlášení uvidíte itinerář, mapu a stav Vaší přihlášky:\n");
+    sb.append("https://app.bydzov-ctverec.cz\n\n");
+    sb.append("S pozdravem\n");
+    sb.append("Tým Novobydžovského čtverce\n");
+    return sb.toString();
   }
 
   private String createUser(String email, String firstName, String lastName, AppRole racerRole,
