@@ -100,8 +100,8 @@ deploy-backend:
       echo "$RESPONSE"
 
       if [ -z "$RENDER_API_KEY" ] || [ -z "$RENDER_SERVICE_ID" ]; then
-        echo "RENDER_API_KEY nebo RENDER_SERVICE_ID není nastaveno — nelze sledovat průběh deploye"
-        exit 1
+        echo "RENDER_API_KEY nebo RENDER_SERVICE_ID není nastaveno — deploy hook byl odeslán, ale průběh deploye nelze sledovat"
+        exit 0
       fi
 
       echo "=== Sleduji průběh deploye (max 15 min) ==="
