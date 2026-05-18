@@ -1,0 +1,1 @@
+ALTER TABLE racer_registration ADD COLUMN paid_at TIMESTAMP WITH TIME ZONE;

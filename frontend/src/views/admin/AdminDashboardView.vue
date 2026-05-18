@@ -26,7 +26,7 @@ interface AdminReg {
   engineDisplacement: number | null; power: number | null; maxSpeed: number | null
   vehicleNotes: string | null; notes: string | null; contacted: boolean
   properlyRegistered: boolean; arrived: boolean; consent: boolean
-  approved: boolean; createdAt: string; crewMembers: CrewInfo[]
+  approved: boolean; createdAt: string; paidAt: string | null; crewMembers: CrewInfo[]
 }
 
 interface AdminStats {
@@ -45,6 +45,9 @@ const stats = ref<AdminStats | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
 const selected = ref<AdminReg | null>(null)
+const editing = ref(false)
+const editForm = ref<Record<string, any>>({})
+const saving = ref(false)
 const resendingId = ref<number | null>(null)
 
 const filterVariant = ref('all')
@@ -279,10 +282,54 @@ function mailtoUnpaid() {
 
 function selectReg(r: AdminReg) {
   selected.value = r
+  editing.value = false
 }
 
 function closeDetail() {
   selected.value = null
+  editing.value = false
+}
+
+function startEdit() {
+  if (!selected.value) return
+  editForm.value = { ...selected.value }
+  editing.value = true
+}
+
+function cancelEdit() {
+  editing.value = false
+}
+
+async function saveEdit() {
+  if (!selected.value) return
+  saving.value = true
+  try {
+    const allowed = [
+      'variant', 'vehicleMake', 'firstTime', 'gender', 'driverAge', 'club',
+      'address', 'youngestAge', 'youngestName', 'engineDisplacement', 'power',
+      'maxSpeed', 'vehicleNotes', 'notes', 'contacted', 'properlyRegistered',
+      'arrived', 'consent'
+    ]
+    const body: Record<string, any> = {}
+    for (const key of allowed) {
+      if (key in editForm.value) body[key] = editForm.value[key]
+    }
+    const res = await fetch(`${apiBaseUrl}/api/admin/registrations/${selected.value.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify(body),
+    })
+    if (!res.ok) throw new Error()
+    const updated = await res.json()
+    Object.assign(selected.value, updated)
+    editing.value = false
+    showToast('Údaje uloženy', 'success')
+    await fetchAll()
+  } catch {
+    showToast('Nepodařilo se uložit změny', 'error')
+  } finally {
+    saving.value = false
+  }
 }
 
 onMounted(() => {
@@ -469,10 +516,13 @@ const variantLabel: Record<string, string> = {
       <div class="mx-4 w-full max-w-lg rounded-xl border border-border bg-surface p-4 sm:p-6 shadow-lg">
         <div class="flex items-center justify-between mb-5">
           <h2 class="text-subsection text-text">#{{ selected.startNumber }} – {{ selected.teamName }}</h2>
-          <button @click="closeDetail" class="text-text-soft hover:text-text text-xl leading-none">&times;</button>
+          <div class="flex items-center gap-2">
+            <button v-if="!editing" @click="startEdit" class="btn-secondary btn-xs">Upravit</button>
+            <button @click="closeDetail" class="text-text-soft hover:text-text text-xl leading-none">&times;</button>
+          </div>
         </div>
 
-        <div class="space-y-4">
+        <div v-if="!editing" class="space-y-4">
           <!-- Payment status toggle -->
           <div>
             <p class="text-label text-text-soft mb-1.5">Stav platby</p>
@@ -576,6 +626,103 @@ const variantLabel: Record<string, string> = {
           </div>
 
           <p class="text-meta text-text-soft text-center">Přihlášeno: {{ new Date(selected.createdAt).toLocaleString('cs') }}</p>
+          <p v-if="selected.paidAt" class="text-meta text-success text-center">Zaplaceno: {{ new Date(selected.paidAt).toLocaleString('cs') }}</p>
+        </div>
+
+        <!-- Edit form -->
+        <div v-else class="space-y-4">
+          <div class="flex flex-col gap-3 max-h-[60vh] overflow-y-auto pr-1">
+            <div>
+              <label class="text-label text-text-soft mb-1 block">Varianta</label>
+              <select v-model="editForm.variant" class="input-field w-full">
+                <option :value="null">—</option>
+                <option value="JEDNODENNI">Jednodenní</option>
+                <option value="DVODENNI">Dvoudenní</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-label text-text-soft mb-1 block">Značka</label>
+              <input v-model="editForm.vehicleMake" class="input-field w-full" />
+            </div>
+            <div>
+              <label class="text-label text-text-soft mb-1 block">První účast</label>
+              <input type="checkbox" v-model="editForm.firstTime" class="cursor-pointer" />
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-label text-text-soft mb-1 block">Věk řidiče</label>
+                <input type="number" v-model.number="editForm.driverAge" class="input-field w-full" />
+              </div>
+              <div>
+                <label class="text-label text-text-soft mb-1 block">Pohlaví</label>
+                <select v-model="editForm.gender" class="input-field w-full">
+                  <option :value="null">—</option>
+                  <option value="M">Muž</option>
+                  <option value="Z">Žena</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label class="text-label text-text-soft mb-1 block">Klub</label>
+              <input v-model="editForm.club" class="input-field w-full" />
+            </div>
+            <div>
+              <label class="text-label text-text-soft mb-1 block">Bydliště</label>
+              <input v-model="editForm.address" class="input-field w-full" />
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-label text-text-soft mb-1 block">Nejmladší člen – věk</label>
+                <input type="number" v-model.number="editForm.youngestAge" class="input-field w-full" />
+              </div>
+              <div>
+                <label class="text-label text-text-soft mb-1 block">Nejmladší člen – jméno</label>
+                <input v-model="editForm.youngestName" class="input-field w-full" />
+              </div>
+            </div>
+            <div class="grid grid-cols-3 gap-3">
+              <div>
+                <label class="text-label text-text-soft mb-1 block">Obsah (ccm)</label>
+                <input type="number" v-model.number="editForm.engineDisplacement" class="input-field w-full" />
+              </div>
+              <div>
+                <label class="text-label text-text-soft mb-1 block">Výkon (kW)</label>
+                <input type="number" v-model.number="editForm.power" class="input-field w-full" />
+              </div>
+              <div>
+                <label class="text-label text-text-soft mb-1 block">Max. rychlost</label>
+                <input type="number" v-model.number="editForm.maxSpeed" class="input-field w-full" />
+              </div>
+            </div>
+            <div>
+              <label class="text-label text-text-soft mb-1 block">Poznámky k vozidlu</label>
+              <textarea v-model="editForm.vehicleNotes" class="input-field w-full" rows="2"></textarea>
+            </div>
+            <div>
+              <label class="text-label text-text-soft mb-1 block">Interní poznámka</label>
+              <textarea v-model="editForm.notes" class="input-field w-full" rows="2"></textarea>
+            </div>
+            <div class="flex flex-wrap gap-4">
+              <label class="flex items-center gap-2 text-body-sm cursor-pointer">
+                <input type="checkbox" v-model="editForm.contacted" /> Kontaktován
+              </label>
+              <label class="flex items-center gap-2 text-body-sm cursor-pointer">
+                <input type="checkbox" v-model="editForm.properlyRegistered" /> Řádně přihlášen
+              </label>
+              <label class="flex items-center gap-2 text-body-sm cursor-pointer">
+                <input type="checkbox" v-model="editForm.arrived" /> Přijel
+              </label>
+              <label class="flex items-center gap-2 text-body-sm cursor-pointer">
+                <input type="checkbox" v-model="editForm.consent" /> Souhlas
+              </label>
+            </div>
+          </div>
+          <div class="flex gap-2 pt-2 border-t border-border">
+            <button @click="saveEdit" :disabled="saving" class="btn-primary flex-1">
+              {{ saving ? 'Ukládám…' : 'Uložit' }}
+            </button>
+            <button @click="cancelEdit" class="btn-ghost">Zrušit</button>
+          </div>
         </div>
       </div>
     </div>

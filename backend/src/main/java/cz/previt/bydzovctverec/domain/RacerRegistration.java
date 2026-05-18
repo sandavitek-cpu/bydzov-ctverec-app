@@ -68,6 +68,9 @@ public class RacerRegistration {
   @Column(name = "created_at", nullable = false)
   private Instant createdAt;
 
+  @Column(name = "paid_at")
+  private Instant paidAt;
+
   @Column(length = 20)
   private String variant;
 
@@ -240,8 +243,12 @@ public class RacerRegistration {
   public Integer getStartFee() { return startFee; }
 
   public String getStatus() { return status; }
+  public void setStatus(String status) { this.status = status; }
 
   public Instant getCreatedAt() { return createdAt; }
+
+  public Instant getPaidAt() { return paidAt; }
+  public void setPaidAt(Instant paidAt) { this.paidAt = paidAt; }
 
   public String getVariant() { return variant; }
 

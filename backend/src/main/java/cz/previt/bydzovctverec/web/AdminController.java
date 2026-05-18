@@ -101,7 +101,13 @@ public class AdminController {
     if (reg == null) {
       return ResponseEntity.badRequest().body(Map.of("error", "Přihláška nenalezena"));
     }
-    racerRegistrationRepository.updateStatus(id, newStatus);
+    reg.setStatus(newStatus);
+    if ("PAID".equals(newStatus) && reg.getPaidAt() == null) {
+      reg.setPaidAt(Instant.now());
+    } else if ("PENDING".equals(newStatus)) {
+      reg.setPaidAt(null);
+    }
+    racerRegistrationRepository.save(reg);
     return ResponseEntity.ok(Map.of("status", newStatus));
   }
 
