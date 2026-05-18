@@ -143,8 +143,8 @@ if (!isLoggedIn.value) {
         </div>
         <div class="flex items-center justify-between mb-4">
           <span class="text-body text-text-muted">Stav platby</span>
-          <span v-if="regStatus.status === 'PAID'" class="badge !bg-success/10 !text-success">Zaplaceno</span>
-          <span v-else class="badge badge-admin">Čeká na platbu</span>
+          <span v-if="regStatus.status === 'PAID'" class="badge !bg-success/10 !text-success">Přihlášen a zaplaceno</span>
+          <span v-else class="badge badge-admin">Přihlášen, nezaplaceno</span>
         </div>
 
         <template v-if="regStatus.status !== 'PAID'">

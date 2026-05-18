@@ -116,7 +116,7 @@ async function batchAction(action: 'paid' | 'pending') {
   selectedIds.value = new Set()
   await fetchAll()
   batchProcessing.value = false
-  const actionLabel = action === 'paid' ? 'Zaplaceno' : 'Vráceno'
+  const actionLabel = action === 'paid' ? 'Přihlášen a zaplaceno' : 'Vráceno na nezaplaceno'
   if (fail > 0) {
     showToast(`${actionLabel}: ${success} OK, ${fail} selhalo`, 'error')
   } else {
@@ -340,8 +340,8 @@ const variantLabel: Record<string, string> = {
       </select>
       <select v-model="filterStatus" class="input-field !w-auto !h-[36px] text-body-sm">
         <option value="all">Všechny stavy</option>
-        <option value="PAID">Zaplaceno</option>
-        <option value="PENDING">Čeká na platbu</option>
+        <option value="PAID">Přihlášen a zaplaceno</option>
+        <option value="PENDING">Přihlášen, nezaplaceno</option>
       </select>
       <input v-model="filterSearch" placeholder="Hledat tým, SPZ, email…" class="input-field !w-full sm:!w-auto sm:!min-w-[200px] !h-[36px] text-body-sm flex-1" />
     </div>
@@ -366,7 +366,7 @@ const variantLabel: Record<string, string> = {
       </div>
       <div class="card !p-4 text-center">
         <p class="text-kpi" :class="stats.paid === stats.totalCrews ? 'text-success' : 'text-red'">{{ stats.paid }}<span class="text-body-sm text-text-soft">/{{ stats.totalCrews }}</span></p>
-        <p class="text-meta text-text-soft mt-0.5">Zaplaceno</p>
+        <p class="text-meta text-text-soft mt-0.5">Přihlášeno a zaplaceno</p>
       </div>
       <div class="card !p-4 text-center">
         <p class="text-kpi" :class="stats.arrived === stats.totalCrews ? 'text-success' : 'text-text-muted'">{{ stats.arrived }}</p>
@@ -436,7 +436,7 @@ const variantLabel: Record<string, string> = {
                 <button @click.stop="toggleStatus(r)"
                   class="badge cursor-pointer transition-colors"
                   :class="r.status === 'PAID' ? '!bg-success/10 !text-success' : 'badge-admin'"
-                >{{ r.status === 'PAID' ? 'Zaplaceno' : 'Čeká' }}</button>
+                >{{ r.status === 'PAID' ? 'Přihlášen a zaplaceno' : 'Přihlášen, nezaplaceno' }}</button>
                 <span v-if="r.arrived" class="badge !bg-info/10 !text-info">Přijel</span>
                 <span v-if="r.firstTime" class="badge !bg-red/10 !text-red">Nový</span>
               </div>
@@ -473,7 +473,7 @@ const variantLabel: Record<string, string> = {
           <!-- Status badges -->
           <div class="flex flex-wrap gap-2">
             <span class="badge" :class="selected.status === 'PAID' ? '!bg-success/10 !text-success' : 'badge-admin'">
-              {{ selected.status === 'PAID' ? 'Zaplaceno' : 'Čeká na platbu' }}
+              {{ selected.status === 'PAID' ? 'Přihlášen a zaplaceno' : 'Přihlášen, nezaplaceno' }}
             </span>
             <span v-if="selected.arrived" class="badge !bg-info/10 !text-info">Přijel</span>
             <span v-if="selected.contacted" class="badge !bg-info/10 !text-info">Kontaktován</span>

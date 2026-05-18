@@ -426,7 +426,7 @@ public class AdminController {
         .append("<td class=\"center\">").append(r.getVehicleYear()).append("</td>")
         .append("<td class=\"center\">").append(r.getCrewCount()).append("</td>")
         .append("<td>").append(escHtml(r.getVariant())).append("</td>")
-        .append("<td>").append("PAID".equals(r.getStatus()) ? "Zaplaceno" : "Čeká").append("</td>")
+        .append("<td>").append("PAID".equals(r.getStatus()) ? "Přihlášen a zaplaceno" : "Přihlášen, nezaplaceno").append("</td>")
         .append("</tr>");
     }
     html.append("</table></body></html>");
@@ -491,8 +491,8 @@ public class AdminController {
   private String statusLabel(String status) {
     if (status == null) return "Neznámý";
     return switch (status) {
-      case "PAID" -> "Zaplaceno";
-      case "PENDING" -> "Čeká na platbu";
+      case "PAID" -> "Přihlášen a zaplaceno";
+      case "PENDING" -> "Přihlášen, nezaplaceno";
       default -> status;
     };
   }
