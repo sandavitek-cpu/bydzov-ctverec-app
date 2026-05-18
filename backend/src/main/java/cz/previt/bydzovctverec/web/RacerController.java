@@ -58,6 +58,17 @@ public class RacerController {
     this.crewMemberRepository = crewMemberRepository;
   }
 
+  @GetMapping("/profile")
+  public ResponseEntity<?> myProfile(Authentication auth) {
+    User user = (User) auth.getPrincipal();
+    var m = new LinkedHashMap<String, Object>();
+    m.put("firstName", user.getFirstName());
+    m.put("lastName", user.getLastName());
+    m.put("email", user.getEmail());
+    m.put("phone", user.getPhone() != null ? user.getPhone() : "");
+    return ResponseEntity.ok(m);
+  }
+
   @GetMapping("/registration")
   @Transactional(readOnly = true)
   public ResponseEntity<?> myRegistration(Authentication auth) {

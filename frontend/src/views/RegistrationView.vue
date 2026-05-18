@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import { submitRegistration, fetchVehicles, createVehicle, type RegistrationResult, type CrewMemberInput, type VehicleData } from '@/api'
+import { submitRegistration, fetchVehicles, createVehicle, fetchRacerProfile, type RegistrationResult, type CrewMemberInput, type VehicleData } from '@/api'
 import { useAuth } from '@/composables/useAuth'
 
 const { isLoggedIn, authHeaders } = useAuth()
@@ -73,6 +73,13 @@ const vehiclesLoaded = ref(false)
 
 onMounted(async () => {
   if (isLoggedIn.value) {
+    try {
+      const profile = await fetchRacerProfile(authHeaders())
+      form.value.firstName = profile.firstName
+      form.value.lastName = profile.lastName
+      form.value.email = profile.email
+      form.value.phone = profile.phone
+    } catch { /* not critical */ }
     try {
       myVehicles.value = await fetchVehicles(authHeaders())
     } catch { /* not critical */ }
@@ -273,7 +280,8 @@ const qrUrl = computed(() => {
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label class="input-label">E-mail</label>
-          <input v-model="form.email" type="email" required class="input-field" placeholder="posadka@example.cz" />
+          <input v-model="form.email" type="email" required class="input-field" :class="{ 'opacity-60': isLoggedIn }" placeholder="posadka@example.cz" :readonly="isLoggedIn" />
+          <p v-if="isLoggedIn" class="text-meta text-text-soft mt-1">E-mail je převzat z tvého účtu</p>
         </div>
         <div>
           <label class="input-label">Telefon</label>

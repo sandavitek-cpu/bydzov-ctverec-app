@@ -363,6 +363,12 @@ export async function assignStartNumber(id: number, headers: Record<string, stri
   return body as { startNumber: number }
 }
 
+export async function fetchRacerProfile(headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/racer/profile`, { headers })
+  if (!res.ok) throw new Error(`API ${res.status}`)
+  return res.json() as Promise<{ firstName: string; lastName: string; email: string; phone: string }>
+}
+
 export async function fetchRacerStatus(headers: Record<string, string>) {
   const res = await fetch(`${apiBaseUrl}/api/racer/status`, { headers })
   if (!res.ok) throw new Error(`API ${res.status}`)
