@@ -122,7 +122,13 @@ public class AdminController {
       return ResponseEntity.badRequest().body(Map.of("error", "Přihláška nenalezena"));
     }
     if (body.containsKey("variant")) reg.setVariant((String) body.get("variant"));
+    if (body.containsKey("teamName")) reg.setTeamName((String) body.get("teamName"));
+    if (body.containsKey("phone")) reg.setPhone((String) body.get("phone"));
+    if (body.containsKey("vehicleCategory")) reg.setVehicleCategory((String) body.get("vehicleCategory"));
     if (body.containsKey("vehicleMake")) reg.setVehicleMake((String) body.get("vehicleMake"));
+    if (body.containsKey("vehiclePlate")) reg.setVehiclePlate((String) body.get("vehiclePlate"));
+    if (body.containsKey("vehicleYear")) reg.setVehicleYear(toInt(body.get("vehicleYear")));
+    if (body.containsKey("crewCount")) reg.setCrewCount(toInt(body.get("crewCount")));
     if (body.containsKey("firstTime")) reg.setFirstTime((Boolean) body.get("firstTime"));
     if (body.containsKey("gender")) reg.setGender((String) body.get("gender"));
     if (body.containsKey("driverAge")) reg.setDriverAge(toInt(body.get("driverAge")));

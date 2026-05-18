@@ -305,10 +305,11 @@ async function saveEdit() {
   saving.value = true
   try {
     const allowed = [
-      'variant', 'vehicleMake', 'firstTime', 'gender', 'driverAge', 'club',
-      'address', 'youngestAge', 'youngestName', 'engineDisplacement', 'power',
-      'maxSpeed', 'vehicleNotes', 'notes', 'contacted', 'properlyRegistered',
-      'arrived', 'consent'
+      'variant', 'teamName', 'phone', 'vehicleCategory', 'vehicleMake',
+      'vehiclePlate', 'vehicleYear', 'crewCount', 'firstTime', 'gender',
+      'driverAge', 'club', 'address', 'youngestAge', 'youngestName',
+      'engineDisplacement', 'power', 'maxSpeed', 'vehicleNotes', 'notes',
+      'contacted', 'properlyRegistered', 'arrived', 'consent'
     ]
     const body: Record<string, any> = {}
     for (const key of allowed) {
@@ -641,8 +642,40 @@ const variantLabel: Record<string, string> = {
               </select>
             </div>
             <div>
-              <label class="text-label text-text-soft mb-1 block">Značka</label>
-              <input v-model="editForm.vehicleMake" class="input-field w-full" />
+              <label class="text-label text-text-soft mb-1 block">Název týmu</label>
+              <input v-model="editForm.teamName" class="input-field w-full" />
+            </div>
+            <div>
+              <label class="text-label text-text-soft mb-1 block">Telefon</label>
+              <input v-model="editForm.phone" class="input-field w-full" />
+            </div>
+            <div>
+              <label class="text-label text-text-soft mb-1 block">Kategorie</label>
+              <select v-model="editForm.vehicleCategory" class="input-field w-full">
+                <option :value="null">—</option>
+                <option value="AUTO">Automobil</option>
+                <option value="MOTO">Motocykl</option>
+              </select>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-label text-text-soft mb-1 block">Značka</label>
+                <input v-model="editForm.vehicleMake" class="input-field w-full" />
+              </div>
+              <div>
+                <label class="text-label text-text-soft mb-1 block">SPZ</label>
+                <input v-model="editForm.vehiclePlate" class="input-field w-full" />
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-label text-text-soft mb-1 block">Ročník</label>
+                <input type="number" v-model.number="editForm.vehicleYear" class="input-field w-full" />
+              </div>
+              <div>
+                <label class="text-label text-text-soft mb-1 block">Počet osob</label>
+                <input type="number" v-model.number="editForm.crewCount" class="input-field w-full" min="1" max="10" />
+              </div>
             </div>
             <div>
               <label class="text-label text-text-soft mb-1 block">První účast</label>

@@ -227,12 +227,16 @@ public class RacerRegistration {
   public String getVehicleDescription() { return vehicleDescription; }
 
   public String getTeamName() { return teamName; }
+  public void setTeamName(String teamName) { this.teamName = teamName; }
 
   public String getPhone() { return phone; }
+  public void setPhone(String phone) { this.phone = phone; }
 
   public String getVehicleCategory() { return vehicleCategory; }
+  public void setVehicleCategory(String vehicleCategory) { this.vehicleCategory = vehicleCategory; }
 
   public String getVehiclePlate() { return vehiclePlate; }
+  public void setVehiclePlate(String vehiclePlate) { this.vehiclePlate = vehiclePlate; }
 
   public Integer getVehicleYear() { return vehicleYear; }
   public void setVehicleYear(Integer vehicleYear) { this.vehicleYear = vehicleYear; }
