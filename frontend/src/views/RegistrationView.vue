@@ -108,19 +108,18 @@ const hasVehicles = computed(() => myVehicles.value.length > 0)
 
 let emailLookupTimer: ReturnType<typeof setTimeout> | null = null
 
-async function lookupEmail(email: string, target: { firstName: string; lastName: string; phone?: string }) {
+async function lookupEmail(email: string, target: { firstName: string; lastName: string }) {
   if (!email || !email.includes('@')) return
   try {
     const user = await lookupUserByEmail(email)
     if (user && user.firstName) {
       target.firstName = target.firstName || user.firstName
       target.lastName = target.lastName || user.lastName
-      if (target.phone !== undefined) target.phone = target.phone || user.phone
     }
   } catch { /* ignore */ }
 }
 
-function onEmailInput(email: string, target: { firstName: string; lastName: string; phone?: string }) {
+function onEmailInput(email: string, target: { firstName: string; lastName: string }) {
   if (emailLookupTimer) clearTimeout(emailLookupTimer)
   emailLookupTimer = setTimeout(() => lookupEmail(email, target), 500)
 }

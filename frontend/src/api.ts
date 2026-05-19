@@ -1,11 +1,18 @@
 export const apiBaseUrl =
   import.meta.env.VITE_API_BASE_URL ?? 'https://bydzov-ctverec-api.onrender.com'
 
+async function apiError(res: Response): Promise<string> {
+  try {
+    const body = await res.json()
+    return body.error ?? body.message ?? `API ${res.status}`
+  } catch {
+    return `API ${res.status}`
+  }
+}
+
 export async function fetchCurrentEdition() {
   const res = await fetch(`${apiBaseUrl}/api/public/editions/current`)
-  if (!res.ok) {
-    throw new Error(`API ${res.status}`)
-  }
+  if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<{ id: number; year: number; label: string }>
 }
 
@@ -80,19 +87,18 @@ export interface RacerLookup {
 export async function lookupRacerByStartNumber(startNumber: number) {
   const res = await fetch(`${apiBaseUrl}/api/public/registrations/lookup/${startNumber}`)
   if (res.status === 404) return null
-  if (!res.ok) throw new Error(`API ${res.status}`)
+  if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<RacerLookup>
 }
 
 export interface UserLookup {
   firstName: string
   lastName: string
-  phone: string
 }
 
 export async function lookupUserByEmail(email: string) {
   const res = await fetch(`${apiBaseUrl}/api/public/registrations/lookup-user?email=${encodeURIComponent(email)}`)
-  if (!res.ok) throw new Error(`API ${res.status}`)
+  if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<UserLookup>
 }
 
@@ -125,7 +131,7 @@ export interface ResultsResponse {
 
 export async function fetchResults(year: number) {
   const res = await fetch(`${apiBaseUrl}/api/public/results/${year}`)
-  if (!res.ok) throw new Error(`API ${res.status}`)
+  if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<ResultsResponse>
 }
 
@@ -149,13 +155,13 @@ export async function fetchArchive(params?: { year?: number; name?: string; vehi
   const qs = q.toString()
   const url = `${apiBaseUrl}/api/public/archive${qs ? '?' + qs : ''}`
   const res = await fetch(url)
-  if (!res.ok) throw new Error(`API ${res.status}`)
+  if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<ArchiveResponse>
 }
 
 export async function fetchArchiveByYear(year: number) {
   const res = await fetch(`${apiBaseUrl}/api/public/archive/${year}`)
-  if (!res.ok) throw new Error(`API ${res.status}`)
+  if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<ArchiveResponse>
 }
 
@@ -173,7 +179,7 @@ export interface CheckpointData {
 
 export async function fetchAdminCheckpoints(headers: Record<string, string>) {
   const res = await fetch(`${apiBaseUrl}/api/admin/checkpoints`, { headers })
-  if (!res.ok) throw new Error(`API ${res.status}`)
+  if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<CheckpointData[]>
 }
 
@@ -248,7 +254,7 @@ export interface RouteData {
 
 export async function fetchAdminRoutes(headers: Record<string, string>) {
   const res = await fetch(`${apiBaseUrl}/api/admin/routes`, { headers })
-  if (!res.ok) throw new Error(`API ${res.status}`)
+  if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<RouteData[]>
 }
 
@@ -257,7 +263,7 @@ export async function deleteAdminCheckpoint(id: number, headers: Record<string, 
     method: 'DELETE',
     headers,
   })
-  if (!res.ok) throw new Error(`API ${res.status}`)
+  if (!res.ok) throw new Error(await apiError(res))
 }
 
 export interface NotifyRequest {
@@ -294,7 +300,7 @@ export async function sendNotify(data: NotifyRequest, headers: Record<string, st
 
 export async function fetchNotifyHistory(headers: Record<string, string>) {
   const res = await fetch(`${apiBaseUrl}/api/admin/notify`, { headers })
-  if (!res.ok) throw new Error(`API ${res.status}`)
+  if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<MessageLogEntry[]>
 }
 
@@ -304,7 +310,7 @@ export interface LogLevelResponse {
 
 export async function fetchLogLevel(headers: Record<string, string>) {
   const res = await fetch(`${apiBaseUrl}/api/admin/logging/level`, { headers })
-  if (!res.ok) throw new Error(`API ${res.status}`)
+  if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<LogLevelResponse>
 }
 
@@ -342,7 +348,7 @@ export interface AdminUser {
 export async function fetchAdminUsers(headers: Record<string, string>, q?: string) {
   const url = q ? `${apiBaseUrl}/api/admin/users?q=${encodeURIComponent(q)}` : `${apiBaseUrl}/api/admin/users`
   const res = await fetch(url, { headers })
-  if (!res.ok) throw new Error(`API ${res.status}`)
+  if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<AdminUser[]>
 }
 
@@ -357,7 +363,7 @@ export interface VariantConfig {
 
 export async function fetchAdminVariants(headers: Record<string, string>) {
   const res = await fetch(`${apiBaseUrl}/api/admin/variants`, { headers })
-  if (!res.ok) throw new Error(`API ${res.status}`)
+  if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<VariantConfig[]>
 }
 
@@ -367,7 +373,7 @@ export async function createAdminVariant(data: Partial<VariantConfig>, headers: 
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(data),
   })
-  if (!res.ok) throw new Error(`API ${res.status}`)
+  if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<VariantConfig>
 }
 
@@ -377,7 +383,7 @@ export async function updateAdminVariant(id: number, data: Partial<VariantConfig
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(data),
   })
-  if (!res.ok) throw new Error(`API ${res.status}`)
+  if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<VariantConfig>
 }
 
@@ -386,7 +392,7 @@ export async function deleteAdminVariant(id: number, headers: Record<string, str
     method: 'DELETE',
     headers,
   })
-  if (!res.ok) throw new Error(`API ${res.status}`)
+  if (!res.ok) throw new Error(await apiError(res))
 }
 
 export interface PublicVariant {
@@ -398,7 +404,7 @@ export interface PublicVariant {
 
 export async function fetchPublicVariants() {
   const res = await fetch(`${apiBaseUrl}/api/public/variants`)
-  if (!res.ok) throw new Error(`API ${res.status}`)
+  if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<PublicVariant[]>
 }
 
@@ -417,7 +423,7 @@ export async function submitScore(data: ScoreSubmit, headers: Record<string, str
 
 export async function fetchAccount(headers: Record<string, string>) {
   const res = await fetch(`${apiBaseUrl}/api/account`, { headers })
-  if (!res.ok) throw new Error(`API ${res.status}`)
+  if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<AdminUser>
 }
 
@@ -433,13 +439,13 @@ export async function assignStartNumber(id: number, headers: Record<string, stri
 
 export async function fetchRacerProfile(headers: Record<string, string>) {
   const res = await fetch(`${apiBaseUrl}/api/racer/profile`, { headers })
-  if (!res.ok) throw new Error(`API ${res.status}`)
+  if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<{ firstName: string; lastName: string; email: string; phone: string }>
 }
 
 export async function fetchRacerStatus(headers: Record<string, string>) {
   const res = await fetch(`${apiBaseUrl}/api/racer/status`, { headers })
-  if (!res.ok) throw new Error(`API ${res.status}`)
+  if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<{
     id: number; paymentReference: number; teamName: string; startNumber: number; startFee: number
     paidAmount: number | null; status: string; variant: string; vehicleCategory: string; vehiclePlate: string
@@ -474,7 +480,7 @@ export interface VehicleData {
 
 export async function fetchVehicles(headers: Record<string, string>) {
   const res = await fetch(`${apiBaseUrl}/api/racer/vehicles`, { headers })
-  if (!res.ok) throw new Error(`API ${res.status}`)
+  if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<VehicleData[]>
 }
 
@@ -534,7 +540,7 @@ export interface CeremonyCategory {
 
 export async function fetchAdminCategories(headers: Record<string, string>) {
   const res = await fetch(`${apiBaseUrl}/api/admin/categories`, { headers })
-  if (!res.ok) throw new Error(`API ${res.status}`)
+  if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<RaceCategory[]>
 }
 
@@ -580,7 +586,7 @@ export async function computeCategoryWinners(headers: Record<string, string>) {
 
 export async function fetchCeremonyCategories(year: number) {
   const res = await fetch(`${apiBaseUrl}/api/public/ceremony/${year}`)
-  if (!res.ok) throw new Error(`API ${res.status}`)
+  if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<{ year: number; categories: CeremonyCategory[] }>
 }
 
@@ -594,7 +600,7 @@ export interface ScheduleItemData {
 
 export async function fetchAdminSchedule(headers: Record<string, string>) {
   const res = await fetch(`${apiBaseUrl}/api/admin/schedule`, { headers })
-  if (!res.ok) throw new Error(`API ${res.status}`)
+  if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<ScheduleItemData[]>
 }
 

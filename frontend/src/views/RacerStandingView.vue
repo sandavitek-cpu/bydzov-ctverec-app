@@ -89,8 +89,10 @@ onMounted(() => {
   load()
   fetchRaceStatus()
   interval = setInterval(() => {
-    load()
-    fetchRaceStatus()
+    if (!document.hidden) {
+      load()
+      fetchRaceStatus()
+    }
   }, 10000)
 })
 

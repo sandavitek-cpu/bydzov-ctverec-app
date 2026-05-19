@@ -67,8 +67,10 @@ async function load() {
 }
 
 async function loadAddresses() {
-  for (const cp of checkpoints.value) {
+  for (let i = 0; i < checkpoints.value.length; i++) {
+    const cp = checkpoints.value[i]
     if (cp.id != null) {
+      if (i > 0) await new Promise(r => setTimeout(r, 1000))
       addresses.value[cp.id] = await reverseGeocode(cp.lat, cp.lng)
     }
   }
