@@ -3,13 +3,14 @@ import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
-import { apiBaseUrl } from '@/api'
+import { apiBaseUrl, fetchNotifications, markNotificationRead, markAllNotificationsRead } from '@/api'
+import type { NotificationItem } from '@/api'
 import logoCtverec from '@/assets/logo_ctverec.png'
 import logoPrevit from '@/assets/logo_previt.png'
 import ImpersonateModal from '@/components/ImpersonateModal.vue'
 
 const route = useRoute()
-const { isLoggedIn, name, username, hasAdmin, hasJudge, hasRacer, impersonating, logout, restoreFromImpersonation } = useAuth()
+const { isLoggedIn, name, username, hasAdmin, hasJudge, hasRacer, impersonating, logout, authHeaders, restoreFromImpersonation } = useAuth()
 const { toasts, remove } = useToast()
 
 const appInfo = ref<{ version: string; deployedAt: string; changelog: { version: string; description: string; createdAt: string }[] } | null>(null)
@@ -24,6 +25,34 @@ const sidebarCollapsed = ref(false)
 const mobileSidebarOpen = ref(false)
 const mobileNavOpen = ref(false)
 const dropdownOpen = ref(false)
+const notificationOpen = ref(false)
+const notifications = ref<NotificationItem[]>([])
+const unreadCount = ref(0)
+let notificationPoll: ReturnType<typeof setInterval> | null = null
+
+async function loadNotifications() {
+  if (!isLoggedIn.value) return
+  try {
+    const data = await fetchNotifications(authHeaders())
+    notifications.value = data.notifications
+    unreadCount.value = data.unreadCount
+  } catch { /* ignore */ }
+}
+
+async function onMarkRead(id: number) {
+  await markNotificationRead(id, authHeaders())
+  await loadNotifications()
+}
+
+async function onMarkAllRead() {
+  await markAllNotificationsRead(authHeaders())
+  await loadNotifications()
+}
+
+function toggleNotifications() {
+  notificationOpen.value = !notificationOpen.value
+  if (notificationOpen.value) loadNotifications()
+}
 
 function closeMobileNav() {
   mobileNavOpen.value = false
@@ -43,12 +72,27 @@ function onDocumentClick(e: MouseEvent) {
       dropdownOpen.value = false
     }
   }
+  if (notificationOpen.value) {
+    const target = e.target as HTMLElement
+    if (!target.closest('.notification-menu') && !target.closest('.notification-toggle')) {
+      notificationOpen.value = false
+    }
+  }
 }
 
-watch(() => route.path, () => { mobileNavOpen.value = false; dropdownOpen.value = false })
+watch(() => route.path, () => { mobileNavOpen.value = false; dropdownOpen.value = false; notificationOpen.value = false })
 
-onMounted(() => document.addEventListener('click', onDocumentClick))
-onUnmounted(() => document.removeEventListener('click', onDocumentClick))
+onMounted(() => {
+  document.addEventListener('click', onDocumentClick)
+  if (isLoggedIn.value) {
+    loadNotifications()
+    notificationPoll = setInterval(loadNotifications, 30000)
+  }
+})
+onUnmounted(() => {
+  document.removeEventListener('click', onDocumentClick)
+  if (notificationPoll) clearInterval(notificationPoll)
+})
 
 async function toggleInfo() {
   if (showInfo.value) {
@@ -184,6 +228,43 @@ async function toggleInfo() {
                 <button @click="onLogout" class="dropdown-item text-text-soft">Odhlásit</button>
               </div>
             </div>
+
+            <span class="relative ml-1">
+              <button @click.stop="toggleNotifications"
+                class="notification-toggle flex h-8 w-8 items-center justify-center rounded-md text-text-soft transition-colors hover:bg-bg-alt hover:text-text-muted"
+                title="Notifikace"
+              >
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                <span v-if="unreadCount > 0"
+                  class="absolute -right-0.5 -top-0.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-error px-1 text-[10px] font-bold leading-none text-white"
+                >{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
+              </button>
+              <div v-if="notificationOpen" @click.stop
+                class="notification-menu absolute right-0 top-full z-50 mt-1 w-80 max-h-96 overflow-y-auto rounded-xl border border-border bg-surface shadow-lg"
+              >
+                <div class="flex items-center justify-between px-4 py-3 border-b border-border">
+                  <span class="text-label font-semibold text-text">Notifikace</span>
+                  <button v-if="unreadCount > 0" @click="onMarkAllRead" class="text-meta text-primary hover:underline">Označit vše jako přečtené</button>
+                </div>
+                <div v-if="notifications.length === 0" class="px-4 py-8 text-center text-body-sm text-text-soft">
+                  Žádné notifikace
+                </div>
+                <div v-for="n in notifications" :key="n.id"
+                  class="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-bg-alt cursor-pointer border-b border-border/50 last:border-b-0"
+                  :class="{ 'bg-primary/5': !n.isRead }"
+                  @click="onMarkRead(n.id)"
+                >
+                  <div class="flex-1 min-w-0">
+                    <p class="text-body-sm font-medium text-text truncate">{{ n.title }}</p>
+                    <p class="text-meta text-text-soft mt-0.5 line-clamp-2">{{ n.message }}</p>
+                    <p class="text-meta text-text-soft mt-1">{{ new Date(n.createdAt).toLocaleString('cs') }}</p>
+                  </div>
+                  <div v-if="!n.isRead" class="mt-1.5 h-2 w-2 rounded-full bg-primary shrink-0"></div>
+                </div>
+              </div>
+            </span>
 
             <span ref="infoRef" class="relative ml-1">
               <button @click.stop="toggleInfo" class="flex h-8 w-8 items-center justify-center rounded-md text-text-soft transition-colors hover:bg-bg-alt hover:text-text-muted" title="Info o aplikaci">

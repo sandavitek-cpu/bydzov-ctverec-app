@@ -23,7 +23,7 @@ if (!isAdmin.value) {
 }
 
 const recipientOptions = [
-  { value: 'ALL_RACERS', label: 'Všichni závodníci' },
+  { value: 'ALL_RACERS', label: 'Aktivní / zaplacení závodníci' },
   { value: 'ADMINS', label: 'Pořadatelé' },
   { value: 'JUDGES', label: 'Komisaři' },
 ]
@@ -64,7 +64,7 @@ async function loadHistory() {
 }
 
 const recipientLabel: Record<string, string> = {
-  ALL_RACERS: 'Všichni závodníci',
+  ALL_RACERS: 'Aktivní / zaplacení závodníci',
   ADMINS: 'Pořadatelé',
   JUDGES: 'Komisaři',
 }

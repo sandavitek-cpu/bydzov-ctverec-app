@@ -4,6 +4,8 @@ import cz.previt.bydzovctverec.domain.Edition;
 import cz.previt.bydzovctverec.domain.EditionRepository;
 import cz.previt.bydzovctverec.domain.MessageLog;
 import cz.previt.bydzovctverec.domain.MessageLogRepository;
+import cz.previt.bydzovctverec.domain.Notification;
+import cz.previt.bydzovctverec.domain.NotificationRepository;
 import cz.previt.bydzovctverec.domain.RacerRegistration;
 import cz.previt.bydzovctverec.domain.RacerRegistrationRepository;
 import cz.previt.bydzovctverec.domain.AppRole;
@@ -36,17 +38,21 @@ public class AdminNotifyController {
   private final UserRepository userRepository;
   private final EditionRepository editionRepository;
   private final MessageLogRepository messageLogRepository;
+  private final NotificationRepository notificationRepository;
   private final JavaMailSender mailSender;
   private final AppRoleRepository appRoleRepository;
 
   public AdminNotifyController(RacerRegistrationRepository racerRegistrationRepository,
       UserRepository userRepository, EditionRepository editionRepository,
-      MessageLogRepository messageLogRepository, JavaMailSender mailSender,
+      MessageLogRepository messageLogRepository,
+      NotificationRepository notificationRepository,
+      JavaMailSender mailSender,
       AppRoleRepository appRoleRepository) {
     this.racerRegistrationRepository = racerRegistrationRepository;
     this.userRepository = userRepository;
     this.editionRepository = editionRepository;
     this.messageLogRepository = messageLogRepository;
+    this.notificationRepository = notificationRepository;
     this.mailSender = mailSender;
     this.appRoleRepository = appRoleRepository;
   }
@@ -92,6 +98,8 @@ public class AdminNotifyController {
       }
     }
 
+    createNotifications(recipientType, subject, messageBody);
+
     messageLogRepository.save(new MessageLog(recipientType, subject, messageBody, sent, Instant.now()));
     log.info("Notified {} / {} recipients (type={})", sent, emails.size(), recipientType);
 
@@ -101,12 +109,58 @@ public class AdminNotifyController {
         "recipientType", recipientType));
   }
 
+  private void createNotifications(String type, String title, String message) {
+    List<User> users = resolveUsers(type);
+    List<Notification> notifications = new ArrayList<>();
+    for (User user : users) {
+      notifications.add(new Notification(user, title, message, "MESSAGE", null));
+    }
+    if (!notifications.isEmpty()) {
+      notificationRepository.saveAll(notifications);
+      log.info("Created {} in-app notifications for type={}", notifications.size(), type);
+    }
+  }
+
+  private List<User> resolveUsers(String type) {
+    return switch (type) {
+      case "ALL_RACERS" -> {
+        Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
+        if (edition == null) yield List.of();
+        var emails = racerRegistrationRepository.findByEditionOrderByStartNumber(edition).stream()
+            .filter(r -> "PAID".equals(r.getStatus()))
+            .map(RacerRegistration::getEmail)
+            .filter(e -> e != null && !e.isBlank())
+            .distinct()
+            .toList();
+        yield userRepository.findAll().stream()
+            .filter(u -> u.getEmail() != null && emails.contains(u.getEmail()))
+            .toList();
+      }
+      case "ADMINS" -> {
+        var adminRole = appRoleRepository.findByName("ADMIN");
+        if (adminRole.isEmpty()) yield List.of();
+        yield userRepository.findAll().stream()
+            .filter(u -> u.getAppRoles().stream().anyMatch(r -> r.getId().equals(adminRole.get().getId())))
+            .toList();
+      }
+      case "JUDGES" -> {
+        var judgeRole = appRoleRepository.findByName("JUDGE");
+        if (judgeRole.isEmpty()) yield List.of();
+        yield userRepository.findAll().stream()
+            .filter(u -> u.getAppRoles().stream().anyMatch(r -> r.getId().equals(judgeRole.get().getId())))
+            .toList();
+      }
+      default -> List.of();
+    };
+  }
+
   private List<String> resolveRecipients(String type) {
     return switch (type) {
       case "ALL_RACERS" -> {
         Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
         if (edition == null) yield List.of();
         yield racerRegistrationRepository.findByEditionOrderByStartNumber(edition).stream()
+            .filter(r -> "PAID".equals(r.getStatus()))
             .map(RacerRegistration::getEmail)
             .filter(e -> e != null && !e.isBlank())
             .distinct()

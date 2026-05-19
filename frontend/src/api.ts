@@ -633,3 +633,38 @@ export async function deleteAdminScheduleItem(id: number, headers: Record<string
   })
   if (!res.ok) throw new Error(`API ${res.status}`)
 }
+
+export interface NotificationItem {
+  id: number
+  title: string
+  message: string
+  type: string
+  relatedUrl: string | null
+  isRead: boolean
+  createdAt: string
+}
+
+export interface NotificationResponse {
+  notifications: NotificationItem[]
+  unreadCount: number
+}
+
+export async function fetchNotifications(headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/notifications`, { headers })
+  if (!res.ok) throw new Error(await apiError(res))
+  return res.json() as Promise<NotificationResponse>
+}
+
+export async function markNotificationRead(id: number, headers: Record<string, string>) {
+  await fetch(`${apiBaseUrl}/api/notifications/${id}/read`, {
+    method: 'PATCH',
+    headers,
+  })
+}
+
+export async function markAllNotificationsRead(headers: Record<string, string>) {
+  await fetch(`${apiBaseUrl}/api/notifications/read-all`, {
+    method: 'POST',
+    headers,
+  })
+}
