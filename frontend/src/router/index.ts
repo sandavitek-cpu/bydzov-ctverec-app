@@ -16,6 +16,7 @@ import AdminCategoriesView from '../views/admin/AdminCategoriesView.vue'
 import AdminScheduleView from '../views/admin/AdminScheduleView.vue'
 import CeremonyView from '../views/CeremonyView.vue'
 import JudgeScoringView from '../views/JudgeScoringView.vue'
+import JudgeDashboardView from '../views/JudgeDashboardView.vue'
 import ResultsView from '../views/ResultsView.vue'
 import ArchiveView from '../views/ArchiveView.vue'
 import RacerItineraryView from '../views/RacerItineraryView.vue'
@@ -45,6 +46,7 @@ const router = createRouter({
     { path: '/ceremoniál/:rok', name: 'ceremony', component: CeremonyView },
     { path: '/rozhodci', redirect: '/komisari' },
     { path: '/komisari', name: 'judge-scoring', component: JudgeScoringView },
+    { path: '/komisari/prehled', name: 'judge-dashboard', component: JudgeDashboardView },
     { path: '/vysledky/:rok', name: 'results', component: ResultsView },
     { path: '/archiv', name: 'archive', component: ArchiveView },
     { path: '/archiv/:rok', name: 'archive-year', component: ArchiveView },
@@ -73,7 +75,7 @@ router.beforeEach((to, _from, next) => {
     return
   }
 
-  if (to.path === '/komisari' && !token) {
+  if (to.path.startsWith('/komisari') && !token) {
     next('/admin/login')
     return
   }

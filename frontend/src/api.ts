@@ -706,3 +706,36 @@ export async function fetchRacerItinerary(headers: Record<string, string>) {
   if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<ItineraryResponse>
 }
+
+export interface JudgeCheckpoint {
+  id: number
+  name: string
+  sortOrder: number
+}
+
+export interface JudgeRacer {
+  id: number
+  startNumber: number
+  teamName: string
+  vehiclePlate: string
+  vehicleCategory: string
+  scored: boolean
+}
+
+export interface JudgeStats {
+  total: number
+  scored: number
+  remaining: number
+}
+
+export interface JudgeOverview {
+  checkpoints: JudgeCheckpoint[]
+  racers: JudgeRacer[]
+  stats: JudgeStats
+}
+
+export async function fetchJudgeOverview(headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/judge/overview`, { headers })
+  if (!res.ok) throw new Error(await apiError(res))
+  return res.json() as Promise<JudgeOverview>
+}

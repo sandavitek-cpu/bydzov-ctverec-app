@@ -1,20 +1,28 @@
 package cz.previt.bydzovctverec.web;
 
+import cz.previt.bydzovctverec.domain.AppRoleRepository;
 import cz.previt.bydzovctverec.domain.Checkpoint;
 import cz.previt.bydzovctverec.domain.CheckpointRepository;
+import cz.previt.bydzovctverec.domain.Notification;
+import cz.previt.bydzovctverec.domain.NotificationRepository;
 import cz.previt.bydzovctverec.domain.RacerRegistration;
 import cz.previt.bydzovctverec.domain.RacerRegistrationRepository;
 import cz.previt.bydzovctverec.domain.Score;
 import cz.previt.bydzovctverec.domain.ScoreRepository;
 import cz.previt.bydzovctverec.domain.User;
+import cz.previt.bydzovctverec.domain.UserRepository;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.Authentication;
@@ -28,15 +36,29 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/scores")
 public class ScoreController {
 
+  private static final Logger log = LoggerFactory.getLogger(ScoreController.class);
+
   private final ScoreRepository scoreRepository;
   private final RacerRegistrationRepository racerRegistrationRepository;
   private final CheckpointRepository checkpointRepository;
+  private final NotificationRepository notificationRepository;
+  private final UserRepository userRepository;
+  private final AppRoleRepository appRoleRepository;
   private final SimpMessagingTemplate messagingTemplate;
 
-  public ScoreController(ScoreRepository scoreRepository, RacerRegistrationRepository racerRegistrationRepository, CheckpointRepository checkpointRepository, SimpMessagingTemplate messagingTemplate) {
+  public ScoreController(ScoreRepository scoreRepository,
+      RacerRegistrationRepository racerRegistrationRepository,
+      CheckpointRepository checkpointRepository,
+      NotificationRepository notificationRepository,
+      UserRepository userRepository,
+      AppRoleRepository appRoleRepository,
+      SimpMessagingTemplate messagingTemplate) {
     this.scoreRepository = scoreRepository;
     this.racerRegistrationRepository = racerRegistrationRepository;
     this.checkpointRepository = checkpointRepository;
+    this.notificationRepository = notificationRepository;
+    this.userRepository = userRepository;
+    this.appRoleRepository = appRoleRepository;
     this.messagingTemplate = messagingTemplate;
   }
 
@@ -56,9 +78,47 @@ public class ScoreController {
     Score score = new Score(racer, judge, cp, request.points(), request.note(), Instant.now());
     scoreRepository.save(score);
 
+    checkCheckpointCompletion(cp, racer.getEdition().getId());
+
     broadcastResults(racer.getEdition().getEditionYear());
 
     return ResponseEntity.ok(new ScoreResponse(score.getId(), cp.getName(), cp.getSortOrder(), score.getPoints(), score.getNote()));
+  }
+
+  private void checkCheckpointCompletion(Checkpoint cp, Long editionId) {
+    List<RacerRegistration> activeRacers = racerRegistrationRepository.findByEditionOrderByStartNumber(
+        cp.getEdition()).stream()
+        .filter(r -> "PAID".equals(r.getStatus()))
+        .toList();
+
+    List<Score> existingScores = scoreRepository.findByCheckpointId(cp.getId());
+    Set<Long> scoredRacerIds = existingScores.stream()
+        .map(s -> s.getRacerRegistration().getId())
+        .collect(Collectors.toSet());
+
+    boolean allScored = activeRacers.stream().allMatch(r -> scoredRacerIds.contains(r.getId()));
+
+    if (allScored && !activeRacers.isEmpty()) {
+      var adminRole = appRoleRepository.findByName("ADMIN");
+      if (adminRole.isPresent()) {
+        Long adminRoleId = adminRole.get().getId();
+        List<User> admins = userRepository.findAll().stream()
+            .filter(u -> u.getAppRoles().stream().anyMatch(r -> r.getId().equals(adminRoleId)))
+            .toList();
+        List<Notification> notifications = new ArrayList<>();
+        for (User admin : admins) {
+          notifications.add(new Notification(admin,
+              "Stanoviště kompletní",
+              "Kontrola " + cp.getName() + " je kompletní – všechny posádky obodovány.",
+              "SUCCESS",
+              "/admin/bodovani"));
+        }
+        if (!notifications.isEmpty()) {
+          notificationRepository.saveAll(notifications);
+          log.info("Checkpoint {} fully scored – notified {} admins", cp.getName(), admins.size());
+        }
+      }
+    }
   }
 
   private void broadcastResults(Integer year) {

@@ -21,6 +21,7 @@ const checkpoints = ref<any[]>([])
 const racerRegistration = ref<any>(null)
 const racerStanding = ref<any>(null)
 const schedule = ref<any[]>([])
+const checkpointProgress = ref<any>(null)
 const error = ref<string | null>(null)
 
 const categoryLabel: Record<string, string> = {
@@ -32,15 +33,17 @@ onMounted(async () => {
   try {
     const h = authHeaders()
     if (role.value === 'admin') {
-      const [statsRes, regRes] = await Promise.all([
+      const [statsRes, regRes, cpRes] = await Promise.all([
         fetch(`${apiBaseUrl}/api/admin/registrations/stats`, { headers: h }),
         fetch(`${apiBaseUrl}/api/admin/registrations`, { headers: h }),
+        fetch(`${apiBaseUrl}/api/admin/checkpoints/progress`, { headers: h }),
       ])
       if (statsRes.ok) stats.value = await statsRes.json()
       if (regRes.ok) {
         const all = await regRes.json()
         registrations.value = all.slice(-5).reverse()
       }
+      if (cpRes.ok) checkpointProgress.value = await cpRes.json()
     }
     if (role.value === 'judge') {
       const res = await fetch(`${apiBaseUrl}/api/racer/checkpoints`, { headers: h })
@@ -162,6 +165,51 @@ async function quickSubmit() {
       <div class="card !p-4 text-center">
         <p class="text-kpi text-text-muted">{{ stats.firstTimers }}</p>
         <p class="text-meta text-text-soft mt-0.5">Nováčků</p>
+      </div>
+    </div>
+
+    <div v-if="checkpointProgress" class="mb-8">
+      <h2 class="text-subsection text-text mb-4">Stav bodování stanovišť</h2>
+      <div class="flex gap-3 mb-4">
+        <div class="card !p-3 text-center flex-1">
+          <p class="text-kpi text-primary">{{ checkpointProgress.overall.total }}</p>
+          <p class="text-meta text-text-soft mt-0.5">Celkem</p>
+        </div>
+        <div class="card !p-3 text-center flex-1">
+          <p class="text-kpi text-success">{{ checkpointProgress.overall.complete }}</p>
+          <p class="text-meta text-text-soft mt-0.5">Hotovo</p>
+        </div>
+        <div class="card !p-3 text-center flex-1">
+          <p class="text-kpi text-red">{{ checkpointProgress.overall.incomplete }}</p>
+          <p class="text-meta text-text-soft mt-0.5">Zbývá</p>
+        </div>
+      </div>
+      <div class="overflow-x-auto rounded-xl border border-border">
+        <table class="w-full">
+          <thead class="table-header">
+            <tr>
+              <th class="w-8 text-center">#</th>
+              <th>Stanoviště</th>
+              <th class="text-center">Oskórováno</th>
+              <th class="text-center w-24">Stav</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="cp in checkpointProgress.checkpoints" :key="cp.id" class="table-row">
+              <td class="text-center font-mono font-bold text-primary">{{ cp.sortOrder }}</td>
+              <td>
+                <div class="font-medium text-text">{{ cp.name }}</div>
+              </td>
+              <td class="text-center">
+                <span class="text-body-sm text-text-muted">{{ cp.scoredCount }} / {{ cp.totalRacers }}</span>
+              </td>
+              <td class="text-center">
+                <span v-if="cp.complete" class="badge !bg-success/10 !text-success">Hotovo</span>
+                <span v-else class="badge !bg-warning/10 !text-warning">Boduje se</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 

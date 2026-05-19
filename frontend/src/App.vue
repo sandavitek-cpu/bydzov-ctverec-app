@@ -214,7 +214,8 @@ async function toggleInfo() {
                   <hr class="my-1 mx-3 border-border" />
                 </template>
                 <template v-if="hasJudge">
-                  <RouterLink to="/komisari" class="dropdown-item">Komisaři</RouterLink>
+                  <RouterLink to="/komisari/prehled" class="dropdown-item">Přehled</RouterLink>
+                  <RouterLink to="/komisari" class="dropdown-item">Bodování</RouterLink>
                 </template>
                 <template v-if="hasRacer">
                   <div class="admin-sidebar-section">Závodník</div>
@@ -328,9 +329,10 @@ async function toggleInfo() {
                 <button @click="showImpersonateModal = true; closeMobileNav()" class="mobile-nav-item w-full text-left">Přihlásit jako</button>
               </template>
               <template v-if="hasJudge">
-                <div class="mobile-nav-section">Komisař</div>
-                <RouterLink to="/komisari" class="mobile-nav-item" @click="closeMobileNav">Komisaři</RouterLink>
-              </template>
+                  <div class="mobile-nav-section">Komisař</div>
+                  <RouterLink to="/komisari/prehled" class="mobile-nav-item" @click="closeMobileNav">Přehled</RouterLink>
+                  <RouterLink to="/komisari" class="mobile-nav-item" @click="closeMobileNav">Bodování</RouterLink>
+                </template>
               <template v-if="hasRacer">
                 <div class="mobile-nav-section">Závodník</div>
                 <RouterLink to="/zavodnik/itinerar" class="mobile-nav-item" @click="closeMobileNav">Itinerář</RouterLink>

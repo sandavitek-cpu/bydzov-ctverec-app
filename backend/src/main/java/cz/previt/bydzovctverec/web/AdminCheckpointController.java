@@ -4,9 +4,16 @@ import cz.previt.bydzovctverec.domain.Checkpoint;
 import cz.previt.bydzovctverec.domain.CheckpointRepository;
 import cz.previt.bydzovctverec.domain.Edition;
 import cz.previt.bydzovctverec.domain.EditionRepository;
+import cz.previt.bydzovctverec.domain.RacerRegistration;
+import cz.previt.bydzovctverec.domain.RacerRegistrationRepository;
+import cz.previt.bydzovctverec.domain.Score;
+import cz.previt.bydzovctverec.domain.ScoreRepository;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -24,10 +31,17 @@ public class AdminCheckpointController {
 
   private final EditionRepository editionRepository;
   private final CheckpointRepository checkpointRepository;
+  private final RacerRegistrationRepository racerRegistrationRepository;
+  private final ScoreRepository scoreRepository;
 
-  public AdminCheckpointController(EditionRepository editionRepository, CheckpointRepository checkpointRepository) {
+  public AdminCheckpointController(EditionRepository editionRepository,
+      CheckpointRepository checkpointRepository,
+      RacerRegistrationRepository racerRegistrationRepository,
+      ScoreRepository scoreRepository) {
     this.editionRepository = editionRepository;
     this.checkpointRepository = checkpointRepository;
+    this.racerRegistrationRepository = racerRegistrationRepository;
+    this.scoreRepository = scoreRepository;
   }
 
   private Edition currentEdition() {
@@ -43,6 +57,47 @@ public class AdminCheckpointController {
     }
     List<Checkpoint> items = checkpointRepository.findByEditionOrderBySortOrder(edition);
     return ResponseEntity.ok(items.stream().map(this::toMap).toList());
+  }
+
+  @GetMapping("/progress")
+  public ResponseEntity<?> progress() {
+    Edition edition = currentEdition();
+    if (edition == null) {
+      return ResponseEntity.ok(Map.of("checkpoints", List.of(), "overall", Map.of("total", 0, "complete", 0, "incomplete", 0)));
+    }
+
+    List<RacerRegistration> activeRacers = racerRegistrationRepository.findByEditionOrderByStartNumber(edition).stream()
+        .filter(r -> "PAID".equals(r.getStatus()))
+        .toList();
+    long totalRacers = activeRacers.size();
+
+    List<Checkpoint> checkpoints = checkpointRepository.findByEditionOrderBySortOrder(edition);
+    List<Score> allScores = scoreRepository.findByEditionYearWithRacer(edition.getEditionYear());
+
+    Map<Long, Set<Long>> scoredPerCheckpoint = allScores.stream()
+        .collect(Collectors.groupingBy(
+            s -> s.getCheckpoint().getId(),
+            Collectors.mapping(s -> s.getRacerRegistration().getId(), Collectors.toSet())));
+
+    int completeCount = 0;
+    List<Map<String, Object>> cpData = new ArrayList<>();
+    for (Checkpoint cp : checkpoints) {
+      Set<Long> scoredIds = scoredPerCheckpoint.getOrDefault(cp.getId(), Set.of());
+      long scoredCount = activeRacers.stream().filter(r -> scoredIds.contains(r.getId())).count();
+      boolean complete = scoredCount >= totalRacers;
+      if (complete) completeCount++;
+      cpData.add(Map.of(
+          "id", cp.getId(),
+          "name", cp.getName(),
+          "sortOrder", cp.getSortOrder(),
+          "totalRacers", totalRacers,
+          "scoredCount", scoredCount,
+          "complete", complete));
+    }
+
+    return ResponseEntity.ok(Map.of(
+        "checkpoints", cpData,
+        "overall", Map.of("total", checkpoints.size(), "complete", completeCount, "incomplete", checkpoints.size() - completeCount)));
   }
 
   @PostMapping
@@ -85,6 +140,7 @@ public class AdminCheckpointController {
     if (body.containsKey("sortOrder") && body.get("sortOrder") instanceof Number n) cp.setSortOrder(n.intValue());
     if (body.containsKey("taskDescription")) cp.setTaskDescription((String) body.get("taskDescription"));
     if (body.containsKey("maxPoints") && body.get("maxPoints") instanceof Number n) cp.setMaxPoints(n.intValue());
+    if (body.containsKey("phone")) cp.setPhone((String) body.get("phone"));
     if (body.containsKey("volunteers")) cp.setVolunteers(toStringList(body.get("volunteers")));
     checkpointRepository.save(cp);
     return ResponseEntity.ok(toMap(cp));
@@ -118,6 +174,7 @@ public class AdminCheckpointController {
     m.put("sortOrder", cp.getSortOrder());
     m.put("taskDescription", cp.getTaskDescription());
     m.put("maxPoints", cp.getMaxPoints());
+    m.put("phone", cp.getPhone());
     m.put("volunteers", cp.getVolunteers());
     return m;
   }
