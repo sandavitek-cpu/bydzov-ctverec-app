@@ -23,6 +23,7 @@ const showAdminSidebar = computed(() => isLoggedIn.value && isAdminPage.value)
 const sidebarCollapsed = ref(false)
 const mobileSidebarOpen = ref(false)
 const mobileNavOpen = ref(false)
+const dropdownOpen = ref(false)
 
 function closeMobileNav() {
   mobileNavOpen.value = false
@@ -36,9 +37,15 @@ function onDocumentClick(e: MouseEvent) {
   if (showInfo.value && infoRef.value && !infoRef.value.contains(e.target as Node)) {
     showInfo.value = false
   }
+  if (dropdownOpen.value) {
+    const target = e.target as HTMLElement
+    if (!target.closest('.dropdown-menu') && !target.closest('.dropdown-toggle')) {
+      dropdownOpen.value = false
+    }
+  }
 }
 
-watch(() => route.path, () => { mobileNavOpen.value = false })
+watch(() => route.path, () => { mobileNavOpen.value = false; dropdownOpen.value = false })
 
 onMounted(() => document.addEventListener('click', onDocumentClick))
 onUnmounted(() => document.removeEventListener('click', onDocumentClick))
@@ -131,9 +138,9 @@ async function toggleInfo() {
           </RouterLink>
 
           <div v-else class="relative ml-2 flex items-center">
-            <div class="group relative">
-              <button
-                class="flex items-center gap-2 rounded-lg border border-border bg-surface px-4 py-1.5 text-label text-text-muted transition-colors hover:bg-bg-alt"
+            <div class="relative">
+              <button @click.stop="dropdownOpen = !dropdownOpen" @mouseenter="dropdownOpen = true"
+                class="dropdown-toggle flex items-center gap-2 rounded-lg border border-border bg-surface px-4 py-1.5 text-label text-text-muted transition-colors hover:bg-bg-alt"
               >
                 <svg class="h-4 w-4 text-text-soft" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -143,7 +150,8 @@ async function toggleInfo() {
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
-              <div class="invisible absolute right-0 top-full z-40 mt-1 w-56 origin-top-right scale-95 dropdown-menu transition-all duration-160 ease-out group-hover:visible group-hover:scale-100">
+              <div v-if="dropdownOpen" @mouseleave="dropdownOpen = false"
+                class="absolute right-0 top-full z-40 mt-1 w-56 origin-top-right scale-100 dropdown-menu">
                 <template v-if="hasAdmin">
                   <div class="admin-sidebar-section">Administrace</div>
                   <RouterLink to="/admin/prihlaseni" class="dropdown-item">Přihlášky</RouterLink>

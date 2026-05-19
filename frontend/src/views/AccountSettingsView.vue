@@ -23,6 +23,13 @@ const memberDuration = computed(() => {
   const diff = now.getTime() - since.getTime()
   return Math.floor(diff / (1000 * 60 * 60 * 24))
 })
+
+const memberLabel = computed(() => {
+  const d = memberDuration.value
+  if (d === 1) return '1 den'
+  if (d >= 2 && d <= 4) return `${d} dny`
+  return `${d} dní`
+})
 const pwSaving = ref(false)
 const pwError = ref<string | null>(null)
 const pwSuccess = ref(false)
@@ -131,7 +138,7 @@ async function changePassword() {
       </div>
       <div v-if="form.memberSince" class="card !p-4">
         <p class="text-meta text-text-soft uppercase tracking-[0.05em]">V klubu od</p>
-        <p class="text-body text-text mt-1">{{ form.memberSince }} <span class="text-text-soft">({{ memberDuration }} dní)</span></p>
+        <p class="text-body text-text mt-1">{{ form.memberSince }} <span class="text-text-soft">({{ memberLabel }})</span></p>
       </div>
       <p v-if="error" class="text-body-sm text-error">{{ error }}</p>
       <p v-if="success" class="text-body-sm text-success">Údaje uloženy</p>

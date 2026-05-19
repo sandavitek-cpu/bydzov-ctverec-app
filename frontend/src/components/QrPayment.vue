@@ -5,8 +5,6 @@ import QRCode from 'qrcode'
 const props = defineProps<{
   amount: number
   variableSymbol: number
-  account?: string
-  bankCode?: string
   message?: string
 }>()
 

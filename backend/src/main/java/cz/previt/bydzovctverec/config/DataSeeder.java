@@ -50,6 +50,7 @@ public class DataSeeder {
   }
 
   @Bean
+  @org.springframework.core.annotation.Order(5)
   CommandLineRunner seedAdmin(UserRepository userRepository, AppRoleRepository appRoleRepository, PasswordEncoder encoder) {
     return args -> {
       try {
@@ -77,6 +78,7 @@ public class DataSeeder {
   }
 
   @Bean
+  @org.springframework.core.annotation.Order(6)
   CommandLineRunner seedJudge(UserRepository userRepository, AppRoleRepository appRoleRepository, PasswordEncoder encoder) {
     return args -> {
       try {
@@ -209,6 +211,7 @@ public class DataSeeder {
   }
 
   @Bean
+  @org.springframework.core.annotation.Order(10)
   CommandLineRunner seedChangeLog(ChangeLogEntryRepository repo) {
     return args -> {
       try {
