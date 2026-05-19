@@ -5,6 +5,7 @@ import cz.previt.bydzovctverec.domain.AppRoleRepository;
 import cz.previt.bydzovctverec.domain.User;
 import cz.previt.bydzovctverec.domain.UserRepository;
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.springframework.http.ResponseEntity;
@@ -33,11 +34,14 @@ public class AdminRoleController {
   @GetMapping
   public ResponseEntity<?> list() {
     var roles = appRoleRepository.findAll();
-    var result = roles.stream().map(r -> Map.of(
-        "id", r.getId(),
-        "name", r.getName(),
-        "displayName", r.getDisplayName(),
-        "createdAt", r.getCreatedAt().toString())).toList();
+    var result = roles.stream().map(r -> {
+      Map<String, Object> m = new LinkedHashMap<>();
+      m.put("id", r.getId());
+      m.put("name", r.getName());
+      m.put("displayName", r.getDisplayName());
+      m.put("createdAt", r.getCreatedAt().toString());
+      return m;
+    }).toList();
     return ResponseEntity.ok(result);
   }
 
@@ -87,10 +91,17 @@ public class AdminRoleController {
   }
 
   @DeleteMapping("/{id}")
+  @Transactional
   public ResponseEntity<?> delete(@PathVariable Long id) {
-    if (appRoleRepository.existsById(id)) {
-      appRoleRepository.deleteById(id);
+    if (!appRoleRepository.existsById(id)) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Role nenalezena"));
     }
+    boolean hasUsers = userRepository.findAll().stream()
+        .anyMatch(u -> u.getAppRoles().stream().anyMatch(r -> r.getId().equals(id)));
+    if (hasUsers) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Roli nelze smazat – je přiřazena uživatelům"));
+    }
+    appRoleRepository.deleteById(id);
     return ResponseEntity.noContent().build();
   }
 }

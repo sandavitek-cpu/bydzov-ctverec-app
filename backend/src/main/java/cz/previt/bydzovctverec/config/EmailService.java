@@ -38,6 +38,7 @@ public class EmailService {
     String startNumberLine = startNumber != null && startNumber > 0
         ? "Startovní číslo Vaší posádky: %d".formatted(startNumber)
         : "Startovní číslo bude přiděleno po zaplacení.";
+    String vs = paymentReference != null ? String.valueOf(paymentReference) : "—";
     String body = """
 Dobrý den %s,
 
@@ -49,7 +50,7 @@ Vaše přihlašovací údaje:
 
 %s
 Startovné: %d Kč
-Variabilní symbol: %d
+Variabilní symbol: %s
 (Pro platbu použijte variabilní symbol výše.)
 
 Po přihlášení uvidíte itinerář, mapu a stav Vaší přihlášky:
@@ -57,7 +58,7 @@ https://app.bydzov-ctverec.cz
 
 S pozdravem
 Tým Novobydžovského čtverce
-""".formatted(personName, login, password, startNumberLine, startFee, paymentReference);
+""".formatted(personName, login, password, startNumberLine, startFee, vs);
     send(to, "Novobydžovský čtverec 2026 – vytvořen účet", body);
   }
 }

@@ -63,9 +63,11 @@ onMounted(() => {
     wsConnected.value = false
   }
 
-  stompClient.activate()
+    stompClient.activate()
 
-  interval = setInterval(load, 15000)
+    interval = setInterval(() => {
+    if (!wsConnected.value) load()
+  }, 15000)
 })
 
 onUnmounted(() => {

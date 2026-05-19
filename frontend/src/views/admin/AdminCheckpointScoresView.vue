@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
-import { apiBaseUrl } from '@/api'
+import { apiBaseUrl, fetchCurrentEdition } from '@/api'
 
 const router = useRouter()
 const { isAdmin, authHeaders, logout } = useAuth()
@@ -33,6 +33,7 @@ const results = ref<ResultRow[]>([])
 const checkpoints = ref<CheckpointInfo[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
+const year = ref<number | null>(null)
 
 if (!isAdmin.value) {
   router.push('/admin/login')
@@ -42,7 +43,9 @@ async function load() {
   loading.value = true
   error.value = null
   try {
-    const res = await fetch(`${apiBaseUrl}/api/admin/registrations/results/2026`, {
+    const ed = await fetchCurrentEdition()
+    year.value = ed.year
+    const res = await fetch(`${apiBaseUrl}/api/admin/registrations/results/${ed.year}`, {
       headers: authHeaders(),
     })
     if (res.status === 403) { logout(); router.push('/admin/login'); return }

@@ -57,14 +57,27 @@ const router = createRouter({
 })
 
 router.beforeEach((to, _from, next) => {
+  const token = localStorage.getItem('admin_token')
+  const role = localStorage.getItem('admin_role')
+  const roles = role?.split(',') ?? []
+
   if (to.meta?.requiresAdmin) {
-    const token = localStorage.getItem('admin_token')
-    const role = localStorage.getItem('admin_role')
-    if (!token || !role?.split(',').includes('ADMIN')) {
+    if (!token || !roles.includes('ADMIN')) {
       next('/admin/login')
       return
     }
   }
+
+  if (to.path.startsWith('/zavodnik/') && !token) {
+    next('/admin/login')
+    return
+  }
+
+  if (to.path === '/komisari' && !token) {
+    next('/admin/login')
+    return
+  }
+
   next()
 })
 

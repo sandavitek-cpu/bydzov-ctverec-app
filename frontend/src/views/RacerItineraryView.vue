@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { apiBaseUrl } from '@/api'
+import { Client } from '@stomp/stompjs'
 
 const router = useRouter()
 const { isLoggedIn, authHeaders } = useAuth()
@@ -20,7 +21,7 @@ const items = ref<ScheduleItem[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const reg = ref<{ teamName: string | null; startNumber: number | null } | null>(null)
-let ws: WebSocket | null = null
+let stompClient: Client | null = null
 
 const now = new Date()
 const today = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
@@ -46,49 +47,31 @@ async function load() {
   }
 }
 
-function connectWebSocket() {
-  const wsUrl = apiBaseUrl.replace(/^http/, 'ws') + '/ws/results'
-  ws = new WebSocket(wsUrl)
-  ws.onopen = () => {
-    const connectFrame = `CONNECT\naccept-version:1.2\nhost:${new URL(apiBaseUrl).host}\n\n\x00`
-    ws?.send(connectFrame)
-    const subFrame = `SUBSCRIBE\nid:sub-schedule\ndestination:/topic/schedule\n\n\x00`
-    ws?.send(subFrame)
-  }
-  ws.onmessage = (event: MessageEvent) => {
-    const data = event.data as string
-    if (data.includes('/topic/schedule') || data.includes('MESSAGE')) {
-      try {
-        const bodyMatch = data.match(/({.*})/)
-        if (bodyMatch) {
-          const parsed = JSON.parse(bodyMatch[1])
-          if (parsed.items) {
-            items.value = parsed.items
-          }
-        }
-      } catch { /* ignore parse errors */ }
+function onScheduleUpdate(frame: { body: string }) {
+  try {
+    const data = JSON.parse(frame.body)
+    if (data.items) {
+      items.value = data.items
     }
-  }
-  ws.onclose = () => {
-    setTimeout(connectWebSocket, 3000)
-  }
+  } catch { /* ignore */ }
 }
 
 onMounted(() => {
+  if (!isLoggedIn.value) {
+    router.push('/admin/login')
+    return
+  }
   load()
-  connectWebSocket()
+
+  const wsUrl = apiBaseUrl.replace(/^https?/, 'ws') + '/ws/results'
+  stompClient = new Client({ brokerURL: wsUrl, reconnectDelay: 5000 })
+  stompClient.onConnect = () => stompClient!.subscribe('/topic/schedule', onScheduleUpdate)
+  stompClient.activate()
 })
 
 onUnmounted(() => {
-  if (ws) {
-    ws.onclose = null
-    ws.close()
-  }
+  if (stompClient) stompClient.deactivate()
 })
-
-if (!isLoggedIn.value) {
-  router.push('/admin/login')
-}
 </script>
 
 <template>

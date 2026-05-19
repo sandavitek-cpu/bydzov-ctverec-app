@@ -42,12 +42,11 @@ public class PublicInfoController {
         .toList();
 
     var edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
-    Map<String, Object> race = Map.of(
-        "started", edition != null && edition.getRaceStartedAt() != null,
-        "finished", edition != null && edition.getRaceFinishedAt() != null,
-        "startedAt", edition != null && edition.getRaceStartedAt() != null ? edition.getRaceStartedAt().toString() : null,
-        "finishedAt", edition != null && edition.getRaceFinishedAt() != null ? edition.getRaceFinishedAt().toString() : null
-    );
+    Map<String, Object> race = new LinkedHashMap<>();
+    race.put("started", edition != null && edition.getRaceStartedAt() != null);
+    race.put("finished", edition != null && edition.getRaceFinishedAt() != null);
+    race.put("startedAt", edition != null && edition.getRaceStartedAt() != null ? edition.getRaceStartedAt().toString() : null);
+    race.put("finishedAt", edition != null && edition.getRaceFinishedAt() != null ? edition.getRaceFinishedAt().toString() : null);
     return Map.of("version", version, "deployedAt", deployedAt, "changelog", changelog, "race", race);
   }
 

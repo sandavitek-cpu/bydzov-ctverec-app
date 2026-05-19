@@ -220,8 +220,7 @@ public class RegistrationController {
     return userRepository.findByEmail(email.trim())
         .map(u -> ResponseEntity.ok(Map.of(
             "firstName", u.getFirstName(),
-            "lastName", u.getLastName(),
-            "phone", u.getPhone() != null ? u.getPhone() : "")))
+            "lastName", u.getLastName())))
         .orElse(ResponseEntity.ok(Map.of()));
   }
 

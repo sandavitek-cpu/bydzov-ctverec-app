@@ -218,7 +218,7 @@ public class AdminController {
     racerRegistrationRepository.save(reg);
 
     emailService.sendCredentials(email, personName, email, rawPassword,
-        reg.getPaymentReference(), reg.getStartFee(), reg.getStartNumber());
+        reg.getPaymentReference() != null ? reg.getPaymentReference() : 0, reg.getStartFee(), reg.getStartNumber());
 
     log.info("Registration {} approved, user {} created", id, email);
     return ResponseEntity.ok(Map.of("approved", true, "email", email));
@@ -307,14 +307,14 @@ Dobrý den,
 zatím jsme neobdrželi platbu startovného pro tým "%s".
 
   Startovné: %d Kč
-  Variabilní symbol: %d
+  Variabilní symbol: %s
 
 Pokud jste již platbu provedli, tuto zprávu prosím ignorujte.
 V případě dotazů nás kontaktujte na info@bydzov-ctverec.cz.
 
 Děkujeme za Vaši účast.
 Tým Novobydžovského čtverce
-""".formatted(name, fee, ref);
+""".formatted(name, fee, ref != null ? String.valueOf(ref) : "—");
     emailService.send(reg.getEmail(), "Novobydžovský čtverec – upomínka nezaplaceného startovného", body);
     log.info("Payment reminder sent to registration {} ({})", id, reg.getEmail());
     return ResponseEntity.ok(Map.of("sent", true));

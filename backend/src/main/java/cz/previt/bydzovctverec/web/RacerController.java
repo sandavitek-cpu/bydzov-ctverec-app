@@ -75,7 +75,7 @@ public class RacerController {
     User user = (User) auth.getPrincipal();
     var crewMember = crewMemberRepository.findByUser(user).orElse(null);
     if (crewMember == null) {
-      return ResponseEntity.ok(Map.of("error", "Nejste přihlášen k závodu"));
+      return ResponseEntity.badRequest().body(Map.of("error", "Nejste přihlášen k závodu"));
     }
     RacerRegistration reg = crewMember.getRegistration();
 
@@ -106,7 +106,7 @@ public class RacerController {
     User user = (User) auth.getPrincipal();
     var crewMember = crewMemberRepository.findByUser(user).orElse(null);
     if (crewMember == null) {
-      return ResponseEntity.ok(Map.of("error", "Nejste přihlášen k závodu"));
+      return ResponseEntity.badRequest().body(Map.of("error", "Nejste přihlášen k závodu"));
     }
     RacerRegistration reg = crewMember.getRegistration();
 
@@ -220,7 +220,7 @@ public class RacerController {
     User user = (User) auth.getPrincipal();
     var crewMember = crewMemberRepository.findByUser(user).orElse(null);
     if (crewMember == null) {
-      return ResponseEntity.ok(Map.of("error", "Nejste přihlášen k závodu"));
+      return ResponseEntity.badRequest().body(Map.of("error", "Nejste přihlášen k závodu"));
     }
     RacerRegistration reg = crewMember.getRegistration();
     var m = new java.util.LinkedHashMap<String, Object>();
@@ -275,7 +275,7 @@ public class RacerController {
     User user = (User) auth.getPrincipal();
     var crewMember = crewMemberRepository.findByUser(user).orElse(null);
     if (crewMember == null) {
-      return ResponseEntity.ok(Map.of("error", "Nejste přihlášen k závodu"));
+      return ResponseEntity.badRequest().body(Map.of("error", "Nejste přihlášen k závodu"));
     }
     RacerRegistration reg = crewMember.getRegistration();
 

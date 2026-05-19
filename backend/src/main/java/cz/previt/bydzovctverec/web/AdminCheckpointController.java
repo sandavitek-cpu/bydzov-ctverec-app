@@ -51,10 +51,16 @@ public class AdminCheckpointController {
     if (edition == null) {
       return ResponseEntity.badRequest().body(Map.of("error", "Žádný aktivní ročník"));
     }
-    Checkpoint cp = new Checkpoint(edition,
-        (String) body.get("name"),
-        body.get("lat") instanceof Number n ? n.doubleValue() : null,
-        body.get("lng") instanceof Number n ? n.doubleValue() : null,
+    String name = (String) body.get("name");
+    if (name == null || name.isBlank()) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Chybí název stanoviště"));
+    }
+    Double lat = body.get("lat") instanceof Number n ? n.doubleValue() : null;
+    Double lng = body.get("lng") instanceof Number n ? n.doubleValue() : null;
+    if (lat == null || lng == null) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Chybí souřadnice (lat/lng)"));
+    }
+    Checkpoint cp = new Checkpoint(edition, name, lat, lng,
         body.get("radius") instanceof Number n ? n.intValue() : 300,
         body.get("sortOrder") instanceof Number n ? n.intValue() : 0);
     cp.setTaskDescription((String) body.get("taskDescription"));
@@ -72,12 +78,12 @@ public class AdminCheckpointController {
       return ResponseEntity.badRequest().body(Map.of("error", "Stanoviště nenalezeno"));
     }
     if (body.containsKey("name")) cp.setName((String) body.get("name"));
-    if (body.containsKey("lat")) cp.setLat(((Number) body.get("lat")).doubleValue());
-    if (body.containsKey("lng")) cp.setLng(((Number) body.get("lng")).doubleValue());
-    if (body.containsKey("radius")) cp.setRadius(((Number) body.get("radius")).intValue());
-    if (body.containsKey("sortOrder")) cp.setSortOrder(((Number) body.get("sortOrder")).intValue());
+    if (body.containsKey("lat") && body.get("lat") instanceof Number n) cp.setLat(n.doubleValue());
+    if (body.containsKey("lng") && body.get("lng") instanceof Number n) cp.setLng(n.doubleValue());
+    if (body.containsKey("radius") && body.get("radius") instanceof Number n) cp.setRadius(n.intValue());
+    if (body.containsKey("sortOrder") && body.get("sortOrder") instanceof Number n) cp.setSortOrder(n.intValue());
     if (body.containsKey("taskDescription")) cp.setTaskDescription((String) body.get("taskDescription"));
-    if (body.containsKey("maxPoints")) cp.setMaxPoints(((Number) body.get("maxPoints")).intValue());
+    if (body.containsKey("maxPoints") && body.get("maxPoints") instanceof Number n) cp.setMaxPoints(n.intValue());
     if (body.containsKey("volunteers")) cp.setVolunteers(toStringList(body.get("volunteers")));
     checkpointRepository.save(cp);
     return ResponseEntity.ok(cp);

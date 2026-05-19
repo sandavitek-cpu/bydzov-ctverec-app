@@ -43,6 +43,9 @@ public class AdminRaceController {
     if (edition.getRaceFinishedAt() != null) {
       return ResponseEntity.badRequest().body(Map.of("error", "Závod již byl ukončen"));
     }
+    if (edition.getRaceStartedAt() != null) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Závod již byl zahájen"));
+    }
     edition.setRaceStartedAt(Instant.now());
     editionRepository.save(edition);
     Map<String, Object> resp = new LinkedHashMap<>();

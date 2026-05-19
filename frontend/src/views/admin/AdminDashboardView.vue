@@ -449,7 +449,20 @@ function clearUserSelection() {
 
 const variantLabel: Record<string, string> = {
   JEDNODENNI: 'Jednodenní', DVODENNI: 'Dvoudenní',
+  DVODENNI_UZAVRENO: 'Dvoudenní (uzavřeno)', DVODENNI_BEZ_UBYTOVANI: 'Dvoudenní bez ubytování',
+  AUTO: 'Automobil',
 }
+
+const variantOptions = computed(() => {
+  const seen = new Set<string>()
+  const opts: { value: string; label: string }[] = []
+  for (const vc of variantConfigs.value) {
+    if (seen.has(vc.variantCode)) continue
+    seen.add(vc.variantCode)
+    opts.push({ value: vc.variantCode, label: variantLabel[vc.variantCode] ?? vc.label })
+  }
+  return opts
+})
 
 const variantConfigs = ref<VariantConfig[]>([])
 
@@ -519,8 +532,7 @@ async function loadVariantConfigs() {
     <div class="flex flex-wrap gap-3 mb-6">
       <select v-model="filterVariant" class="input-field !w-auto !h-[36px] text-body-sm">
         <option value="all">Všechny varianty</option>
-        <option value="JEDNODENNI">Jednodenní</option>
-        <option value="DVODENNI">Dvoudenní</option>
+        <option v-for="opt in variantOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
       </select>
       <select v-model="filterStatus" class="input-field !w-auto !h-[36px] text-body-sm">
         <option value="all">Všechny stavy</option>
@@ -833,8 +845,7 @@ async function loadVariantConfigs() {
               <label class="text-label text-text-soft mb-1 block">Varianta</label>
               <select v-model="editForm.variant" class="input-field w-full">
                 <option :value="null">—</option>
-                <option value="JEDNODENNI">Jednodenní</option>
-                <option value="DVODENNI">Dvoudenní</option>
+                <option v-for="opt in variantOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
               </select>
             </div>
             <div>
