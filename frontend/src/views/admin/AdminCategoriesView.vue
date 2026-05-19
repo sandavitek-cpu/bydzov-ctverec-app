@@ -18,6 +18,7 @@ const saving = ref(false)
 const computing = ref(false)
 const showForm = ref(false)
 const editing = ref<RaceCategory | null>(null)
+const editingWinner = ref<RaceCategory | null>(null)
 const form = ref({
   name: '',
   code: '',
@@ -133,18 +134,27 @@ async function handleCompute() {
 }
 
 function editWinner(cat: RaceCategory) {
-  const n = prompt('Jméno vítěze (nechte prázdné pro smazání):', cat.winnerName ?? '')
-  if (n === null) return
-  updateAdminCategory(cat.id, {
-    winnerName: n || null,
-    winnerTeam: cat.winnerTeam,
-    winnerNumber: cat.winnerNumber,
-    winnerPoints: cat.winnerPoints,
-  }, authHeaders()).then(updated => {
+  editingWinner.value = { ...cat }
+}
+
+async function saveWinner() {
+  if (!editingWinner.value) return
+  const cat = editingWinner.value
+  try {
+    const updated = await updateAdminCategory(cat.id, {
+      winnerName: cat.winnerName || null,
+      winnerTeam: cat.winnerTeam,
+      winnerNumber: cat.winnerNumber,
+      winnerPoints: cat.winnerPoints,
+    }, authHeaders())
     const idx = categories.value.findIndex(c => c.id === cat.id)
     if (idx >= 0) categories.value[idx] = updated
-    showToast(n ? 'Vítěz nastaven' : 'Vítěz smazán', 'success')
-  }).catch(() => showToast('Chyba při ukládání', 'error'))
+    showToast(cat.winnerName ? 'Vítěz nastaven' : 'Vítěz smazán', 'success')
+  } catch {
+    showToast('Chyba při ukládání', 'error')
+  } finally {
+    editingWinner.value = null
+  }
 }
 
 onMounted(load)
@@ -241,6 +251,37 @@ onMounted(load)
       <p v-if="categories.length === 0" class="text-body text-text-soft text-center py-8">
         Zatím žádné kategorie. Přidejte první.
       </p>
+    </div>
+
+    <!-- Winner edit modal -->
+    <div v-if="editingWinner" class="fixed inset-0 z-50 flex items-center justify-center bg-black/30" @click.self="editingWinner = null">
+      <div class="rounded-xl border border-border bg-surface p-6 w-full max-w-sm mx-4 shadow-xl">
+        <h3 class="text-subsection text-text mb-4">Upravit vítěze: {{ editingWinner.name }}</h3>
+        <div class="space-y-3">
+          <div>
+            <label class="input-label">Jméno vítěze</label>
+            <input v-model="editingWinner.winnerName" class="input-field w-full" placeholder="Nechte prázdné pro smazání" />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="input-label">Tým</label>
+              <input v-model="editingWinner.winnerTeam" class="input-field w-full" />
+            </div>
+            <div>
+              <label class="input-label">Start. číslo</label>
+              <input v-model.number="editingWinner.winnerNumber" type="number" class="input-field w-full" />
+            </div>
+          </div>
+          <div>
+            <label class="input-label">Body</label>
+            <input v-model.number="editingWinner.winnerPoints" type="number" class="input-field w-full" />
+          </div>
+        </div>
+        <div class="flex gap-2 mt-6">
+          <button @click="saveWinner" class="btn-primary flex-1">Uložit</button>
+          <button @click="editingWinner = null" class="btn-ghost">Zrušit</button>
+        </div>
+      </div>
     </div>
   </div>
 </template>

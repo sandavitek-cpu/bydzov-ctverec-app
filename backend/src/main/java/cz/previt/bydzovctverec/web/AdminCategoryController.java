@@ -156,31 +156,36 @@ public class AdminCategoryController {
         case "RANKING_TOP" -> {
           yield pool.stream()
               .filter(r -> r.getCancelledAt() == null)
-              .max(Comparator.comparingInt(r -> pointsByRacerId.getOrDefault(r.getId(), 0)))
+              .max(Comparator.comparingInt((RacerRegistration r) -> pointsByRacerId.getOrDefault(r.getId(), 0))
+                  .thenComparingLong(RacerRegistration::getId))
               .orElse(null);
         }
         case "RANKING_LAST" -> {
           yield pool.stream()
               .filter(r -> r.getCancelledAt() == null)
-              .min(Comparator.comparingInt(r -> pointsByRacerId.getOrDefault(r.getId(), 0)))
+              .min(Comparator.comparingInt((RacerRegistration r) -> pointsByRacerId.getOrDefault(r.getId(), 0))
+                  .thenComparingLong(RacerRegistration::getId))
               .orElse(null);
         }
         case "OLDEST_VEHICLE" -> {
           yield pool.stream()
               .filter(r -> r.getVehicleYear() != null && r.getCancelledAt() == null)
-              .min(Comparator.comparingInt(RacerRegistration::getVehicleYear))
+              .min(Comparator.comparingInt(RacerRegistration::getVehicleYear)
+                  .thenComparingLong(RacerRegistration::getId))
               .orElse(null);
         }
         case "YOUNGEST_DRIVER" -> {
           yield pool.stream()
               .filter(r -> r.getDriverAge() != null && r.getCancelledAt() == null)
-              .min(Comparator.comparingInt(RacerRegistration::getDriverAge))
+              .min(Comparator.comparingInt(RacerRegistration::getDriverAge)
+                  .thenComparingLong(RacerRegistration::getId))
               .orElse(null);
         }
         case "OLDEST_DRIVER" -> {
           yield pool.stream()
               .filter(r -> r.getDriverAge() != null && r.getCancelledAt() == null)
-              .max(Comparator.comparingInt(RacerRegistration::getDriverAge))
+              .max(Comparator.comparingInt(RacerRegistration::getDriverAge)
+                  .thenComparingLong(RacerRegistration::getId))
               .orElse(null);
         }
         default -> null;

@@ -4,6 +4,7 @@ import cz.previt.bydzovctverec.domain.Checkpoint;
 import cz.previt.bydzovctverec.domain.CheckpointRepository;
 import cz.previt.bydzovctverec.domain.Edition;
 import cz.previt.bydzovctverec.domain.EditionRepository;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.springframework.http.ResponseEntity;
@@ -41,7 +42,7 @@ public class AdminCheckpointController {
       return ResponseEntity.ok(List.of());
     }
     List<Checkpoint> items = checkpointRepository.findByEditionOrderBySortOrder(edition);
-    return ResponseEntity.ok(items);
+    return ResponseEntity.ok(items.stream().map(this::toMap).toList());
   }
 
   @PostMapping
@@ -67,7 +68,7 @@ public class AdminCheckpointController {
     cp.setMaxPoints(body.get("maxPoints") instanceof Number n ? n.intValue() : null);
     cp.setVolunteers(toStringList(body.get("volunteers")));
     checkpointRepository.save(cp);
-    return ResponseEntity.ok(cp);
+    return ResponseEntity.ok(toMap(cp));
   }
 
   @PutMapping("/{id}")
@@ -86,7 +87,7 @@ public class AdminCheckpointController {
     if (body.containsKey("maxPoints") && body.get("maxPoints") instanceof Number n) cp.setMaxPoints(n.intValue());
     if (body.containsKey("volunteers")) cp.setVolunteers(toStringList(body.get("volunteers")));
     checkpointRepository.save(cp);
-    return ResponseEntity.ok(cp);
+    return ResponseEntity.ok(toMap(cp));
   }
 
   @SuppressWarnings("unchecked")
@@ -105,5 +106,19 @@ public class AdminCheckpointController {
     }
     checkpointRepository.deleteById(id);
     return ResponseEntity.ok(Map.of("deleted", true));
+  }
+
+  private Map<String, Object> toMap(Checkpoint cp) {
+    Map<String, Object> m = new LinkedHashMap<>();
+    m.put("id", cp.getId());
+    m.put("name", cp.getName());
+    m.put("lat", cp.getLat());
+    m.put("lng", cp.getLng());
+    m.put("radius", cp.getRadius());
+    m.put("sortOrder", cp.getSortOrder());
+    m.put("taskDescription", cp.getTaskDescription());
+    m.put("maxPoints", cp.getMaxPoints());
+    m.put("volunteers", cp.getVolunteers());
+    return m;
   }
 }

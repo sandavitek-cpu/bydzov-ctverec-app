@@ -3,18 +3,27 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { fetchCeremonyCategories, fetchResults } from '@/api'
 
+interface CeremonyItem {
+  id: string
+  name: string
+  winnerName: string | null
+  winnerNumber: number | null
+  winnerPoints: number | null
+  rank?: number
+}
+
 const route = useRoute()
 const year = ref(Number(route.params.rok) || new Date().getFullYear())
 const loading = ref(true)
 const error = ref<string | null>(null)
-const items = ref<any[]>([])
+const items = ref<CeremonyItem[]>([])
 const done = ref<Set<string>>(new Set())
 const fullscreen = ref(false)
-const fsItem = ref<any>(null)
+const fsItem = ref<CeremonyItem | null>(null)
 const fsCountdown = ref(0)
 const fsPhase = ref<'countdown' | 'reveal'>('countdown')
 
-function announce(item: any) {
+function announce(item: CeremonyItem) {
   if (fullscreen.value) return
   fsItem.value = item
   fsPhase.value = 'countdown'
@@ -50,9 +59,9 @@ async function load() {
       fetchCeremonyCategories(year.value).catch(() => ({ year: year.value, categories: [] })),
       fetchResults(year.value).catch(() => null),
     ])
-    const result: any[] = []
+    const result: CeremonyItem[] = []
     if (resData?.results) {
-      const top = [...resData.results].sort((a: any, b: any) => a.rank - b.rank).slice(0, 3)
+      const top = [...resData.results].sort((a, b) => a.rank - b.rank).slice(0, 3)
       for (const r of top) {
         result.push({
           id: `r${r.rank}`,

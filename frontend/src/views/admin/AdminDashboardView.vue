@@ -404,6 +404,7 @@ onMounted(() => {
 
 const categoryLabel: Record<string, string> = {
   MOTOCYKL: 'Motocykl', OSOBNI: 'Osobní', CLASSIC: 'Historické', NAKLADNI: 'Nákladní',
+  AUTO: 'Automobil',
 }
 
 const userQuery = ref('')

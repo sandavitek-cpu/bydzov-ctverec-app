@@ -161,11 +161,11 @@ async function handleSubmit() {
   loading.value = true
   try {
     result.value = await submitRegistration({
-      teamName: form.value.teamName,
-      email: form.value.email,
-      phone: form.value.phone,
+      teamName: form.value.teamName.trim(),
+      email: form.value.email.trim(),
+      phone: form.value.phone.trim(),
       vehicleCategory: form.value.vehicleCategory,
-      vehiclePlate: form.value.vehiclePlate,
+      vehiclePlate: form.value.vehiclePlate.trim(),
       vehicleYear: form.value.vehicleYear,
       crewCount: form.value.crewCount,
       variant: form.value.variant,

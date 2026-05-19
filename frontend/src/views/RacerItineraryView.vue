@@ -21,12 +21,16 @@ const items = ref<ScheduleItem[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const reg = ref<{ teamName: string | null; startNumber: number | null } | null>(null)
+const nowStr = ref('')
 let stompClient: Client | null = null
+let timeInterval: ReturnType<typeof setInterval> | null = null
 
-const now = new Date()
-const today = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+function updateNow() {
+  const n = new Date()
+  nowStr.value = `${String(n.getHours()).padStart(2, '0')}:${String(n.getMinutes()).padStart(2, '0')}`
+}
 const currentIndex = computed(() =>
-  items.value.findIndex(i => i.time > today)
+  items.value.findIndex(i => i.time > nowStr.value)
 )
 
 async function load() {
@@ -61,16 +65,20 @@ onMounted(() => {
     router.push('/admin/login')
     return
   }
+  updateNow()
   load()
 
   const wsUrl = apiBaseUrl.replace(/^https?/, 'ws') + '/ws/results'
   stompClient = new Client({ brokerURL: wsUrl, reconnectDelay: 5000 })
   stompClient.onConnect = () => stompClient!.subscribe('/topic/schedule', onScheduleUpdate)
   stompClient.activate()
+
+  timeInterval = setInterval(updateNow, 30000)
 })
 
 onUnmounted(() => {
   if (stompClient) stompClient.deactivate()
+  if (timeInterval) clearInterval(timeInterval)
 })
 </script>
 
