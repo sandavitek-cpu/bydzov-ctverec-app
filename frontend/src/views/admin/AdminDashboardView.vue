@@ -25,7 +25,7 @@ interface AdminReg {
   gender: string | null; driverAge: number | null; club: string | null
   address: string | null; youngestAge: number | null; youngestName: string | null
   engineDisplacement: number | null; power: number | null; maxSpeed: number | null
-  vehicleNotes: string | null; notes: string | null; contacted: boolean
+  vehicleNotes: string | null; vehicleStory: string | null; notes: string | null; contacted: boolean
   properlyRegistered: boolean; arrived: boolean; consent: boolean
   approved: boolean; createdAt: string; paidAt: string | null; cancelledAt: string | null; refundAmount: number | null; crewMembers: CrewInfo[]
 }
@@ -362,7 +362,7 @@ async function saveEdit() {
       'variant', 'teamName', 'phone', 'vehicleCategory', 'vehicleMake',
       'vehiclePlate', 'vehicleYear', 'crewCount', 'firstTime', 'gender',
       'driverAge', 'club', 'address', 'youngestAge', 'youngestName',
-      'engineDisplacement', 'power', 'maxSpeed', 'vehicleNotes', 'notes',
+      'engineDisplacement', 'power', 'maxSpeed', 'vehicleNotes', 'vehicleStory', 'notes',
       'contacted', 'properlyRegistered', 'arrived', 'consent'
     ]
     const body: Record<string, any> = {}
@@ -745,6 +745,7 @@ async function loadVariantConfigs() {
               <div v-if="selected.maxSpeed"><span class="text-text-soft">Max. rychlost:</span> <span class="text-text">{{ selected.maxSpeed }} km/h</span></div>
             </div>
             <p v-if="selected.vehicleNotes" class="mt-2 text-body-sm text-text-muted italic">{{ selected.vehicleNotes }}</p>
+            <p v-if="selected.vehicleStory" class="mt-2 text-body-sm text-primary italic">{{ selected.vehicleStory }}</p>
           </div>
 
           <!-- Driver info -->
@@ -942,6 +943,10 @@ async function loadVariantConfigs() {
             <div>
               <label class="text-label text-text-soft mb-1 block">Poznámky k vozidlu</label>
               <textarea v-model="editForm.vehicleNotes" class="input-field w-full" rows="2"></textarea>
+            </div>
+            <div>
+              <label class="text-label text-text-soft mb-1 block">Zajímavosti pro moderátora</label>
+              <textarea v-model="editForm.vehicleStory" class="input-field w-full" rows="2" placeholder="Např. auto přijelo z Německa…"></textarea>
             </div>
             <div>
               <label class="text-label text-text-soft mb-1 block">Interní poznámka</label>

@@ -112,7 +112,7 @@ public class RegistrationSeeder {
             "OSOBNI", "Citroën 2CV", "5H0 0050", 1968, 2, sn,
             RegistrationController.calculateFee("JEDNODENNI", 1968, 2),
             null, "Testovací", "Řidič", false, "M", 33, null, null,
-            null, null, null, null, null, null, null, false, true, false, true, false, Instant.now()));
+            null, null, null, null, null, null, null, null, false, true, false, true, false, Instant.now()));
 
         // ===== PŘIDEJ registraci pro seed racer usera =====
         boolean foundRacer2 = false;
@@ -167,7 +167,7 @@ public class RegistrationSeeder {
         (String) a[14], null,
         (Integer) a[15], (String) a[16],
         (int) a[17], (int) a[18], (int) a[19],
-        (String) a[20], null,
+        (String) a[20], null, null,
         (boolean) a[21], (boolean) a[22], (boolean) a[23], (boolean) a[24], false,
         Instant.now());
   }

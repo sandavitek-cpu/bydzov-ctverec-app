@@ -34,6 +34,7 @@ public record AdminRegistrationResponse(
     Integer power,
     Integer maxSpeed,
     String vehicleNotes,
+    String vehicleStory,
     String notes,
     Boolean contacted,
     Boolean properlyRegistered,
@@ -61,7 +62,7 @@ public record AdminRegistrationResponse(
         r.getLastName(), r.getFirstTime(), r.getGender(), r.getDriverAge(),
         r.getClub(), r.getAddress(), r.getYoungestAge(), r.getYoungestName(),
         r.getEngineDisplacement(), r.getPower(), r.getMaxSpeed(),
-        r.getVehicleNotes(), r.getNotes(), r.getContacted(),
+        r.getVehicleNotes(), r.getVehicleStory(), r.getNotes(), r.getContacted(),
         r.getProperlyRegistered(), r.getArrived(), r.getConsent(),
         r.getApproved(),
         r.getCreatedAt(), r.getPaidAt(), r.getCancelledAt(), r.getRefundAmount(), cmList);

@@ -28,6 +28,7 @@ public record RegistrationRequest(
     Integer power,
     Integer maxSpeed,
     String vehicleNotes,
+    String vehicleStory,
     String notes,
     Boolean consent,
     String recaptchaToken,

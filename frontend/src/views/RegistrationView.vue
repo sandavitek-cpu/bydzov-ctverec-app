@@ -41,6 +41,7 @@ const form = ref({
   club: '',
   firstTime: false,
   vehicleMake: '',
+  vehicleStory: '',
   consent: false,
 })
 
@@ -175,6 +176,8 @@ async function handleSubmit() {
       address: form.value.address,
       club: driverClubMember.value ? 'ano' : '',
       firstTime: form.value.firstTime,
+      vehicleMake: form.value.vehicleMake,
+      vehicleStory: form.value.vehicleStory || undefined,
       crewMembers: crewMembers.value.filter(m => m.firstName && m.lastName && m.email),
     })
     submitted.value = true
@@ -369,6 +372,12 @@ const qrUrl = computed(() => {
           <label class="input-label">Počet členů posádky</label>
           <input v-model.number="form.crewCount" type="number" required min="1" max="10" class="input-field" />
         </div>
+      </div>
+
+      <div>
+        <label class="input-label">Zajímavosti o vozidle (pro moderátora)</label>
+        <textarea v-model="form.vehicleStory" rows="3" class="input-field" placeholder="Např. auto přijelo z Německa, vůz se účastnil závodu v XY, apod."></textarea>
+        <p class="text-meta text-text-soft mt-1">Informace pro moderátora, který o vozidle řekne zajímavost při startu.</p>
       </div>
 
       <label v-if="isLoggedIn" class="flex items-center gap-2 cursor-pointer">

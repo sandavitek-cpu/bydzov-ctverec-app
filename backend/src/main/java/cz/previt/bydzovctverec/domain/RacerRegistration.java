@@ -119,6 +119,9 @@ public class RacerRegistration {
   @Column(name = "vehicle_notes", length = 500)
   private String vehicleNotes;
 
+  @Column(name = "vehicle_story", length = 2000)
+  private String vehicleStory;
+
   @Column(length = 500)
   private String notes;
 
@@ -182,7 +185,7 @@ public class RacerRegistration {
       Boolean firstTime, String gender, Integer driverAge, String club,
       String address, Integer youngestAge, String youngestName,
       Integer engineDisplacement, Integer power, Integer maxSpeed,
-      String vehicleNotes, String notes, Boolean contacted,
+      String vehicleNotes, String vehicleStory, String notes, Boolean contacted,
       Boolean properlyRegistered, Boolean arrived, Boolean consent, Boolean approved,
       Instant createdAt) {
     this.edition = edition;
@@ -210,6 +213,7 @@ public class RacerRegistration {
     this.power = power;
     this.maxSpeed = maxSpeed;
     this.vehicleNotes = vehicleNotes;
+    this.vehicleStory = vehicleStory;
     this.notes = notes;
     this.contacted = contacted;
     this.properlyRegistered = properlyRegistered;
@@ -336,6 +340,9 @@ public class RacerRegistration {
   public void setMaxSpeed(Integer maxSpeed) { this.maxSpeed = maxSpeed; }
 
   public void setVehicleNotes(String vehicleNotes) { this.vehicleNotes = vehicleNotes; }
+
+  public String getVehicleStory() { return vehicleStory; }
+  public void setVehicleStory(String vehicleStory) { this.vehicleStory = vehicleStory; }
 
   public void setNotes(String notes) { this.notes = notes; }
 

@@ -102,7 +102,7 @@ public class RegistrationController {
         request.club(), request.address(),
         request.youngestAge(), request.youngestName(),
         request.engineDisplacement(), request.power(), request.maxSpeed(),
-        request.vehicleNotes(), request.notes(),
+        request.vehicleNotes(), request.vehicleStory(), request.notes(),
         false, false, false,
         request.consent() != null ? request.consent() : false,
         true, Instant.now());

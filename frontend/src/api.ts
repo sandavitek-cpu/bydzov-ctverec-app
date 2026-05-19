@@ -44,6 +44,10 @@ export interface RegistrationData {
   address: string
   club: string
   firstTime: boolean
+  vehicleMake?: string
+  vehicleNotes?: string
+  vehicleStory?: string
+  notes?: string
   crewMembers: CrewMemberInput[]
 }
 
