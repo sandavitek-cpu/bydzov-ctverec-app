@@ -11,6 +11,7 @@ import cz.previt.bydzovctverec.domain.Score;
 import cz.previt.bydzovctverec.domain.ScoreRepository;
 import cz.previt.bydzovctverec.domain.User;
 import cz.previt.bydzovctverec.domain.UserRepository;
+import cz.previt.bydzovctverec.service.CeremonyService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
@@ -44,6 +45,7 @@ public class ScoreController {
   private final NotificationRepository notificationRepository;
   private final UserRepository userRepository;
   private final AppRoleRepository appRoleRepository;
+  private final CeremonyService ceremonyService;
   private final SimpMessagingTemplate messagingTemplate;
 
   public ScoreController(ScoreRepository scoreRepository,
@@ -52,6 +54,7 @@ public class ScoreController {
       NotificationRepository notificationRepository,
       UserRepository userRepository,
       AppRoleRepository appRoleRepository,
+      CeremonyService ceremonyService,
       SimpMessagingTemplate messagingTemplate) {
     this.scoreRepository = scoreRepository;
     this.racerRegistrationRepository = racerRegistrationRepository;
@@ -59,6 +62,7 @@ public class ScoreController {
     this.notificationRepository = notificationRepository;
     this.userRepository = userRepository;
     this.appRoleRepository = appRoleRepository;
+    this.ceremonyService = ceremonyService;
     this.messagingTemplate = messagingTemplate;
   }
 
@@ -99,25 +103,32 @@ public class ScoreController {
     boolean allScored = activeRacers.stream().allMatch(r -> scoredRacerIds.contains(r.getId()));
 
     if (allScored && !activeRacers.isEmpty()) {
-      var adminRole = appRoleRepository.findByName("ADMIN");
-      if (adminRole.isPresent()) {
-        Long adminRoleId = adminRole.get().getId();
-        List<User> admins = userRepository.findAll().stream()
-            .filter(u -> u.getAppRoles().stream().anyMatch(r -> r.getId().equals(adminRoleId)))
-            .toList();
-        List<Notification> notifications = new ArrayList<>();
-        for (User admin : admins) {
-          notifications.add(new Notification(admin,
-              "Stanoviště kompletní",
-              "Kontrola " + cp.getName() + " je kompletní – všechny posádky obodovány.",
-              "SUCCESS",
-              "/admin/bodovani"));
-        }
-        if (!notifications.isEmpty()) {
-          notificationRepository.saveAll(notifications);
-          log.info("Checkpoint {} fully scored – notified {} admins", cp.getName(), admins.size());
-        }
+      notifyAdmins("Stanoviště kompletní",
+          "Kontrola " + cp.getName() + " je kompletní – všechny posádky obodovány.",
+          "/admin/bodovani");
+
+      if (ceremonyService.areAllCheckpointsComplete()) {
+        int count = ceremonyService.computeCategoryWinners();
+        notifyAdmins("Vyhodnocení dokončeno",
+            "Všechna stanoviště jsou kompletně obodována. Vyhodnoceno " + count + " kategorií.",
+            "/admin/ceremonie");
       }
+    }
+  }
+
+  private void notifyAdmins(String title, String message, String link) {
+    var adminRole = appRoleRepository.findByName("ADMIN");
+    if (adminRole.isEmpty()) return;
+    Long adminRoleId = adminRole.get().getId();
+    List<User> admins = userRepository.findAll().stream()
+        .filter(u -> u.getAppRoles().stream().anyMatch(r -> r.getId().equals(adminRoleId)))
+        .toList();
+    List<Notification> notifications = new ArrayList<>();
+    for (User admin : admins) {
+      notifications.add(new Notification(admin, title, message, "SUCCESS", link));
+    }
+    if (!notifications.isEmpty()) {
+      notificationRepository.saveAll(notifications);
     }
   }
 

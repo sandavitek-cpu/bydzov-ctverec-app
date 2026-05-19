@@ -202,6 +202,7 @@ async function toggleInfo() {
                   <RouterLink to="/admin/varianty" class="dropdown-item">Závod</RouterLink>
                   <RouterLink to="/admin/program" class="dropdown-item">Program</RouterLink>
                   <RouterLink to="/admin/kategorie" class="dropdown-item">Kategorie</RouterLink>
+                  <RouterLink :to="`/ceremoniál/${new Date().getFullYear()}`" class="dropdown-item">Ceremoniál</RouterLink>
                   <RouterLink to="/admin/trasy" class="dropdown-item">Trasy</RouterLink>
                   <RouterLink to="/admin/stanoviste" class="dropdown-item">Stanoviště</RouterLink>
                   <RouterLink to="/admin/bodovani" class="dropdown-item">Bodování</RouterLink>
@@ -318,6 +319,7 @@ async function toggleInfo() {
                 <RouterLink to="/admin/varianty" class="mobile-nav-item" @click="closeMobileNav">Závod</RouterLink>
                 <RouterLink to="/admin/program" class="mobile-nav-item" @click="closeMobileNav">Program</RouterLink>
                 <RouterLink to="/admin/kategorie" class="mobile-nav-item" @click="closeMobileNav">Kategorie</RouterLink>
+                <RouterLink :to="`/ceremoniál/${new Date().getFullYear()}`" class="mobile-nav-item" @click="closeMobileNav">Ceremoniál</RouterLink>
                 <RouterLink to="/admin/trasy" class="mobile-nav-item" @click="closeMobileNav">Trasy</RouterLink>
                 <RouterLink to="/admin/stanoviste" class="mobile-nav-item" @click="closeMobileNav">Stanoviště</RouterLink>
                 <RouterLink to="/admin/bodovani" class="mobile-nav-item" @click="closeMobileNav">Bodování</RouterLink>
@@ -424,6 +426,7 @@ async function toggleInfo() {
               <RouterLink to="/admin/varianty" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Závod</RouterLink>
               <RouterLink to="/admin/program" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Program</RouterLink>
               <RouterLink to="/admin/kategorie" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Kategorie</RouterLink>
+              <RouterLink :to="`/ceremoniál/${new Date().getFullYear()}`" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Ceremoniál</RouterLink>
               <RouterLink to="/admin/trasy" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Trasy</RouterLink>
               <RouterLink to="/admin/stanoviste" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Stanoviště</RouterLink>
               <RouterLink to="/admin/bodovani" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Bodování</RouterLink>

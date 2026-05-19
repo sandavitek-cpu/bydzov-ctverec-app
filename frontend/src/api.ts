@@ -538,6 +538,43 @@ export interface CeremonyCategory {
   winnerPoints: number | null
 }
 
+export interface CeremonyOverallRow {
+  rank: number
+  startNumber: number
+  teamName: string
+  vehicleCategory: string
+  vehiclePlate: string
+  totalPoints: number
+}
+
+export interface CeremonyData {
+  year: number
+  overall: CeremonyOverallRow[]
+  categories: CeremonyCategory[]
+}
+
+export async function fetchCeremonyCategories(year: number) {
+  const res = await fetch(`${apiBaseUrl}/api/public/ceremony/${year}`)
+  if (!res.ok) throw new Error(await apiError(res))
+  return res.json() as Promise<CeremonyData>
+}
+
+export async function fetchAdminCeremonyData(headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/ceremony/data`, { headers })
+  if (!res.ok) throw new Error(await apiError(res))
+  return res.json() as Promise<CeremonyData>
+}
+
+export async function generateCeremonyPresentation(headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/ceremony/generate`, {
+    method: 'POST',
+    headers,
+  })
+  const body = await res.json()
+  if (!res.ok) throw new Error(body.error ?? `API ${res.status}`)
+  return body as { computed: number; data: CeremonyData }
+}
+
 export async function fetchAdminCategories(headers: Record<string, string>) {
   const res = await fetch(`${apiBaseUrl}/api/admin/categories`, { headers })
   if (!res.ok) throw new Error(await apiError(res))
@@ -582,12 +619,6 @@ export async function computeCategoryWinners(headers: Record<string, string>) {
   const body = await res.json()
   if (!res.ok) throw new Error(body.error ?? `API ${res.status}`)
   return body as { computed: boolean; count: number }
-}
-
-export async function fetchCeremonyCategories(year: number) {
-  const res = await fetch(`${apiBaseUrl}/api/public/ceremony/${year}`)
-  if (!res.ok) throw new Error(await apiError(res))
-  return res.json() as Promise<{ year: number; categories: CeremonyCategory[] }>
 }
 
 export interface ScheduleItemData {

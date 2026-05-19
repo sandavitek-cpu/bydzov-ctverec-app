@@ -8,6 +8,7 @@ import cz.previt.bydzovctverec.domain.RacerRegistration;
 import cz.previt.bydzovctverec.domain.RacerRegistrationRepository;
 import cz.previt.bydzovctverec.domain.Score;
 import cz.previt.bydzovctverec.domain.ScoreRepository;
+import cz.previt.bydzovctverec.service.CeremonyService;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -31,16 +32,13 @@ public class AdminCategoryController {
 
   private final RaceCategoryRepository raceCategoryRepository;
   private final EditionRepository editionRepository;
-  private final ScoreRepository scoreRepository;
-  private final RacerRegistrationRepository racerRegistrationRepository;
+  private final CeremonyService ceremonyService;
 
   public AdminCategoryController(RaceCategoryRepository raceCategoryRepository,
-      EditionRepository editionRepository, ScoreRepository scoreRepository,
-      RacerRegistrationRepository racerRegistrationRepository) {
+      EditionRepository editionRepository, CeremonyService ceremonyService) {
     this.raceCategoryRepository = raceCategoryRepository;
     this.editionRepository = editionRepository;
-    this.scoreRepository = scoreRepository;
-    this.racerRegistrationRepository = racerRegistrationRepository;
+    this.ceremonyService = ceremonyService;
   }
 
   @GetMapping
@@ -122,93 +120,8 @@ public class AdminCategoryController {
     if (edition == null) {
       return ResponseEntity.badRequest().body(Map.of("error", "Žádný aktivní ročník"));
     }
-    List<RaceCategory> cats = raceCategoryRepository.findByEditionOrderBySortOrder(edition);
-    Integer year = edition.getEditionYear();
-
-    List<Score> allScores = scoreRepository.findByEditionYearWithRacer(year);
-    Map<Long, Integer> pointsByRacerId = allScores.stream()
-        .collect(Collectors.groupingBy(
-            s -> s.getRacerRegistration().getId(),
-            Collectors.summingInt(Score::getPoints)));
-
-    List<RacerRegistration> allRegs = racerRegistrationRepository.findByEditionId(edition.getId());
-
-    for (RaceCategory cat : cats) {
-      List<RacerRegistration> pool = allRegs;
-
-      String variant = cat.getVariant();
-      if (variant != null && !variant.isBlank()) {
-        pool = pool.stream()
-            .filter(r -> variant.equals(r.getVariant()))
-            .toList();
-      }
-
-      String code = cat.getCode();
-      if (code != null && !code.isBlank()) {
-        pool = pool.stream()
-            .filter(r -> code.equalsIgnoreCase(r.getVehicleCategory())
-                || r.getVehicleCategory() != null
-                && r.getVehicleCategory().toLowerCase().contains(code.toLowerCase()))
-            .toList();
-      }
-
-      RacerRegistration winner = switch (cat.getDetermination()) {
-        case "RANKING_TOP" -> {
-          yield pool.stream()
-              .filter(r -> r.getCancelledAt() == null)
-              .max(Comparator.comparingInt((RacerRegistration r) -> pointsByRacerId.getOrDefault(r.getId(), 0))
-                  .thenComparingLong(RacerRegistration::getId))
-              .orElse(null);
-        }
-        case "RANKING_LAST" -> {
-          yield pool.stream()
-              .filter(r -> r.getCancelledAt() == null)
-              .min(Comparator.comparingInt((RacerRegistration r) -> pointsByRacerId.getOrDefault(r.getId(), 0))
-                  .thenComparingLong(RacerRegistration::getId))
-              .orElse(null);
-        }
-        case "OLDEST_VEHICLE" -> {
-          yield pool.stream()
-              .filter(r -> r.getVehicleYear() != null && r.getCancelledAt() == null)
-              .min(Comparator.comparingInt(RacerRegistration::getVehicleYear)
-                  .thenComparingLong(RacerRegistration::getId))
-              .orElse(null);
-        }
-        case "YOUNGEST_DRIVER" -> {
-          yield pool.stream()
-              .filter(r -> r.getDriverAge() != null && r.getCancelledAt() == null)
-              .min(Comparator.comparingInt(RacerRegistration::getDriverAge)
-                  .thenComparingLong(RacerRegistration::getId))
-              .orElse(null);
-        }
-        case "OLDEST_DRIVER" -> {
-          yield pool.stream()
-              .filter(r -> r.getDriverAge() != null && r.getCancelledAt() == null)
-              .max(Comparator.comparingInt(RacerRegistration::getDriverAge)
-                  .thenComparingLong(RacerRegistration::getId))
-              .orElse(null);
-        }
-        default -> null;
-      };
-
-      if (winner != null) {
-        cat.setWinnerRegistrationId(winner.getId());
-        cat.setWinnerName(winner.getTeamName() != null ? winner.getTeamName() :
-            (winner.getFirstName() + " " + winner.getLastName()).trim());
-        cat.setWinnerTeam(winner.getTeamName());
-        cat.setWinnerNumber(winner.getStartNumber());
-        cat.setWinnerPoints(pointsByRacerId.getOrDefault(winner.getId(), 0));
-      } else {
-        cat.setWinnerRegistrationId(null);
-        cat.setWinnerName(null);
-        cat.setWinnerTeam(null);
-        cat.setWinnerNumber(null);
-        cat.setWinnerPoints(null);
-      }
-      raceCategoryRepository.save(cat);
-    }
-
-    return ResponseEntity.ok(Map.of("computed", true, "count", cats.size()));
+    int count = ceremonyService.computeCategoryWinners();
+    return ResponseEntity.ok(Map.of("computed", true, "count", count));
   }
 
   private Map<String, Object> toMap(RaceCategory cat) {
