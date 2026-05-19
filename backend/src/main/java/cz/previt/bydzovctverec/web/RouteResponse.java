@@ -7,6 +7,7 @@ import java.util.List;
 public record RouteResponse(
     long id, String variant, String name,
     double totalDistance, boolean published,
+    int avgSpeedKmph,
     List<RoutePointResponse> points) {
 
   public static RouteResponse from(Route route, List<RoutePoint> points) {
@@ -15,6 +16,7 @@ public record RouteResponse(
             p.getId(), p.getSortOrder(), p.getLat(), p.getLng(), p.getDistanceFromStart()))
         .toList();
     return new RouteResponse(route.getId(), route.getVariant(), route.getName(),
-        route.getTotalDistance(), Boolean.TRUE.equals(route.getPublished()), pts);
+        route.getTotalDistance(), Boolean.TRUE.equals(route.getPublished()),
+        route.getAvgSpeedKmph() != null ? route.getAvgSpeedKmph() : 30, pts);
   }
 }

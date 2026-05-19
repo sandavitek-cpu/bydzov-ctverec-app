@@ -668,3 +668,41 @@ export async function markAllNotificationsRead(headers: Record<string, string>) 
     headers,
   })
 }
+
+export interface ItineraryCheckpoint {
+  name: string
+  sortOrder: number
+  maxPoints: number | null
+  scorePoints: number | null
+  phone: string | null
+  taskDescription: string | null
+  volunteers: string[]
+}
+
+export interface ItineraryRoute {
+  name: string
+  totalDistance: number
+  pointCount: number
+}
+
+export interface ItineraryContact {
+  towPhone: string | null
+  towNote: string | null
+}
+
+export interface ItineraryResponse {
+  teamName: string | null
+  startNumber: number | null
+  schedule: ScheduleItemData[]
+  checkpoints: ItineraryCheckpoint[]
+  passedCount: number
+  remainingCount: number
+  route: ItineraryRoute | null
+  contact: ItineraryContact | null
+}
+
+export async function fetchRacerItinerary(headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/racer/itinerary`, { headers })
+  if (!res.ok) throw new Error(await apiError(res))
+  return res.json() as Promise<ItineraryResponse>
+}

@@ -1,0 +1,4 @@
+ALTER TABLE checkpoint ADD COLUMN phone VARCHAR(30);
+
+ALTER TABLE edition ADD COLUMN tow_phone VARCHAR(30);
+ALTER TABLE edition ADD COLUMN tow_note VARCHAR(500);

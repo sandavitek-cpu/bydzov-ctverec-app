@@ -93,6 +93,9 @@ public class AdminRouteController {
       return ResponseEntity.badRequest().body(Map.of("error", "Trasa nenalezena"));
     }
     if (body.containsKey("name")) route.setName(body.get("name"));
+    if (body.containsKey("avgSpeedKmph")) {
+      try { route.setAvgSpeedKmph(Integer.parseInt(body.get("avgSpeedKmph"))); } catch (Exception ignored) {}
+    }
     routeRepository.save(route);
     var points = routePointRepository.findByRouteOrderBySortOrder(route);
     return ResponseEntity.ok(RouteResponse.from(route, points));

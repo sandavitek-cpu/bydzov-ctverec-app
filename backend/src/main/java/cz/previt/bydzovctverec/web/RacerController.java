@@ -269,7 +269,63 @@ public class RacerController {
     )).toList());
   }
 
-  @GetMapping("/map")
+  @GetMapping("/itinerary")
+  @Transactional(readOnly = true)
+  public ResponseEntity<?> myItinerary(Authentication auth) {
+    User user = (User) auth.getPrincipal();
+    var crewMember = crewMemberRepository.findByUser(user).orElse(null);
+    if (crewMember == null) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Nejste přihlášen k závodu"));
+    }
+    RacerRegistration reg = crewMember.getRegistration();
+    Edition edition = reg.getEdition();
+
+    List<ScheduleItem> scheduleItems = scheduleItemRepository.findByEditionOrderBySortOrder(edition);
+    List<ScheduleItemResponse> schedule = scheduleItems.stream()
+        .map(i -> new ScheduleItemResponse(i.getId(), i.getTime(), i.getLabel(), i.getDescription(), i.getSortOrder()))
+        .toList();
+
+    List<Score> scores = scoreRepository.findByRacerRegistrationIdWithCheckpoint(reg.getId());
+    Map<Integer, Integer> scoreMap = scores.stream()
+        .collect(Collectors.groupingBy(s -> s.getCheckpoint().getSortOrder(), Collectors.summingInt(Score::getPoints)));
+
+    List<Checkpoint> allCheckpoints = checkpointRepository.findByEditionOrderBySortOrder(edition);
+    int passedCount = 0;
+    List<ItineraryCheckpointData> checkpointData = new ArrayList<>();
+    for (Checkpoint cp : allCheckpoints) {
+      int order = cp.getSortOrder() != null ? cp.getSortOrder() : 0;
+      Integer pts = scoreMap.get(order);
+      if (pts != null) passedCount++;
+      checkpointData.add(new ItineraryCheckpointData(
+          cp.getName(), order, cp.getMaxPoints(), pts, cp.getPhone(), cp.getTaskDescription(), cp.getVolunteers()));
+    }
+
+    String variant = reg.getVariant();
+    ItineraryRouteData routeData = null;
+    if (variant != null) {
+      Route route = routeRepository.findByEditionAndVariant(edition, variant)
+          .filter(Route::getPublished)
+          .orElse(null);
+      if (route != null) {
+        int pointCount = routePointRepository.findByRouteOrderBySortOrder(route).size();
+        routeData = new ItineraryRouteData(
+            route.getName(),
+            route.getTotalDistance() != null ? route.getTotalDistance() : 0,
+            pointCount);
+      }
+    }
+
+    ItineraryContactData contactData = null;
+    if (edition.getTowPhone() != null || edition.getTowNote() != null) {
+      contactData = new ItineraryContactData(edition.getTowPhone(), edition.getTowNote());
+    }
+
+    int remainingCount = allCheckpoints.size() - passedCount;
+
+    return ResponseEntity.ok(new ItineraryResponse(
+        reg.getTeamName(), reg.getStartNumber(), schedule, checkpointData,
+        passedCount, remainingCount, routeData, contactData));
+  }
   @Transactional(readOnly = true)
   public ResponseEntity<?> myMap(Authentication auth) {
     User user = (User) auth.getPrincipal();
@@ -313,6 +369,28 @@ public class RacerController {
           cp.getSortOrder(), cp.getTaskDescription(), cp.getMaxPoints(), pts));
     }
 
+    List<CheckpointScoreData> visibleCheckpoints = checkpointData.stream()
+        .filter(cd -> cd.scorePoints() != null)
+        .toList();
+
+    List<RoutePointData> visibleRoutePoints;
+    if (!visibleCheckpoints.isEmpty() && !routePoints.isEmpty()) {
+      CheckpointScoreData last = visibleCheckpoints.get(visibleCheckpoints.size() - 1);
+      int bestIdx = 0;
+      double bestDist = Double.MAX_VALUE;
+      for (int i = 0; i < routePoints.size(); i++) {
+        RoutePointData rp = routePoints.get(i);
+        double d = Math.pow(rp.lat() - last.lat(), 2) + Math.pow(rp.lng() - last.lng(), 2);
+        if (d < bestDist) {
+          bestDist = d;
+          bestIdx = i;
+        }
+      }
+      visibleRoutePoints = routePoints.subList(0, bestIdx + 1);
+    } else {
+      visibleRoutePoints = List.of();
+    }
+
     int totalScore = scores.stream().mapToInt(Score::getPoints).sum();
 
     List<Score> allScores = scoreRepository.findByEditionYearWithRacer(edition.getEditionYear());
@@ -327,7 +405,7 @@ public class RacerController {
     }
 
     return ResponseEntity.ok(new RacerMapResponse(
-        routePoints, checkpointData, totalDistance,
+        visibleRoutePoints, visibleCheckpoints, totalDistance,
         totalScore, rank, sorted.size(),
         reg.getTeamName(), reg.getStartNumber()));
   }
@@ -345,4 +423,9 @@ public class RacerController {
   public record RoutePointData(double lat, double lng, Double distanceFromStart) {}
   public record CheckpointScoreData(String name, Double lat, Double lng, Integer radius, Integer sortOrder, String taskDescription, Integer maxPoints, Integer scorePoints) {}
   public record RacerMapResponse(List<RoutePointData> routePoints, List<CheckpointScoreData> checkpoints, double totalDistance, int totalScore, int rank, int totalRacers, String teamName, Integer startNumber) {}
+
+  public record ItineraryCheckpointData(String name, Integer sortOrder, Integer maxPoints, Integer scorePoints, String phone, String taskDescription, List<String> volunteers) {}
+  public record ItineraryRouteData(String name, double totalDistance, int pointCount) {}
+  public record ItineraryContactData(String towPhone, String towNote) {}
+  public record ItineraryResponse(String teamName, Integer startNumber, List<ScheduleItemResponse> schedule, List<ItineraryCheckpointData> checkpoints, int passedCount, int remainingCount, ItineraryRouteData route, ItineraryContactData contact) {}
 }

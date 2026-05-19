@@ -47,6 +47,9 @@ public class Checkpoint {
   @Column(name = "max_points")
   private Integer maxPoints;
 
+  @Column(length = 30)
+  private String phone;
+
   @ElementCollection(fetch = FetchType.EAGER)
   @CollectionTable(name = "checkpoint_volunteers", joinColumns = @JoinColumn(name = "checkpoint_id"))
   @Column(name = "volunteer_name", length = 200)
@@ -73,6 +76,7 @@ public class Checkpoint {
   public String getTaskDescription() { return taskDescription; }
   public Integer getMaxPoints() { return maxPoints; }
   public List<String> getVolunteers() { return volunteers; }
+  public String getPhone() { return phone; }
 
   public void setName(String name) { this.name = name; }
   public void setLat(Double lat) { this.lat = lat; }
@@ -82,4 +86,5 @@ public class Checkpoint {
   public void setTaskDescription(String taskDescription) { this.taskDescription = taskDescription; }
   public void setMaxPoints(Integer maxPoints) { this.maxPoints = maxPoints; }
   public void setVolunteers(List<String> volunteers) { this.volunteers = volunteers; }
+  public void setPhone(String phone) { this.phone = phone; }
 }

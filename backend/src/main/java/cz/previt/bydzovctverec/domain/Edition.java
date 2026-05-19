@@ -31,6 +31,12 @@ public class Edition {
   @Column(name = "cancellation_deadline")
   private Instant cancellationDeadline;
 
+  @Column(name = "tow_phone", length = 30)
+  private String towPhone;
+
+  @Column(name = "tow_note", length = 500)
+  private String towNote;
+
   protected Edition() {}
 
   public Edition(Integer editionYear, String label) {
@@ -54,5 +60,10 @@ public class Edition {
 
   public Instant getCancellationDeadline() { return cancellationDeadline; }
 
+  public String getTowPhone() { return towPhone; }
+  public String getTowNote() { return towNote; }
+
   public void setCancellationDeadline(Instant cancellationDeadline) { this.cancellationDeadline = cancellationDeadline; }
+  public void setTowPhone(String towPhone) { this.towPhone = towPhone; }
+  public void setTowNote(String towNote) { this.towNote = towNote; }
 }

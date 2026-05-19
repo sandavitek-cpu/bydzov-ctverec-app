@@ -22,6 +22,7 @@ interface RouteData {
   name: string
   totalDistance: number
   published: boolean
+  avgSpeedKmph: number
   points: RoutePointData[]
 }
 
@@ -39,6 +40,7 @@ const editingRoute = ref<RouteData | null>(null)
 const form = ref({
   name: '',
   variant: 'JEDNODENNI',
+  avgSpeedKmph: 30,
 })
 
 const localPoints = ref<RoutePointData[]>([])
@@ -49,6 +51,7 @@ let polyline: L.Polyline | null = null
 let markers: L.Marker[] = []
 const osrmPreview = ref(false)
 const osrmLoading = ref(false)
+const importing = ref(false)
 
 if (!isAdmin.value) {
   router.push('/admin/login')
@@ -90,6 +93,21 @@ function formatDistance(meters: number): string {
   return Math.round(meters) + ' m'
 }
 
+function formatTime(minutes: number): string {
+  if (minutes < 1) return '< 1 min'
+  if (minutes < 60) return Math.round(minutes) + ' min'
+  const h = Math.floor(minutes / 60)
+  const m = Math.round(minutes % 60)
+  return m > 0 ? `${h}h ${m}min` : `${h}h`
+}
+
+function estimatedMinutes(distanceMeters: number, speedKmph: number): number {
+  if (speedKmph <= 0 || distanceMeters <= 0) return 0
+  return distanceMeters / 1000 / speedKmph * 60
+}
+
+const totalEditMinutes = computed(() => estimatedMinutes(totalEditDistance.value, form.value.avgSpeedKmph))
+
 async function load() {
   loading.value = true
   error.value = null
@@ -109,7 +127,7 @@ async function load() {
 function startCreate() {
   editing.value = true
   editingRoute.value = null
-  form.value = { name: '', variant: 'JEDNODENNI' }
+  form.value = { name: '', variant: 'JEDNODENNI', avgSpeedKmph: 30 }
   localPoints.value = []
   nextTick(() => initMap())
 }
@@ -117,7 +135,7 @@ function startCreate() {
 function startEdit(route: RouteData) {
   editing.value = true
   editingRoute.value = route
-  form.value = { name: route.name, variant: route.variant }
+  form.value = { name: route.name, variant: route.variant, avgSpeedKmph: route.avgSpeedKmph }
   localPoints.value = route.points.map(p => ({ ...p }))
   nextTick(() => initMap())
 }
@@ -125,7 +143,7 @@ function startEdit(route: RouteData) {
 function cancelEdit() {
   editing.value = false
   editingRoute.value = null
-  form.value = { name: '', variant: 'JEDNODENNI' }
+  form.value = { name: '', variant: 'JEDNODENNI', avgSpeedKmph: 30 }
   localPoints.value = []
   destroyMap()
 }
@@ -141,7 +159,7 @@ async function saveRoute() {
       const res = await fetch(`${apiBaseUrl}/api/admin/routes/${editingRoute.value.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', ...h },
-        body: JSON.stringify({ name: form.value.name }),
+        body: JSON.stringify({ name: form.value.name, avgSpeedKmph: String(form.value.avgSpeedKmph) }),
       })
       if (res.status === 403) { logout(); router.push('/admin/login'); return }
       if (!res.ok) throw new Error((await res.json()).error ?? 'Chyba uložení')
@@ -259,37 +277,76 @@ function triggerImport() {
   fileInput.value?.click()
 }
 
+function simplifyRdp(points: { lat: number; lng: number }[], epsilon: number): { lat: number; lng: number }[] {
+  if (points.length <= 2) return points
+
+  let dmax = 0
+  let idx = 0
+  const first = points[0]
+  const last = points[points.length - 1]
+
+  for (let i = 1; i < points.length - 1; i++) {
+    const d = perpendicularDistance(points[i], first, last)
+    if (d > dmax) { dmax = d; idx = i }
+  }
+
+  if (dmax > epsilon) {
+    const left = simplifyRdp(points.slice(0, idx + 1), epsilon)
+    const right = simplifyRdp(points.slice(idx), epsilon)
+    return [...left.slice(0, -1), ...right]
+  }
+
+  return [first, last]
+}
+
+function perpendicularDistance(p: { lat: number; lng: number }, a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
+  const dx = b.lng - a.lng
+  const dy = b.lat - a.lat
+  if (dx === 0 && dy === 0) return Math.hypot(p.lat - a.lat, p.lng - a.lng)
+  return Math.abs(dy * (p.lng - a.lng) - dx * (p.lat - a.lat)) / Math.hypot(dx, dy)
+}
+
 function handleFileUpload(e: Event) {
   const input = e.target as HTMLInputElement
   const file = input.files?.[0]
   if (!file) return
+  importing.value = true
   const reader = new FileReader()
   reader.onload = () => {
-    const text = reader.result as string
-    const parser = new DOMParser()
-    const doc = parser.parseFromString(text, 'text/xml')
-    const trkpts = doc.querySelectorAll('trkpt')
-    const wpts = doc.querySelectorAll('wpt')
-    const points: { lat: number; lng: number }[] = []
-    trkpts.forEach(el => {
-      const lat = parseFloat(el.getAttribute('lat') || '')
-      const lon = parseFloat(el.getAttribute('lon') || '')
-      if (!isNaN(lat) && !isNaN(lon)) points.push({ lat, lng: lon })
-    })
-    wpts.forEach(el => {
-      const lat = parseFloat(el.getAttribute('lat') || '')
-      const lon = parseFloat(el.getAttribute('lon') || '')
-      if (!isNaN(lat) && !isNaN(lon)) points.push({ lat, lng: lon })
-    })
-    if (points.length === 0) {
-      error.value = 'Soubor neobsahuje žádné body (trkpt/wpt)'
-      return
+    try {
+      const text = reader.result as string
+      const parser = new DOMParser()
+      const doc = parser.parseFromString(text, 'text/xml')
+      const trkpts = doc.querySelectorAll('trkpt')
+      const wpts = doc.querySelectorAll('wpt')
+      const points: { lat: number; lng: number }[] = []
+      trkpts.forEach(el => {
+        const lat = parseFloat(el.getAttribute('lat') || '')
+        const lon = parseFloat(el.getAttribute('lon') || '')
+        if (!isNaN(lat) && !isNaN(lon)) points.push({ lat, lng: lon })
+      })
+      wpts.forEach(el => {
+        const lat = parseFloat(el.getAttribute('lat') || '')
+        const lon = parseFloat(el.getAttribute('lon') || '')
+        if (!isNaN(lat) && !isNaN(lon)) points.push({ lat, lng: lon })
+      })
+      if (points.length === 0) {
+        error.value = 'Soubor neobsahuje žádné body (trkpt/wpt)'
+        return
+      }
+      let simplified = points
+      if (points.length > 200) {
+        simplified = simplifyRdp(points, 0.0001)
+      }
+      localPoints.value = simplified.map(p => ({ sortOrder: 0, lat: p.lat, lng: p.lng, distanceFromStart: 0 }))
+      recalcPoints()
+      rebuildMap()
+    } finally {
+      importing.value = false
+      input.value = ''
     }
-    localPoints.value = points.map(p => ({ sortOrder: 0, lat: p.lat, lng: p.lng, distanceFromStart: 0 }))
-    recalcPoints()
-    rebuildMap()
-    input.value = ''
   }
+  reader.onerror = () => { importing.value = false }
   reader.readAsText(file)
 }
 
@@ -487,6 +544,10 @@ onUnmounted(() => {
               <option value="DVODENNI">Dvoudenní</option>
             </select>
           </div>
+          <div>
+            <label class="input-label">Průměrná rychlost (km/h)</label>
+            <input v-model.number="form.avgSpeedKmph" type="number" min="1" max="200" class="input-field w-32" />
+          </div>
           <div class="text-body-sm text-text-soft">
             Kliknutím do mapy přidáš bod. Tažením bod přemístíš. Pravým kliknutím nebo vyskakovacím oknem bod smažeš.
           </div>
@@ -494,7 +555,10 @@ onUnmounted(() => {
           <div v-if="localPoints.length > 0" class="space-y-1">
             <div class="flex items-center justify-between">
               <span class="text-meta font-medium text-text">Body trasy ({{ localPoints.length }})</span>
-              <span class="text-meta text-text-soft">Celkem: {{ formatDistance(totalEditDistance) }}</span>
+              <span class="text-meta text-text-soft">
+                Celkem: {{ formatDistance(totalEditDistance) }}
+                &middot; ~{{ formatTime(totalEditMinutes) }}
+              </span>
             </div>
             <div class="max-h-48 overflow-y-auto space-y-1">
               <div v-for="(pt, i) in localPoints" :key="i"
@@ -524,8 +588,8 @@ onUnmounted(() => {
             <button type="submit" :disabled="saving" class="btn-primary btn-sm">
               {{ saving ? 'Ukládám…' : 'Uložit trasu' }}
             </button>
-            <button type="button" @click="triggerImport" class="btn-secondary btn-sm">
-              Import GPX
+            <button type="button" @click="triggerImport" :disabled="importing" class="btn-secondary btn-sm">
+              {{ importing ? 'Importuji…' : 'Import GPX' }}
             </button>
             <button type="button" @click="exportGpx" :disabled="localPoints.length === 0" class="btn-secondary btn-sm">
               Export GPX
@@ -565,6 +629,7 @@ onUnmounted(() => {
             <div class="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-meta text-text-soft">
               <span>Vzdálenost: {{ formatDistance(route.totalDistance) }}</span>
               <span>{{ route.points.length }} bodů</span>
+              <span>~{{ formatTime(estimatedMinutes(route.totalDistance, route.avgSpeedKmph)) }}</span>
             </div>
             <details class="mt-2">
               <summary class="text-meta text-primary cursor-pointer hover:underline">
