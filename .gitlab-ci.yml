@@ -218,13 +218,13 @@ deploy-backend:rpi:
   script:
     - |
       echo "=== Build JAR ==="
-      cd backend && mvn -B -ntp package -DskipTests
+      cd $CI_PROJECT_DIR/backend && mvn -B -ntp package -DskipTests
 
       echo "=== Priprava deploy adresare ==="
       mkdir -p "$DEPLOY_DIR"
 
       echo "=== Kopirovani JARu ==="
-      cp backend/target/bydzov-ctverec-api.jar "$DEPLOY_DIR/"
+      cp "$CI_PROJECT_DIR/backend/target/bydzov-ctverec-api.jar" "$DEPLOY_DIR/"
 
       echo "=== Vytvoreni .env ==="
       echo "DATABASE_URL=$DATABASE_URL" > "$DEPLOY_DIR/.env"
