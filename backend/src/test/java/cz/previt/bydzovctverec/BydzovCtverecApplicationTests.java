@@ -12,6 +12,7 @@ import cz.previt.bydzovctverec.domain.CrewMember;
 import cz.previt.bydzovctverec.domain.CrewMemberRepository;
 import cz.previt.bydzovctverec.domain.Edition;
 import cz.previt.bydzovctverec.domain.EditionRepository;
+import cz.previt.bydzovctverec.domain.RaceCategoryRepository;
 import cz.previt.bydzovctverec.domain.RacerRegistration;
 import cz.previt.bydzovctverec.domain.RacerRegistrationRepository;
 import cz.previt.bydzovctverec.domain.UserRole;
@@ -46,6 +47,7 @@ class BydzovCtverecApplicationTests {
   @Autowired private ScoreRepository scoreRepository;
   @Autowired private ScheduleItemRepository scheduleItemRepository;
   @Autowired private CheckpointRepository checkpointRepository;
+  @Autowired private RaceCategoryRepository raceCategoryRepository;
   @Autowired private PasswordEncoder passwordEncoder;
 
   @BeforeEach
@@ -55,6 +57,7 @@ class BydzovCtverecApplicationTests {
     checkpointRepository.deleteAll();
     crewMemberRepository.deleteAll();
     racerRegistrationRepository.deleteAll();
+    raceCategoryRepository.deleteAll();
     editionRepository.deleteAll();
     userRepository.deleteAll();
     editionRepository.save(new Edition(2026, "30. ročník Novobydžovského čtverce"));
