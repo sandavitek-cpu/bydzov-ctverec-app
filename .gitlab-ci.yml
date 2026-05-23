@@ -247,3 +247,20 @@ deploy-backend:rpi:
     - when: never
   needs:
     - backend-test:rpi
+
+# ---------------------------------------------------------------
+# STAGE: deploy — Sync to GitHub (spustí GitHub Actions → Docker Hub → Render)
+# ---------------------------------------------------------------
+sync-to-github:rpi:
+  stage: deploy
+  tags: [rpi]
+  script:
+    - git remote add github "https://vitsanda:${GITHUB_PAT}@github.com/sandavitek-cpu/bydzov-ctverec-app.git" 2>/dev/null || git remote set-url github "https://vitsanda:${GITHUB_PAT}@github.com/sandavitek-cpu/bydzov-ctverec-app.git"
+    - git push github main
+    - echo "Sync OK - GitHub Actions spusti Docker build a Render deploy"
+  rules:
+    - if: '$USE_RPI_RUNNER == "true" && $CI_COMMIT_BRANCH == "main" && $GITHUB_PAT != null && $GITHUB_PAT != ""'
+      when: on_success
+    - when: never
+  needs:
+    - deploy-backend:rpi
