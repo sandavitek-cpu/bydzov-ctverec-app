@@ -1,0 +1,17 @@
+[Unit]
+Description=Bydzov Ctverec API (Spring Boot)
+After=network.target
+
+[Service]
+Type=simple
+User=gitlab-runner
+Group=gitlab-runner
+WorkingDirectory=/home/gitlab-runner/bydzov-api
+EnvironmentFile=/home/gitlab-runner/bydzov-api/.env
+ExecStart=/usr/bin/java -XX:MaxRAMPercentage=70.0 -jar /home/gitlab-runner/bydzov-api/bydzov-ctverec-api.jar
+SuccessExitStatus=143
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

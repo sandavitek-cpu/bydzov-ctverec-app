@@ -213,80 +213,34 @@ deploy-backend:
 deploy-backend:rpi:
   stage: deploy
   tags: [rpi]
+  variables:
+    DEPLOY_DIR: /home/gitlab-runner/bydzov-api
   script:
     - |
-      if [ -z "$RENDER_API_KEY" ] || [ -z "$RENDER_SERVICE_ID" ]; then
-        echo "RENDER_API_KEY nebo RENDER_SERVICE_ID není nastaveno — nelze spustit deploy"
-        exit 1
-      fi
+      echo "=== Build JAR ==="
+      cd backend && mvn -B -ntp package -DskipTests
 
-      echo "=== Spouštím deploy na Renderu přes API ==="
-      DEPLOY_RESPONSE=$(curl -s -X POST \
-        -H "Authorization: Bearer $RENDER_API_KEY" \
-        -H "Accept: application/json" \
-        -H "Content-Type: application/json" \
-        -d '{}' \
-        "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys")
-      echo "Odpoved: $DEPLOY_RESPONSE"
+      echo "=== Priprava deploy adresare ==="
+      mkdir -p "$DEPLOY_DIR"
 
-      DEPLOY_ID=$(echo "$DEPLOY_RESPONSE" | jq -r '.id // empty' 2>/dev/null)
-      if [ -z "$DEPLOY_ID" ]; then
-        echo "Nepodarilo se spustit deploy"
-        exit 1
-      fi
-      echo "Deploy #$DEPLOY_ID spusten"
+      echo "=== Kopirovani JARu ==="
+      cp backend/target/bydzov-ctverec-api.jar "$DEPLOY_DIR/"
 
-      echo "=== Sleduji průběh deploye (max 15 min) ==="
-      for i in $(seq 1 45); do
-        sleep 20
-        DEPLOY=$(curl -s \
-          -H "Authorization: Bearer $RENDER_API_KEY" \
-          -H "Accept: application/json" \
-          "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys?limit=1")
+      echo "=== Vytvoreni .env ==="
+      echo "DATABASE_URL=$DATABASE_URL" > "$DEPLOY_DIR/.env"
+      echo "JWT_SECRET=$JWT_SECRET" >> "$DEPLOY_DIR/.env"
+      echo "GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID" >> "$DEPLOY_DIR/.env"
+      echo "SMTP_HOST=smtp-relay.brevo.com" >> "$DEPLOY_DIR/.env"
+      echo "SMTP_PORT=587" >> "$DEPLOY_DIR/.env"
+      echo "SMTP_USER=" >> "$DEPLOY_DIR/.env"
+      echo "SMTP_PASS=" >> "$DEPLOY_DIR/.env"
+      echo "PORT=8080" >> "$DEPLOY_DIR/.env"
+      chmod 600 "$DEPLOY_DIR/.env"
 
-        echo "[$i/45] $(echo $DEPLOY | head -c 150)"
+      echo "=== Restart service ==="
+      sudo systemctl restart bydzov-api
 
-        STATUS=$(echo "$DEPLOY" | jq -r 'if type == "array" then .[0].deploy.status else .message end // empty' 2>/dev/null || true)
-
-        if [ -z "$STATUS" ] || [ "$STATUS" = "null" ]; then
-          echo "[$i/45] Status nezjisten, čekám..."
-          continue
-        fi
-
-        echo "[$i/45] Status: $STATUS"
-
-        case "$STATUS" in
-          live)
-            echo "Deploy úspěšný!"
-            exit 0
-            ;;
-          build_failed|update_failed|canceled|deactivated)
-            echo "Deploy selhal: $STATUS"
-            exit 1
-            ;;
-          created|queued|pre_deploy_in_progress|building|update_in_progress)
-            echo "-> Deploy stále běží"
-            ;;
-          *)
-            echo "-> Status: $STATUS (pokračuji)"
-            ;;
-        esac
-      done
-
-      echo "Deploy timeout po 15 minutách"
-      exit 1
-            ;;
-          created|queued|pre_deploy_in_progress|building|update_in_progress)
-            echo "-> Deploy stále běží"
-            ;;
-          *)
-            echo "-> Status: $STATUS (pokračuji)"
-            ;;
-        esac
-      done
-
-      echo "Deploy timeout po 15 minutách"
-      exit 1
+      echo "=== Deploy hotov ==="
   rules:
     - if: '$USE_RPI_RUNNER == "true" && $CI_COMMIT_BRANCH == "main"'
       when: on_success
