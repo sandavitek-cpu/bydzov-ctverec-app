@@ -2,7 +2,6 @@ package cz.previt.bydzovctverec.config;
 
 import cz.previt.bydzovctverec.domain.User;
 import cz.previt.bydzovctverec.domain.UserRepository;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import java.util.List;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.transaction.annotation.Transactional;

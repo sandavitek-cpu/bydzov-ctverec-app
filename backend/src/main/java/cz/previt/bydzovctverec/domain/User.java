@@ -95,7 +95,11 @@ public class User {
   public void setFirstName(String firstName) { this.firstName = firstName; }
   public String getLastName() { return lastName; }
   public void setLastName(String lastName) { this.lastName = lastName; }
-  public String getName() { return lastName.isEmpty() ? firstName : firstName + " " + lastName; }
+  public String getName() {
+    String fn = firstName != null ? firstName : "";
+    String ln = lastName != null ? lastName : "";
+    return ln.isEmpty() ? fn : fn + " " + ln;
+  }
   public void setName(String name) { var parts = name.split(" ", 2); this.firstName = parts[0]; this.lastName = parts.length > 1 ? parts[1] : ""; }
   public Instant getCreatedAt() { return createdAt; }
   public Set<AppRole> getAppRoles() { return appRoles; }

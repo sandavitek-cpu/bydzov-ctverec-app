@@ -50,7 +50,7 @@ public class DataSeeder {
   }
 
   @Bean
-  @org.springframework.core.annotation.Order(5)
+  @org.springframework.core.annotation.Order(3)
   CommandLineRunner seedAdmin(UserRepository userRepository, AppRoleRepository appRoleRepository, PasswordEncoder encoder) {
     return args -> {
       try {
@@ -78,7 +78,7 @@ public class DataSeeder {
   }
 
   @Bean
-  @org.springframework.core.annotation.Order(6)
+  @org.springframework.core.annotation.Order(4)
   CommandLineRunner seedJudge(UserRepository userRepository, AppRoleRepository appRoleRepository, PasswordEncoder encoder) {
     return args -> {
       try {
@@ -103,7 +103,7 @@ public class DataSeeder {
   }
 
   @Bean
-  @org.springframework.core.annotation.Order(4)
+  @org.springframework.core.annotation.Order(5)
   CommandLineRunner seedRacer(UserRepository userRepository, AppRoleRepository appRoleRepository, PasswordEncoder encoder) {
     return args -> {
       try {
@@ -146,7 +146,7 @@ public class DataSeeder {
   }
 
   @Bean
-  @org.springframework.core.annotation.Order(2)
+  @org.springframework.core.annotation.Order(6)
   CommandLineRunner seedSchedule(EditionRepository editionRepository, ScheduleItemRepository scheduleItemRepository) {
     return args -> {
       try {
@@ -173,7 +173,7 @@ public class DataSeeder {
   }
 
   @Bean
-  @org.springframework.core.annotation.Order(3)
+  @org.springframework.core.annotation.Order(7)
   CommandLineRunner seedCheckpoints(EditionRepository editionRepository, CheckpointRepository checkpointRepository) {
     return args -> {
       try {
@@ -228,7 +228,7 @@ public class DataSeeder {
   }
 
   @Bean
-  @org.springframework.core.annotation.Order(4)
+  @org.springframework.core.annotation.Order(9)
   CommandLineRunner seedArchiveData(ArchiveEntryRepository archiveEntryRepository) {
     return args -> {
       try {
@@ -257,7 +257,7 @@ public class DataSeeder {
   }
 
   @Bean
-  @org.springframework.core.annotation.Order(5)
+  @org.springframework.core.annotation.Order(8)
   CommandLineRunner seedRaceCategories(RaceCategoryRepository raceCategoryRepository,
       EditionRepository editionRepository) {
     return args -> {

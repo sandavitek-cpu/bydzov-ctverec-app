@@ -83,7 +83,7 @@ public class AdminCategoryController {
     if (body.containsKey("code")) cat.setCode((String) body.get("code"));
     if (body.containsKey("variant")) cat.setVariant((String) body.get("variant"));
     if (body.containsKey("determination")) cat.setDetermination((String) body.get("determination"));
-    if (body.containsKey("sortOrder")) cat.setSortOrder(((Number) body.get("sortOrder")).intValue());
+    if (body.containsKey("sortOrder") && body.get("sortOrder") instanceof Number n) cat.setSortOrder(n.intValue());
     if (body.containsKey("winnerRegistrationId")) {
       cat.setWinnerRegistrationId(body.get("winnerRegistrationId") != null
           ? ((Number) body.get("winnerRegistrationId")).longValue() : null);

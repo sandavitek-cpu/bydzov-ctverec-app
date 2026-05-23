@@ -326,6 +326,8 @@ public class RacerController {
         reg.getTeamName(), reg.getStartNumber(), schedule, checkpointData,
         passedCount, remainingCount, routeData, contactData));
   }
+
+  @GetMapping("/map")
   @Transactional(readOnly = true)
   public ResponseEntity<?> myMap(Authentication auth) {
     User user = (User) auth.getPrincipal();

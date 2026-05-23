@@ -8,5 +8,7 @@ public interface CrewMemberRepository extends JpaRepository<CrewMember, Long> {
 
   List<CrewMember> findByRegistration(RacerRegistration registration);
 
+  List<CrewMember> findByRegistrationIn(List<RacerRegistration> registrations);
+
   Optional<CrewMember> findByUser(User user);
 }
