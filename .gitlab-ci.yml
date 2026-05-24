@@ -259,8 +259,7 @@ sync-to-github:rpi:
   script:
     - git remote add github "https://vitsanda:${GITHUB_PAT}@github.com/sandavitek-cpu/bydzov-ctverec-app.git"
     - git push -f github HEAD:main
-    - echo "Sync OK - GitHub Actions spusti Docker build a Render deploy"
-    - echo "Sync OK - GitHub Actions spusti Docker build a Render deploy"
+    - echo "Sync OK - GitHub Actions spusti Docker build"
   rules:
     - if: '$USE_RPI_RUNNER == "true" && $CI_COMMIT_BRANCH == "main" && $GITHUB_PAT != null && $GITHUB_PAT != ""'
       when: on_success
