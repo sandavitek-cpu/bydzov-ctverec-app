@@ -24,7 +24,6 @@ jobs:
           tags: ${{ secrets.DOCKER_USERNAME }}/bydzov-ctverec-api:latest
 
       - name: Trigger Render deploy
-        if: secrets.RENDER_API_KEY != ''
         run: |
           curl -s -X POST \
             -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
