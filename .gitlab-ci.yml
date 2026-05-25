@@ -6,9 +6,10 @@
 #   2. build  — build frontendu (Vue 3 + Vite)
 #   3. deploy — GitLab Pages (frontend) + Render.com (backend)
 # =============================================================
-# Runner switching:
-#   USE_RPI_RUNNER=true  -> jobs běží na Raspberry Pi runneru (tag: rpi)
-#   USE_RPI_RUNNER!=true -> jobs běží na GitLab shared runneru
+# Runner strategy:
+#   Both shared and RPI runners execute; the first to finish each
+#   job supplies the artifact. Jobs use `optional: true` in needs
+#   so either runner works without blocking the other.
 # =============================================================
 
 stages:
@@ -84,7 +85,7 @@ frontend-build:
       - frontend/dist/
     expire_in: 1 hour
   rules:
-    - if: '$USE_RPI_RUNNER != "true" && ($CI_COMMIT_BRANCH == "main" || $CI_PIPELINE_SOURCE == "merge_request_event")'
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_PIPELINE_SOURCE == "merge_request_event"'
       when: on_success
     - when: never
 
@@ -101,7 +102,7 @@ frontend-build:rpi:
       - frontend/dist/
     expire_in: 1 hour
   rules:
-    - if: '$USE_RPI_RUNNER == "true" && ($CI_COMMIT_BRANCH == "main" || $CI_PIPELINE_SOURCE == "merge_request_event")'
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_PIPELINE_SOURCE == "merge_request_event"'
       when: on_success
     - when: never
 
@@ -214,7 +215,10 @@ deploy-backend:
       when: on_success
     - when: never
   needs:
-    - backend-test
+    - job: backend-test
+      optional: true
+    - job: backend-test:rpi
+      optional: true
 
 deploy-backend:rpi:
   stage: deploy
@@ -248,11 +252,14 @@ deploy-backend:rpi:
 
       echo "=== Deploy hotov ==="
   rules:
-    - if: '$USE_RPI_RUNNER == "true" && $CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
       when: on_success
     - when: never
   needs:
-    - backend-test:rpi
+    - job: backend-test
+      optional: true
+    - job: backend-test:rpi
+      optional: true
 
 # ---------------------------------------------------------------
 # STAGE: deploy — Sync to GitHub (spustí GitHub Actions → Docker Hub → Render)
@@ -267,8 +274,11 @@ sync-to-github:rpi:
     - git push -f github HEAD:main
     - echo "Sync OK - GitHub Actions spusti Docker build"
   rules:
-    - if: '$USE_RPI_RUNNER == "true" && $CI_COMMIT_BRANCH == "main" && $GITHUB_PAT != null && $GITHUB_PAT != ""'
+    - if: '$CI_COMMIT_BRANCH == "main" && $GITHUB_PAT != null && $GITHUB_PAT != ""'
       when: on_success
     - when: never
   needs:
-    - deploy-backend:rpi
+    - job: deploy-backend
+      optional: true
+    - job: deploy-backend:rpi
+      optional: true
