@@ -78,7 +78,12 @@ public class AdminController {
       return ResponseEntity.ok(List.of());
     }
     List<RacerRegistration> regs = racerRegistrationRepository.findByEditionOrderByStartNumber(edition);
-    return ResponseEntity.ok(regs.stream().map(r -> AdminRegistrationResponse.from(r, crewMemberRepository.findByRegistration(r))).toList());
+    List<CrewMember> allCrew = crewMemberRepository.findByRegistrationIn(regs);
+    Map<Long, List<CrewMember>> crewByRegId = allCrew.stream()
+        .collect(Collectors.groupingBy(cm -> cm.getRegistration().getId()));
+    return ResponseEntity.ok(regs.stream()
+        .map(r -> AdminRegistrationResponse.from(r, crewByRegId.getOrDefault(r.getId(), List.of())))
+        .toList());
   }
 
   @GetMapping("/{id}")
