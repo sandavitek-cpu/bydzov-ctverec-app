@@ -7,9 +7,10 @@
 #   3. deploy — GitLab Pages (frontend) + Render.com (backend)
 # =============================================================
 # Runner strategy:
-#   Both shared and RPI runners execute; the first to finish each
-#   job supplies the artifact. Jobs use `optional: true` in needs
-#   so either runner works without blocking the other.
+#   Shared runner jobs run automatically on main branch pushes.
+#   RPI-tagged jobs (for local Raspberry Pi deployment) are manual
+#   with allow_failure: true — they don't block the pipeline when
+#   the RPI runner is offline.
 # =============================================================
 
 stages:
@@ -67,7 +68,8 @@ backend-test:rpi:
         - backend/target/surefire-reports/TEST-*.xml
   rules:
     - if: '$CI_COMMIT_BRANCH == "main" || $CI_PIPELINE_SOURCE == "merge_request_event"'
-      when: on_success
+      when: manual
+      allow_failure: true
     - when: never
 
 # ---------------------------------------------------------------
@@ -103,7 +105,8 @@ frontend-build:rpi:
     expire_in: 1 hour
   rules:
     - if: '$CI_COMMIT_BRANCH == "main" || $CI_PIPELINE_SOURCE == "merge_request_event"'
-      when: on_success
+      when: manual
+      allow_failure: true
     - when: never
 
 # ---------------------------------------------------------------
@@ -123,10 +126,7 @@ pages:
       when: on_success
     - when: never
   needs:
-    - job: frontend-build
-      optional: true
-    - job: frontend-build:rpi
-      optional: true
+    - frontend-build
 
 pages:rpi:
   stage: deploy
@@ -140,13 +140,11 @@ pages:rpi:
       - public
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
-      when: on_success
+      when: manual
+      allow_failure: true
     - when: never
   needs:
-    - job: frontend-build
-      optional: true
-    - job: frontend-build:rpi
-      optional: true
+    - frontend-build:rpi
 
 # ---------------------------------------------------------------
 # STAGE: deploy — Render.com (backend)
@@ -215,10 +213,7 @@ deploy-backend:
       when: on_success
     - when: never
   needs:
-    - job: backend-test
-      optional: true
-    - job: backend-test:rpi
-      optional: true
+    - backend-test
 
 deploy-backend:rpi:
   stage: deploy
@@ -253,13 +248,11 @@ deploy-backend:rpi:
       echo "=== Deploy hotov ==="
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
-      when: on_success
+      when: manual
+      allow_failure: true
     - when: never
   needs:
-    - job: backend-test
-      optional: true
-    - job: backend-test:rpi
-      optional: true
+    - backend-test:rpi
 
 # ---------------------------------------------------------------
 # STAGE: deploy — Sync to GitHub (spustí GitHub Actions → Docker Hub → Render)
@@ -275,10 +268,8 @@ sync-to-github:rpi:
     - echo "Sync OK - GitHub Actions spusti Docker build"
   rules:
     - if: '$CI_COMMIT_BRANCH == "main" && $GITHUB_PAT != null && $GITHUB_PAT != ""'
-      when: on_success
+      when: manual
+      allow_failure: true
     - when: never
   needs:
-    - job: deploy-backend
-      optional: true
-    - job: deploy-backend:rpi
-      optional: true
+    - deploy-backend:rpi
