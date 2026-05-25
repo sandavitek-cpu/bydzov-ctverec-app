@@ -2,15 +2,9 @@
 # GitLab CI/CD Pipeline — Novobydžovský čtverec app
 # =============================================================
 # Stages:
-#   1. test   — build + unit testy backendu
+#   1. test   — build + unit test backendu
 #   2. build  — build frontendu (Vue 3 + Vite)
 #   3. deploy — GitLab Pages (frontend) + Render.com (backend)
-# =============================================================
-# Runner strategy:
-#   Shared runner jobs run automatically on main branch pushes.
-#   RPI-tagged jobs (for local Raspberry Pi deployment) are manual
-#   with allow_failure: true — they don't block the pipeline when
-#   the RPI runner is offline.
 # =============================================================
 
 stages:
@@ -22,14 +16,12 @@ variables:
   MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
   MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end"
 
-# Cache Maven dependencies
 cache:
   key: "$CI_COMMIT_REF_SLUG"
   paths:
     - .m2/repository
     - frontend/node_modules/
 
-# ----- Sdílené scripty (pro oba runner typy) -----
 .test-backend: &test-backend
   - cd backend
   - mvn $MAVEN_CLI_OPTS test
@@ -39,9 +31,6 @@ cache:
   - npm ci
   - npm run build
 
-# ---------------------------------------------------------------
-# STAGE: test — Backend build + testy
-# ---------------------------------------------------------------
 backend-test:
   stage: test
   image: maven:3.9-eclipse-temurin-17
@@ -56,25 +45,6 @@ backend-test:
       when: on_success
     - when: never
 
-backend-test:rpi:
-  stage: test
-  image: maven:3.9-eclipse-temurin-17
-  tags: [rpi]
-  script: *test-backend
-  artifacts:
-    when: always
-    reports:
-      junit:
-        - backend/target/surefire-reports/TEST-*.xml
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main" || $CI_PIPELINE_SOURCE == "merge_request_event"'
-      when: manual
-      allow_failure: true
-    - when: never
-
-# ---------------------------------------------------------------
-# STAGE: build — Frontend build
-# ---------------------------------------------------------------
 frontend-build:
   stage: build
   image: node:20-alpine
@@ -91,27 +61,6 @@ frontend-build:
       when: on_success
     - when: never
 
-frontend-build:rpi:
-  stage: build
-  image: node:20-alpine
-  tags: [rpi]
-  variables:
-    VITE_API_BASE_URL: "https://bydzov-ctverec-api.onrender.com"
-    VITE_GOOGLE_CLIENT_ID: "$VITE_GOOGLE_CLIENT_ID"
-  script: *build-frontend
-  artifacts:
-    paths:
-      - frontend/dist/
-    expire_in: 1 hour
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main" || $CI_PIPELINE_SOURCE == "merge_request_event"'
-      when: manual
-      allow_failure: true
-    - when: never
-
-# ---------------------------------------------------------------
-# STAGE: deploy — GitLab Pages (frontend)
-# ---------------------------------------------------------------
 pages:
   stage: deploy
   image: alpine:latest
@@ -128,27 +77,6 @@ pages:
   needs:
     - frontend-build
 
-pages:rpi:
-  stage: deploy
-  image: alpine:latest
-  tags: [rpi]
-  script:
-    - mkdir -p public
-    - cp -r frontend/dist/* public/
-  artifacts:
-    paths:
-      - public
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
-      when: manual
-      allow_failure: true
-    - when: never
-  needs:
-    - frontend-build:rpi
-
-# ---------------------------------------------------------------
-# STAGE: deploy — Render.com (backend)
-# ---------------------------------------------------------------
 deploy-backend:
   stage: deploy
   image: alpine:latest
@@ -214,62 +142,3 @@ deploy-backend:
     - when: never
   needs:
     - backend-test
-
-deploy-backend:rpi:
-  stage: deploy
-  tags: [rpi]
-  variables:
-    DEPLOY_DIR: /home/gitlab-runner/bydzov-api
-  script:
-    - |
-      echo "=== Build JAR ==="
-      cd $CI_PROJECT_DIR/backend && mvn -B -ntp package -DskipTests
-
-      echo "=== Priprava deploy adresare ==="
-      mkdir -p "$DEPLOY_DIR"
-
-      echo "=== Kopirovani JARu ==="
-      cp "$CI_PROJECT_DIR/backend/target/bydzov-ctverec-api.jar" "$DEPLOY_DIR/"
-
-      echo "=== Vytvoreni .env ==="
-      echo "DATABASE_URL=$DATABASE_URL" > "$DEPLOY_DIR/.env"
-      echo "JWT_SECRET=$JWT_SECRET" >> "$DEPLOY_DIR/.env"
-      echo "GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID" >> "$DEPLOY_DIR/.env"
-      echo "SMTP_HOST=smtp-relay.brevo.com" >> "$DEPLOY_DIR/.env"
-      echo "SMTP_PORT=587" >> "$DEPLOY_DIR/.env"
-      echo "SMTP_USER=" >> "$DEPLOY_DIR/.env"
-      echo "SMTP_PASS=" >> "$DEPLOY_DIR/.env"
-      echo "PORT=8080" >> "$DEPLOY_DIR/.env"
-      chmod 600 "$DEPLOY_DIR/.env"
-
-      echo "=== Restart service ==="
-      sudo systemctl restart bydzov-api
-
-      echo "=== Deploy hotov ==="
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
-      when: manual
-      allow_failure: true
-    - when: never
-  needs:
-    - backend-test:rpi
-
-# ---------------------------------------------------------------
-# STAGE: deploy — Sync to GitHub (spustí GitHub Actions → Docker Hub → Render)
-# ---------------------------------------------------------------
-sync-to-github:rpi:
-  stage: deploy
-  tags: [rpi]
-  variables:
-    GIT_STRATEGY: clone
-  script:
-    - git remote add github "https://vitsanda:${GITHUB_PAT}@github.com/sandavitek-cpu/bydzov-ctverec-app.git"
-    - git push -f github HEAD:main
-    - echo "Sync OK - GitHub Actions spusti Docker build"
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main" && $GITHUB_PAT != null && $GITHUB_PAT != ""'
-      when: manual
-      allow_failure: true
-    - when: never
-  needs:
-    - deploy-backend:rpi
