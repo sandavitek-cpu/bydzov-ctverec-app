@@ -50,7 +50,7 @@ backend-test:
       junit:
         - backend/target/surefire-reports/TEST-*.xml
   rules:
-    - if: '$USE_RPI_RUNNER != "true" && ($CI_COMMIT_BRANCH == "main" || $CI_PIPELINE_SOURCE == "merge_request_event")'
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_PIPELINE_SOURCE == "merge_request_event"'
       when: on_success
     - when: never
 
@@ -65,7 +65,7 @@ backend-test:rpi:
       junit:
         - backend/target/surefire-reports/TEST-*.xml
   rules:
-    - if: '$USE_RPI_RUNNER == "true" && ($CI_COMMIT_BRANCH == "main" || $CI_PIPELINE_SOURCE == "merge_request_event")'
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_PIPELINE_SOURCE == "merge_request_event"'
       when: on_success
     - when: never
 
@@ -118,11 +118,14 @@ pages:
     paths:
       - public
   rules:
-    - if: '$USE_RPI_RUNNER != "true" && $CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
       when: on_success
     - when: never
   needs:
-    - frontend-build
+    - job: frontend-build
+      optional: true
+    - job: frontend-build:rpi
+      optional: true
 
 pages:rpi:
   stage: deploy
@@ -135,11 +138,14 @@ pages:rpi:
     paths:
       - public
   rules:
-    - if: '$USE_RPI_RUNNER == "true" && $CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
       when: on_success
     - when: never
   needs:
-    - frontend-build:rpi
+    - job: frontend-build
+      optional: true
+    - job: frontend-build:rpi
+      optional: true
 
 # ---------------------------------------------------------------
 # STAGE: deploy — Render.com (backend)
@@ -204,7 +210,7 @@ deploy-backend:
       echo "Deploy timeout po 15 minutách"
       exit 1
   rules:
-    - if: '$USE_RPI_RUNNER != "true" && $CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_PIPELINE_SOURCE == "merge_request_event"'
       when: on_success
     - when: never
   needs:
