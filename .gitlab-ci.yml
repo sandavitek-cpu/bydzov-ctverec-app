@@ -4,7 +4,10 @@
 # Stages:
 #   1. test   — build + unit test backendu
 #   2. build  — build frontendu (Vue 3 + Vite)
-#   3. deploy — GitLab Pages (frontend) + Render.com (backend)
+#   3. deploy — GitLab Pages (frontend) + RPI (backend)
+# =============================================================
+# Všechny joby běží na RPI runneru (tag: rpi) — 0 shared min.
+# RPI runner musí být online, jinak pipeline čeká.
 # =============================================================
 
 stages:
@@ -31,9 +34,13 @@ cache:
   - npm ci
   - npm run build
 
+# ---------------------------------------------------------------
+# STAGE: test — Backend
+# ---------------------------------------------------------------
 backend-test:
   stage: test
   image: maven:3.9-eclipse-temurin-17
+  tags: [rpi]
   script: *test-backend
   artifacts:
     when: always
@@ -45,9 +52,13 @@ backend-test:
       when: on_success
     - when: never
 
+# ---------------------------------------------------------------
+# STAGE: build — Frontend
+# ---------------------------------------------------------------
 frontend-build:
   stage: build
   image: node:20-alpine
+  tags: [rpi]
   variables:
     VITE_API_BASE_URL: "https://bydzov-ctverec-api.onrender.com"
     VITE_GOOGLE_CLIENT_ID: "$VITE_GOOGLE_CLIENT_ID"
@@ -61,9 +72,13 @@ frontend-build:
       when: on_success
     - when: never
 
+# ---------------------------------------------------------------
+# STAGE: deploy — GitLab Pages (frontend)
+# ---------------------------------------------------------------
 pages:
   stage: deploy
   image: alpine:latest
+  tags: [rpi]
   script:
     - mkdir -p public
     - cp -r frontend/dist/* public/
@@ -77,68 +92,62 @@ pages:
   needs:
     - frontend-build
 
+# ---------------------------------------------------------------
+# STAGE: deploy — RPI (backend)
+# ---------------------------------------------------------------
 deploy-backend:
   stage: deploy
-  image: alpine:latest
+  tags: [rpi]
+  variables:
+    DEPLOY_DIR: /home/gitlab-runner/bydzov-api
   script:
-    - apk add --no-cache curl jq
     - |
-      if [ -z "$RENDER_DEPLOY_HOOK" ]; then
-        echo "RENDER_DEPLOY_HOOK not set — skipping"
-        exit 0
-      fi
+      echo "=== Build JAR ==="
+      cd $CI_PROJECT_DIR/backend && mvn -B -ntp package -DskipTests
 
-      echo "=== Spouštím deploy na Renderu ==="
-      DEPLOY_RESPONSE=$(curl -s -X POST "$RENDER_DEPLOY_HOOK")
-      echo "Deploy hook odpoved: $DEPLOY_RESPONSE"
+      echo "=== Priprava deploy adresare ==="
+      mkdir -p "$DEPLOY_DIR"
 
-      if [ -z "$RENDER_API_KEY" ] || [ -z "$RENDER_SERVICE_ID" ]; then
-        echo "RENDER_API_KEY nebo RENDER_SERVICE_ID není nastaveno — nelze sledovat průběh"
-        exit 0
-      fi
+      echo "=== Kopirovani JARu ==="
+      cp "$CI_PROJECT_DIR/backend/target/bydzov-ctverec-api.jar" "$DEPLOY_DIR/"
 
-      echo "=== Sleduji průběh deploye (max 15 min) ==="
-      for i in $(seq 1 45); do
-        sleep 20
-        DEPLOY=$(curl -s \
-          -H "Authorization: Bearer $RENDER_API_KEY" \
-          -H "Accept: application/json" \
-          "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys?limit=1")
+      echo "=== Vytvoreni .env ==="
+      echo "DATABASE_URL=$DATABASE_URL" > "$DEPLOY_DIR/.env"
+      echo "JWT_SECRET=$JWT_SECRET" >> "$DEPLOY_DIR/.env"
+      echo "GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID" >> "$DEPLOY_DIR/.env"
+      echo "SMTP_HOST=smtp-relay.brevo.com" >> "$DEPLOY_DIR/.env"
+      echo "SMTP_PORT=587" >> "$DEPLOY_DIR/.env"
+      echo "SMTP_USER=" >> "$DEPLOY_DIR/.env"
+      echo "SMTP_PASS=" >> "$DEPLOY_DIR/.env"
+      echo "PORT=8080" >> "$DEPLOY_DIR/.env"
+      chmod 600 "$DEPLOY_DIR/.env"
 
-        echo "[$i/45] API odpoved: $DEPLOY"
+      echo "=== Restart service ==="
+      sudo systemctl restart bydzov-api
 
-        STATUS=$(echo "$DEPLOY" | jq -r 'if type == "array" then .[0].deploy.status else .message end // empty' 2>/dev/null || true)
-
-        if [ -z "$STATUS" ] || [ "$STATUS" = "null" ]; then
-          echo "[$i/45] Status nezjisten, čekám..."
-          continue
-        fi
-
-        echo "[$i/45] Status: $STATUS"
-
-        case "$STATUS" in
-          live)
-            echo "Deploy úspěšný!"
-            exit 0
-            ;;
-          build_failed|update_failed|canceled|deactivated)
-            echo "Deploy selhal: $STATUS"
-            exit 1
-            ;;
-          created|queued|pre_deploy_in_progress|building|update_in_progress)
-            echo "-> Deploy stále běží"
-            ;;
-          *)
-            echo "-> Status: $STATUS (pokračuji)"
-            ;;
-        esac
-      done
-
-      echo "Deploy timeout po 15 minutách"
-      exit 1
+      echo "=== Deploy hotov ==="
   rules:
-    - if: '$CI_COMMIT_BRANCH == "main" || $CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
       when: on_success
     - when: never
   needs:
     - backend-test
+
+# ---------------------------------------------------------------
+# STAGE: deploy — Sync to GitHub (Docker Hub → Render)
+# ---------------------------------------------------------------
+sync-to-github:
+  stage: deploy
+  tags: [rpi]
+  variables:
+    GIT_STRATEGY: clone
+  script:
+    - git remote add github "https://vitsanda:${GITHUB_PAT}@github.com/sandavitek-cpu/bydzov-ctverec-app.git"
+    - git push -f github HEAD:main
+    - echo "Sync OK - GitHub Actions spusti Docker build"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" && $GITHUB_PAT != null && $GITHUB_PAT != ""'
+      when: on_success
+    - when: never
+  needs:
+    - deploy-backend
