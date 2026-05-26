@@ -9,7 +9,7 @@ import AdminLoggingView from '../views/admin/AdminLoggingView.vue'
 import AdminRolesView from '../views/admin/AdminRolesView.vue'
 import AdminUsersView from '../views/admin/AdminUsersView.vue'
 import AdminRoutesView from '../views/admin/AdminRoutesView.vue'
-import AdminChangelogView from '../views/admin/AdminChangelogView.vue'
+
 import AdminCheckpointScoresView from '../views/admin/AdminCheckpointScoresView.vue'
 import AdminVariantsView from '../views/admin/AdminVariantsView.vue'
 import AdminCategoriesView from '../views/admin/AdminCategoriesView.vue'
@@ -38,7 +38,7 @@ const router = createRouter({
     { path: '/admin/role', name: 'admin-roles', component: AdminRolesView, meta: { requiresAdmin: true } },
     { path: '/admin/trasy', name: 'admin-routes', component: AdminRoutesView, meta: { requiresAdmin: true } },
     { path: '/admin/uzivatele', name: 'admin-users', component: AdminUsersView, meta: { requiresAdmin: true } },
-    { path: '/admin/changelog', name: 'admin-changelog', component: AdminChangelogView, meta: { requiresAdmin: true } },
+
     { path: '/admin/bodovani', name: 'admin-scores', component: AdminCheckpointScoresView, meta: { requiresAdmin: true } },
     { path: '/admin/varianty', name: 'admin-variants', component: AdminVariantsView, meta: { requiresAdmin: true } },
     { path: '/admin/kategorie', name: 'admin-categories', component: AdminCategoriesView, meta: { requiresAdmin: true } },

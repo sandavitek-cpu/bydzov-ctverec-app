@@ -361,6 +361,7 @@ export interface VariantConfig {
   variantCode: string
   label: string
   registrationDeadline: string | null
+  registrationReopenedUntil: string | null
   raceDate: string | null
   enabled: boolean
 }
@@ -399,10 +400,31 @@ export async function deleteAdminVariant(id: number, headers: Record<string, str
   if (!res.ok) throw new Error(await apiError(res))
 }
 
+export async function reopenAdminVariant(id: number, data: { durationMinutes: number } | { untilMidnight: boolean }, headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/variants/${id}/reopen`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...headers },
+    body: JSON.stringify(data),
+  })
+  const body = await res.json()
+  if (!res.ok) throw new Error(body.error ?? `API ${res.status}`)
+  return body as VariantConfig
+}
+
+export async function closeAdminVariantReopen(id: number, headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/variants/${id}/reopen`, {
+    method: 'DELETE',
+    headers,
+  })
+  if (!res.ok) throw new Error(await apiError(res))
+  return res.json() as Promise<VariantConfig>
+}
+
 export interface PublicVariant {
   variantCode: string
   label: string
   registrationDeadline: string | null
+  registrationReopenedUntil: string | null
   raceDate: string | null
 }
 

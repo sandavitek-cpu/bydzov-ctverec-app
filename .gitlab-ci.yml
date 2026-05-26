@@ -102,8 +102,18 @@ deploy-backend:
     DEPLOY_DIR: /home/gitlab-runner/bydzov-api
   script:
     - |
+      echo "=== Nastaveni verze + generovani git-commits.properties ==="
+      cd $CI_PROJECT_DIR/backend
+      SHORT_HASH=$(git rev-parse --short HEAD)
+      sed -i "s/<version>0.4.0<\/version>/<version>0.4.0-$SHORT_HASH<\/version>/" pom.xml
+      echo "# Auto-generated during CI deploy" > src/main/resources/git-commits.properties
+      echo "current=$SHORT_HASH" >> src/main/resources/git-commits.properties
+      git log --format="%H|||%s" -30 | while IFS='|||' read -r hash msg; do
+        echo "$hash|||$msg" >> src/main/resources/git-commits.properties
+      done
+
       echo "=== Build JAR ==="
-      cd $CI_PROJECT_DIR/backend && mvn -B -ntp package -DskipTests
+      mvn -B -ntp package -DskipTests
 
       echo "=== Priprava deploy adresare ==="
       mkdir -p "$DEPLOY_DIR"

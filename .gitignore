@@ -44,6 +44,9 @@ logs/
 backend/logs/
 backend.pid
 
+# CI-generated
+backend/src/main/resources/git-commits.properties
+
 # Environment
 .env
 .env.local

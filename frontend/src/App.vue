@@ -207,7 +207,6 @@ async function toggleInfo() {
                   <RouterLink to="/admin/stanoviste" class="dropdown-item">Stanoviště</RouterLink>
                   <RouterLink to="/admin/bodovani" class="dropdown-item">Bodování</RouterLink>
                   <RouterLink to="/admin/komunikace" class="dropdown-item">Komunikace</RouterLink>
-                  <RouterLink to="/admin/changelog" class="dropdown-item">ChangeLog</RouterLink>
                   <RouterLink to="/admin/logovani" class="dropdown-item">Logování</RouterLink>
                   <RouterLink to="/admin/role" class="dropdown-item">Role</RouterLink>
                   <RouterLink to="/admin/uzivatele" class="dropdown-item">Uživatelé</RouterLink>
@@ -269,22 +268,26 @@ async function toggleInfo() {
             </span>
 
             <span ref="infoRef" class="relative ml-1">
-              <button @click.stop="toggleInfo" class="flex h-8 w-8 items-center justify-center rounded-md text-text-soft transition-colors hover:bg-bg-alt hover:text-text-muted" title="Info o aplikaci">
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <button @click.stop="toggleInfo"
+                class="flex h-8 items-center gap-1 rounded-md px-2 text-text-soft transition-colors hover:bg-bg-alt hover:text-text-muted"
+                title="Info o aplikaci"
+              >
+                <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
+                <span class="text-meta font-mono leading-none">{{ appInfo?.version ?? '' }}</span>
               </button>
               <div
                 v-if="showInfo"
                 @click.stop
-                class="absolute right-0 top-full z-50 mt-1 w-72 rounded-xl border border-border bg-surface p-5 shadow-lg"
+                class="absolute right-0 top-full z-50 mt-1 w-80 rounded-xl border border-border bg-surface p-5 shadow-lg"
               >
-                <p class="text-meta text-text-soft">verze {{ appInfo?.version ?? '…' }}</p>
+                <p class="text-meta text-text-soft">verze <span class="font-mono text-text">{{ appInfo?.version ?? '…' }}</span></p>
                 <p class="mt-1 text-meta text-text-soft">nasazeno {{ appInfo?.deployedAt ? new Date(appInfo.deployedAt).toLocaleString('cs') : '…' }}</p>
-                <div v-if="hasAdmin && appInfo?.changelog?.length" class="mt-4 border-t border-border pt-4">
+                <div v-if="appInfo?.changelog?.length" class="mt-4 border-t border-border pt-4">
                   <p class="mb-3 text-meta font-semibold text-text-muted">ChangeLog</p>
                   <div v-for="(entry, i) in appInfo.changelog" :key="i" class="mb-3 last:mb-0">
-                    <p class="text-label text-primary">{{ entry.version }}</p>
+                    <p class="text-label text-primary font-mono">{{ entry.version }}</p>
                     <p class="mt-0.5 text-body-sm text-text-muted">{{ entry.description }}</p>
                     <p class="text-meta text-text-soft">{{ new Date(entry.createdAt).toLocaleDateString('cs') }}</p>
                   </div>
@@ -324,7 +327,6 @@ async function toggleInfo() {
                 <RouterLink to="/admin/stanoviste" class="mobile-nav-item" @click="closeMobileNav">Stanoviště</RouterLink>
                 <RouterLink to="/admin/bodovani" class="mobile-nav-item" @click="closeMobileNav">Bodování</RouterLink>
                 <RouterLink to="/admin/komunikace" class="mobile-nav-item" @click="closeMobileNav">Komunikace</RouterLink>
-                <RouterLink to="/admin/changelog" class="mobile-nav-item" @click="closeMobileNav">ChangeLog</RouterLink>
                 <RouterLink to="/admin/logovani" class="mobile-nav-item" @click="closeMobileNav">Logování</RouterLink>
                 <RouterLink to="/admin/role" class="mobile-nav-item" @click="closeMobileNav">Role</RouterLink>
                 <RouterLink to="/admin/uzivatele" class="mobile-nav-item" @click="closeMobileNav">Uživatelé</RouterLink>
@@ -407,9 +409,6 @@ async function toggleInfo() {
               <RouterLink to="/admin/komunikace" class="flex items-center justify-center h-12 text-text-soft hover:text-primary hover:bg-surface-2 transition-colors" title="Komunikace" active-class="!text-primary" @click="mobileSidebarOpen = false">
                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
               </RouterLink>
-              <RouterLink to="/admin/changelog" class="flex items-center justify-center h-12 text-text-soft hover:text-primary hover:bg-surface-2 transition-colors" title="ChangeLog" active-class="!text-primary" @click="mobileSidebarOpen = false">
-                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-              </RouterLink>
               <RouterLink to="/admin/logovani" class="flex items-center justify-center h-12 text-text-soft hover:text-primary hover:bg-surface-2 transition-colors" title="Logování" active-class="!text-primary" @click="mobileSidebarOpen = false">
                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
               </RouterLink>
@@ -431,7 +430,6 @@ async function toggleInfo() {
               <RouterLink to="/admin/stanoviste" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Stanoviště</RouterLink>
               <RouterLink to="/admin/bodovani" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Bodování</RouterLink>
               <RouterLink to="/admin/komunikace" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Komunikace</RouterLink>
-              <RouterLink to="/admin/changelog" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">ChangeLog</RouterLink>
               <RouterLink to="/admin/logovani" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Logování</RouterLink>
               <RouterLink to="/admin/role" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Role</RouterLink>
               <RouterLink to="/admin/uzivatele" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="mobileSidebarOpen = false">Uživatelé</RouterLink>

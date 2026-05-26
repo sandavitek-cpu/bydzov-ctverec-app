@@ -4,7 +4,10 @@ import cz.previt.bydzovctverec.domain.Edition;
 import cz.previt.bydzovctverec.domain.EditionRepository;
 import cz.previt.bydzovctverec.domain.VariantConfig;
 import cz.previt.bydzovctverec.domain.VariantConfigRepository;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -79,6 +82,46 @@ public class AdminVariantConfigController {
     return ResponseEntity.ok(toMap(vc));
   }
 
+  @PostMapping("/{id}/reopen")
+  @Transactional
+  public ResponseEntity<?> reopen(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+    VariantConfig vc = variantConfigRepository.findById(id).orElse(null);
+    if (vc == null) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Varianta nenalezena"));
+    }
+    Instant until;
+    if (Boolean.TRUE.equals(body.get("untilMidnight"))) {
+      until = LocalDate.now().plusDays(1).atStartOfDay(ZoneId.of("Europe/Prague")).toInstant();
+    } else {
+      Object duration = body.get("durationMinutes");
+      if (duration == null) {
+        return ResponseEntity.badRequest().body(Map.of("error", "durationMinutes nebo untilMidnight je vyžadováno"));
+      }
+      long minutes;
+      try {
+        minutes = Long.parseLong(duration.toString());
+      } catch (NumberFormatException e) {
+        return ResponseEntity.badRequest().body(Map.of("error", "durationMinutes musí být číslo"));
+      }
+      until = Instant.now().plusSeconds(minutes * 60);
+    }
+    vc.setRegistrationReopenedUntil(until);
+    variantConfigRepository.save(vc);
+    return ResponseEntity.ok(toMap(vc));
+  }
+
+  @DeleteMapping("/{id}/reopen")
+  @Transactional
+  public ResponseEntity<?> closeReopen(@PathVariable Long id) {
+    VariantConfig vc = variantConfigRepository.findById(id).orElse(null);
+    if (vc == null) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Varianta nenalezena"));
+    }
+    vc.setRegistrationReopenedUntil(null);
+    variantConfigRepository.save(vc);
+    return ResponseEntity.ok(toMap(vc));
+  }
+
   @DeleteMapping("/{id}")
   @Transactional
   public ResponseEntity<?> delete(@PathVariable Long id) {
@@ -96,6 +139,7 @@ public class AdminVariantConfigController {
     m.put("variantCode", vc.getVariantCode());
     m.put("label", vc.getLabel());
     m.put("registrationDeadline", vc.getRegistrationDeadline() != null ? vc.getRegistrationDeadline().toString() : null);
+    m.put("registrationReopenedUntil", vc.getRegistrationReopenedUntil() != null ? vc.getRegistrationReopenedUntil().toString() : null);
     m.put("raceDate", vc.getRaceDate() != null ? vc.getRaceDate().toString() : null);
     m.put("enabled", vc.isEnabled());
     return m;

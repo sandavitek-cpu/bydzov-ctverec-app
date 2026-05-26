@@ -10,10 +10,12 @@ import cz.previt.bydzovctverec.domain.EditionRepository;
 import cz.previt.bydzovctverec.domain.RacerRegistration;
 import cz.previt.bydzovctverec.domain.RacerRegistrationRepository;
 import cz.previt.bydzovctverec.domain.User;
+import cz.previt.bydzovctverec.domain.VariantConfigRepository;
 import cz.previt.bydzovctverec.domain.UserRepository;
 import cz.previt.bydzovctverec.domain.UserRole;
 import jakarta.validation.Valid;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +43,7 @@ public class RegistrationController {
   private final UserRepository userRepository;
   private final AppRoleRepository appRoleRepository;
   private final CrewMemberRepository crewMemberRepository;
+  private final VariantConfigRepository variantConfigRepository;
   private final PasswordEncoder passwordEncoder;
   private final EmailService emailService;
 
@@ -55,12 +58,14 @@ public class RegistrationController {
   public RegistrationController(EditionRepository editionRepository,
       RacerRegistrationRepository racerRegistrationRepository, UserRepository userRepository,
       AppRoleRepository appRoleRepository, CrewMemberRepository crewMemberRepository,
+      VariantConfigRepository variantConfigRepository,
       PasswordEncoder passwordEncoder, EmailService emailService) {
     this.editionRepository = editionRepository;
     this.racerRegistrationRepository = racerRegistrationRepository;
     this.userRepository = userRepository;
     this.appRoleRepository = appRoleRepository;
     this.crewMemberRepository = crewMemberRepository;
+    this.variantConfigRepository = variantConfigRepository;
     this.passwordEncoder = passwordEncoder;
     this.emailService = emailService;
   }
@@ -71,6 +76,21 @@ public class RegistrationController {
     Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
     if (edition == null) {
       edition = editionRepository.save(new Edition(2026, "30. ročník Novobydžovského čtverce – Memoriál Elišky Junkové"));
+    }
+
+    var variant = variantConfigRepository.findByEditionAndVariantCode(edition, request.variant()).orElse(null);
+    if (variant == null) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Vybraná varianta závodu neexistuje"));
+    }
+    if (!variant.isEnabled()) {
+      return ResponseEntity.badRequest().body(Map.of("error", "Přihlášky pro tuto variantu jsou uzavřeny"));
+    }
+    LocalDate today = LocalDate.now();
+    if (variant.getRegistrationDeadline() != null && today.isAfter(variant.getRegistrationDeadline())) {
+      if (variant.getRegistrationReopenedUntil() == null || Instant.now().isAfter(variant.getRegistrationReopenedUntil())) {
+        return ResponseEntity.badRequest().body(Map.of("error",
+            "Uzávěrka přihlášek pro tuto variantu již proběhla (" + variant.getRegistrationDeadline() + ")"));
+      }
     }
 
     int startFee = calculateFee(request.variant(), request.vehicleYear(), request.crewCount());

@@ -8,6 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.time.Instant;
 import java.time.LocalDate;
 
 @Entity
@@ -31,6 +32,9 @@ public class VariantConfig {
   @Column(name = "registration_deadline")
   private LocalDate registrationDeadline;
 
+  @Column(name = "registration_reopened_until")
+  private Instant registrationReopenedUntil;
+
   @Column(name = "race_date")
   private LocalDate raceDate;
 
@@ -53,6 +57,8 @@ public class VariantConfig {
   public void setLabel(String label) { this.label = label; }
   public LocalDate getRegistrationDeadline() { return registrationDeadline; }
   public void setRegistrationDeadline(LocalDate registrationDeadline) { this.registrationDeadline = registrationDeadline; }
+  public Instant getRegistrationReopenedUntil() { return registrationReopenedUntil; }
+  public void setRegistrationReopenedUntil(Instant registrationReopenedUntil) { this.registrationReopenedUntil = registrationReopenedUntil; }
   public LocalDate getRaceDate() { return raceDate; }
   public void setRaceDate(LocalDate raceDate) { this.raceDate = raceDate; }
   public boolean isEnabled() { return enabled; }

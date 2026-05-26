@@ -61,6 +61,7 @@ public class PublicInfoController {
           m.put("variantCode", vc.getVariantCode());
           m.put("label", vc.getLabel());
           m.put("registrationDeadline", vc.getRegistrationDeadline() != null ? vc.getRegistrationDeadline().toString() : null);
+          m.put("registrationReopenedUntil", vc.getRegistrationReopenedUntil() != null ? vc.getRegistrationReopenedUntil().toString() : null);
           m.put("raceDate", vc.getRaceDate() != null ? vc.getRaceDate().toString() : null);
           return m;
         }).toList();
