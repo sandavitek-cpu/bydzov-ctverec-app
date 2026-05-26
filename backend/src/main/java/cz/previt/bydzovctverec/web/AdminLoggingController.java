@@ -69,8 +69,9 @@ public class AdminLoggingController {
       String line;
       while ((line = r.readLine()) != null) {
         if (line.length() >= 23) {
+          String tsPart = line.substring(0, 23).replace('T', ' ');
           try {
-            LocalDateTime ts = LocalDateTime.parse(line.substring(0, 23), LOG_TS);
+            LocalDateTime ts = LocalDateTime.parse(tsPart, LOG_TS);
             if (ts.isAfter(cutoff)) {
               lines.add(line);
             }
