@@ -24,7 +24,7 @@ public class DatabaseUrlEnvironmentPostProcessor implements EnvironmentPostProce
 
   @Override
   public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
-    if (environment.matchesProfiles("test")) {
+    if (environment.matchesProfiles("test") || environment.matchesProfiles("dev")) {
       return;
     }
     String databaseUrl = resolveDatabaseUrl(environment);
@@ -103,7 +103,8 @@ public class DatabaseUrlEnvironmentPostProcessor implements EnvironmentPostProce
         return v;
       }
     }
-    System.err.println("[DatabaseUrlEnvironmentPostProcessor] DATABASE_URL not found in environment or system env");
-    return null;
+    throw new IllegalStateException(
+        "DATABASE_URL not set! Configure it as a GitLab CI/CD variable or system environment.\n" +
+        "Without it, Spring Boot would silently fall back to H2 in-memory and lose all data on restart.");
   }
 }
