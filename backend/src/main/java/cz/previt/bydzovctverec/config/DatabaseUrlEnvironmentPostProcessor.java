@@ -24,9 +24,6 @@ public class DatabaseUrlEnvironmentPostProcessor implements EnvironmentPostProce
 
   @Override
   public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
-    if (environment.matchesProfiles("test") || environment.matchesProfiles("dev")) {
-      return;
-    }
     if (environment.getPropertySources().contains("active-test-profiles")) {
       return;
     }
@@ -105,6 +102,13 @@ public class DatabaseUrlEnvironmentPostProcessor implements EnvironmentPostProce
         System.err.println("[DatabaseUrlEnvironmentPostProcessor] found " + key + " via System.getenv()");
         return v;
       }
+    }
+    String active = environment.getProperty("spring.profiles.active");
+    if (active != null && (active.contains("dev") || active.contains("test"))) {
+      return null;
+    }
+    if (environment.matchesProfiles("dev") || environment.matchesProfiles("test")) {
+      return null;
     }
     throw new IllegalStateException(
         "DATABASE_URL not set! Configure it as a GitLab CI/CD variable or system environment.\n" +
