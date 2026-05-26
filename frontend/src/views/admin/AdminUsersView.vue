@@ -22,7 +22,7 @@ const editMemberSince = ref('')
 const saving = ref(false)
 
 const showCreate = ref(false)
-const createForm = ref({ username: '', firstName: '', lastName: '', email: '', phone: '', memberSince: '', password: '' })
+const createForm = ref({ username: '', firstName: '', lastName: '', email: '', phone: '', memberSince: '', password: '', role: 'RACER', appRoleIds: [] as number[] })
 
 const pwNewPassword = ref('')
 const pwError = ref<string | null>(null)
@@ -89,10 +89,12 @@ async function saveUser() {
   saving.value = true
   error.value = null
   try {
+    const updateBody: Record<string, string> = { firstName: editFirstName.value, lastName: editLastName.value, email: editEmail.value, phone: editPhone.value, memberSince: editMemberSince.value }
+    if (selectedUser.value.role) updateBody.role = selectedUser.value.role
     const res = await fetch(`${apiBaseUrl}/api/admin/users/${selectedUser.value.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify({ firstName: editFirstName.value, lastName: editLastName.value, email: editEmail.value, phone: editPhone.value, memberSince: editMemberSince.value }),
+      body: JSON.stringify(updateBody),
     })
     if (!res.ok) { const body = await res.json(); throw new Error(body.error ?? 'Chyba uložení') }
     await selectUser(selectedUser.value.id)
@@ -116,7 +118,7 @@ async function createUser() {
     const data = await res.json()
     if (!res.ok) throw new Error(data.error ?? 'Chyba vytvoření')
     showCreate.value = false
-    createForm.value = { username: '', firstName: '', lastName: '', email: '', phone: '', memberSince: '', password: '' }
+    createForm.value = { username: '', firstName: '', lastName: '', email: '', phone: '', memberSince: '', password: '', role: 'RACER', appRoleIds: [] }
     await loadUsers()
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Chyba vytvoření'
@@ -311,12 +313,34 @@ onMounted(async () => {
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="input-label">V klubu od</label>
-              <input v-model="createForm.memberSince" type="date" class="input-field" />
+              <label class="input-label">Role</label>
+              <select v-model="createForm.role" class="input-field">
+                <option value="RACER">Závodník</option>
+                <option value="JUDGE">Komisař</option>
+                <option value="ADMIN">Pořadatel</option>
+              </select>
             </div>
             <div>
               <label class="input-label">Heslo (min. 6 znaků)</label>
               <input v-model="createForm.password" type="password" required minlength="6" class="input-field" />
+            </div>
+          </div>
+          <div v-if="roles.length > 0">
+            <label class="input-label">Oprávnění (AppRole)</label>
+            <div class="mt-1 flex flex-wrap gap-2">
+              <label v-for="r in roles" :key="r.id"
+                class="flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-body-sm cursor-pointer"
+                :class="createForm.appRoleIds.includes(r.id) ? 'border-primary bg-primary/5' : 'bg-bg'"
+              >
+                <input type="checkbox" :value="r.id" v-model="createForm.appRoleIds" class="sr-only" />
+                {{ r.displayName }}
+              </label>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="input-label">V klubu od</label>
+              <input v-model="createForm.memberSince" type="date" class="input-field" />
             </div>
           </div>
           <p v-if="error" class="text-body-sm text-error">{{ error }}</p>
@@ -359,6 +383,14 @@ onMounted(async () => {
           <div>
             <label class="input-label">V klubu od</label>
             <input v-model="editMemberSince" type="date" class="input-field" />
+          </div>
+          <div>
+            <label class="input-label">Role</label>
+            <select v-model="selectedUser.role" class="input-field">
+              <option value="RACER">Závodník</option>
+              <option value="JUDGE">Komisař</option>
+              <option value="ADMIN">Pořadatel</option>
+            </select>
           </div>
           <div class="text-meta text-text-soft bg-bg-alt -mx-6 px-6 py-3">
             Uživatelské jméno: {{ selectedUser.username }} · Registrován: {{ new Date(selectedUser.createdAt).toLocaleString('cs') }}

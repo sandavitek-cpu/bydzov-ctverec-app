@@ -100,14 +100,14 @@ public class AdminUserController {
 
   @PutMapping("/{id}")
   @Transactional
-  public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Map<String, String> body) {
+  public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Map<String, Object> body) {
     var userOpt = userRepository.findById(id);
     if (userOpt.isEmpty()) return ResponseEntity.notFound().build();
     var user = userOpt.get();
-    var firstName = body.get("firstName");
-    var lastName = body.get("lastName");
-    var email = body.get("email");
-    var phone = body.get("phone");
+    var firstName = getStr(body, "firstName");
+    var lastName = getStr(body, "lastName");
+    var email = getStr(body, "email");
+    var phone = getStr(body, "phone");
     if (firstName != null && !firstName.isBlank()) user.setFirstName(firstName);
     if (lastName != null) user.setLastName(lastName);
     if (email != null && !email.isBlank()) {
@@ -117,9 +117,13 @@ public class AdminUserController {
       user.setEmail(email);
     }
     if (phone != null) user.setPhone(phone);
-    var memberSinceStr = body.get("memberSince");
+    var memberSinceStr = getStr(body, "memberSince");
     if (memberSinceStr != null && !memberSinceStr.isBlank()) {
       user.setMemberSince(LocalDate.parse(memberSinceStr));
+    }
+    var roleStr = getStr(body, "role");
+    if (roleStr != null) {
+      try { user.setRole(UserRole.valueOf(roleStr.toUpperCase())); } catch (IllegalArgumentException e) { /* ignore */ }
     }
     userRepository.save(user);
     var respPhone = user.getPhone() != null ? user.getPhone() : "";
@@ -140,12 +144,12 @@ public class AdminUserController {
 
   @PostMapping
   @Transactional
-  public ResponseEntity<?> create(@RequestBody Map<String, String> body) {
-    var username = body.get("username");
-    var email = body.get("email");
-    var password = body.get("password");
-    var firstName = body.get("firstName");
-    var lastName = body.get("lastName");
+  public ResponseEntity<?> create(@RequestBody Map<String, Object> body) {
+    var username = getStr(body, "username");
+    var email = getStr(body, "email");
+    var password = getStr(body, "password");
+    var firstName = getStr(body, "firstName");
+    var lastName = getStr(body, "lastName");
     if (username == null || username.isBlank()
         || email == null || email.isBlank()
         || password == null || password.isBlank()
@@ -162,15 +166,33 @@ public class AdminUserController {
     if (userRepository.findByEmail(email).isPresent()) {
       return ResponseEntity.badRequest().body(Map.of("error", "Email již existuje"));
     }
-    var user = new User(email, username, passwordEncoder.encode(password), UserRole.RACER, firstName, lastName, java.time.Instant.now());
-    var phone = body.get("phone");
+    var roleStr = getStr(body, "role");
+    var userRole = UserRole.RACER;
+    if (roleStr != null) {
+      try { userRole = UserRole.valueOf(roleStr.toUpperCase()); } catch (IllegalArgumentException e) { /* fallback to RACER */ }
+    }
+    var user = new User(email, username, passwordEncoder.encode(password), userRole, firstName, lastName, java.time.Instant.now());
+    var phone = getStr(body, "phone");
     if (phone != null) user.setPhone(phone);
-    var memberSinceStr = body.get("memberSince");
+    var memberSinceStr = getStr(body, "memberSince");
     if (memberSinceStr != null && !memberSinceStr.isBlank()) {
       user.setMemberSince(LocalDate.parse(memberSinceStr));
     }
+    var appRoleIdsRaw = body.get("appRoleIds");
+    if (appRoleIdsRaw instanceof List<?> ids) {
+      for (var idObj : ids) {
+        if (idObj instanceof Number num) {
+          appRoleRepository.findById(num.longValue()).ifPresent(role -> user.getAppRoles().add(role));
+        }
+      }
+    }
     userRepository.save(user);
     return ResponseEntity.ok(Map.of("id", user.getId(), "message", "Uživatel vytvořen"));
+  }
+
+  private static String getStr(Map<String, Object> map, String key) {
+    var v = map.get(key);
+    return v instanceof String s ? s : null;
   }
 
   @DeleteMapping("/{id}")

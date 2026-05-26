@@ -12,6 +12,7 @@ import cz.previt.bydzovctverec.domain.AppRole;
 import cz.previt.bydzovctverec.domain.AppRoleRepository;
 import cz.previt.bydzovctverec.domain.User;
 import cz.previt.bydzovctverec.domain.UserRepository;
+import cz.previt.bydzovctverec.domain.UserRole;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -138,16 +139,18 @@ public class AdminNotifyController {
       }
       case "ADMINS" -> {
         var adminRole = appRoleRepository.findByName("ADMIN");
-        if (adminRole.isEmpty()) yield List.of();
         yield userRepository.findAll().stream()
-            .filter(u -> u.getAppRoles().stream().anyMatch(r -> r.getId().equals(adminRole.get().getId())))
+            .filter(u -> u.getRole() == UserRole.ADMIN
+                || (adminRole.isPresent()
+                    && u.getAppRoles().stream().anyMatch(r -> r.getId().equals(adminRole.get().getId()))))
             .toList();
       }
       case "JUDGES" -> {
         var judgeRole = appRoleRepository.findByName("JUDGE");
-        if (judgeRole.isEmpty()) yield List.of();
         yield userRepository.findAll().stream()
-            .filter(u -> u.getAppRoles().stream().anyMatch(r -> r.getId().equals(judgeRole.get().getId())))
+            .filter(u -> u.getRole() == UserRole.JUDGE
+                || (judgeRole.isPresent()
+                    && u.getAppRoles().stream().anyMatch(r -> r.getId().equals(judgeRole.get().getId()))))
             .toList();
       }
       default -> List.of();
@@ -168,18 +171,20 @@ public class AdminNotifyController {
       }
       case "ADMINS" -> {
         var adminRole = appRoleRepository.findByName("ADMIN");
-        if (adminRole.isEmpty()) yield List.of();
         yield userRepository.findAll().stream()
-            .filter(u -> u.getAppRoles().stream().anyMatch(r -> r.getId().equals(adminRole.get().getId())))
+            .filter(u -> u.getRole() == UserRole.ADMIN
+                || (adminRole.isPresent()
+                    && u.getAppRoles().stream().anyMatch(r -> r.getId().equals(adminRole.get().getId()))))
             .map(User::getEmail)
             .filter(e -> e != null && !e.isBlank())
             .toList();
       }
       case "JUDGES" -> {
         var judgeRole = appRoleRepository.findByName("JUDGE");
-        if (judgeRole.isEmpty()) yield List.of();
         yield userRepository.findAll().stream()
-            .filter(u -> u.getAppRoles().stream().anyMatch(r -> r.getId().equals(judgeRole.get().getId())))
+            .filter(u -> u.getRole() == UserRole.JUDGE
+                || (judgeRole.isPresent()
+                    && u.getAppRoles().stream().anyMatch(r -> r.getId().equals(judgeRole.get().getId()))))
             .map(User::getEmail)
             .filter(e -> e != null && !e.isBlank())
             .toList();
