@@ -4,19 +4,23 @@ import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
-import { apiBaseUrl, impersonateRegistration, assignStartNumber, fetchAdminUsers, fetchAdminVariants, type AdminUser, type VariantConfig } from '@/api'
+import RaceControls from '@/components/admin/RaceControls.vue'
+import RegistrationFilters from '@/components/admin/RegistrationFilters.vue'
+import RegistrationStats from '@/components/admin/RegistrationStats.vue'
+import RegistrationTable from '@/components/admin/RegistrationTable.vue'
+import { apiBaseUrl, authFetch, impersonateRegistration, assignStartNumber, fetchAdminUsers, fetchAdminVariants, type AdminUser, type VariantConfig } from '@/api'
 
 const router = useRouter()
-const { isAdmin, authHeaders, logout, impersonateAs } = useAuth()
+const { authHeaders, logout, impersonateAs } = useAuth()
 const { show: showToast } = useToast()
 
-interface CrewInfo {
+export interface CrewInfo {
   firstName: string; lastName: string; email: string
   driverAge: number | null; gender: string | null; address: string | null
   clubMember: boolean; clubName: string | null; firstTime: boolean
 }
 
-interface AdminReg {
+export interface AdminReg {
   id: number; teamName: string; email: string; phone: string
   vehicleCategory: string; vehicleMake: string; vehiclePlate: string
   vehicleYear: number; crewCount: number; startNumber: number
@@ -30,7 +34,7 @@ interface AdminReg {
   approved: boolean; createdAt: string; paidAt: string | null; cancelledAt: string | null; refundAmount: number | null; crewMembers: CrewInfo[]
 }
 
-interface AdminStats {
+export interface AdminStats {
   totalCrews: number; totalMembers: number; paid: number
   contacted: number; arrived: number; firstTimers: number
   women: number; kidsUnder10: number; vehiclesBefore1945: number
@@ -59,10 +63,6 @@ const selectedIds = ref<Set<number>>(new Set())
 const batchProcessing = ref(false)
 
 const raceStatus = ref<{ started: boolean; finished: boolean } | null>(null)
-
-if (!isAdmin.value) {
-  router.push('/admin/login')
-}
 
 const filtered = computed(() => {
   let list = registrations.value
@@ -107,9 +107,9 @@ async function batchAction(action: 'paid' | 'pending') {
   for (const id of ids) {
     try {
       const newStatus = action === 'paid' ? 'PAID' : 'PENDING'
-      const res = await fetch(`${apiBaseUrl}/api/admin/registrations/${id}/status`, {
+      const res = await authFetch(`${apiBaseUrl}/api/admin/registrations/${id}/status`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
       })
       if (!res.ok) throw new Error()
@@ -131,15 +131,15 @@ async function batchAction(action: 'paid' | 'pending') {
 
 async function fetchRaceStatus() {
   try {
-    const res = await fetch(`${apiBaseUrl}/api/admin/race`, { headers: authHeaders() })
+    const res = await authFetch(`${apiBaseUrl}/api/admin/race`)
     if (res.ok) raceStatus.value = await res.json()
   } catch { /* ignore */ }
 }
 
 async function handleRaceStart() {
   try {
-    const res = await fetch(`${apiBaseUrl}/api/admin/race/start`, {
-      method: 'POST', headers: authHeaders(),
+    const res = await authFetch(`${apiBaseUrl}/api/admin/race/start`, {
+      method: 'POST',
     })
     if (!res.ok) { showToast('Nepodařilo se spustit závod', 'error'); return }
     await fetchRaceStatus()
@@ -149,8 +149,8 @@ async function handleRaceStart() {
 
 async function handleRaceFinish() {
   try {
-    const res = await fetch(`${apiBaseUrl}/api/admin/race/finish`, {
-      method: 'POST', headers: authHeaders(),
+    const res = await authFetch(`${apiBaseUrl}/api/admin/race/finish`, {
+      method: 'POST',
     })
     if (!res.ok) { showToast('Nepodařilo se ukončit závod', 'error'); return }
     await fetchRaceStatus()
@@ -160,8 +160,8 @@ async function handleRaceFinish() {
 
 async function handleRaceReset() {
   try {
-    const res = await fetch(`${apiBaseUrl}/api/admin/race/reset`, {
-      method: 'POST', headers: authHeaders(),
+    const res = await authFetch(`${apiBaseUrl}/api/admin/race/reset`, {
+      method: 'POST',
     })
     if (!res.ok) { showToast('Nepodařilo se resetovat závod', 'error'); return }
     await fetchRaceStatus()
@@ -174,8 +174,8 @@ async function fetchAll() {
   error.value = null
   try {
     const [regRes, statsRes] = await Promise.all([
-      fetch(`${apiBaseUrl}/api/admin/registrations`, { headers: authHeaders() }),
-      fetch(`${apiBaseUrl}/api/admin/registrations/stats`, { headers: authHeaders() }),
+      authFetch(`${apiBaseUrl}/api/admin/registrations`),
+      authFetch(`${apiBaseUrl}/api/admin/registrations/stats`),
     ])
     if (regRes.status === 403) { logout(); router.push('/admin/login'); return }
     registrations.value = await regRes.json()
@@ -190,9 +190,9 @@ async function fetchAll() {
 async function toggleStatus(reg: AdminReg) {
   const newStatus = reg.status === 'PAID' ? 'PENDING' : 'PAID'
   try {
-    const res = await fetch(`${apiBaseUrl}/api/admin/registrations/${reg.id}/status`, {
+    const res = await authFetch(`${apiBaseUrl}/api/admin/registrations/${reg.id}/status`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: newStatus }),
     })
     if (!res.ok) throw new Error()
@@ -209,8 +209,8 @@ async function toggleStatus(reg: AdminReg) {
 async function handleResend(reg: AdminReg) {
   resendingId.value = reg.id
   try {
-    const res = await fetch(`${apiBaseUrl}/api/admin/registrations/${reg.id}/resend-credentials`, {
-      method: 'POST', headers: authHeaders(),
+    const res = await authFetch(`${apiBaseUrl}/api/admin/registrations/${reg.id}/resend-credentials`, {
+      method: 'POST',
     })
     const body = await res.json()
     if (!res.ok) throw new Error(body.error ?? 'Chyba')
@@ -226,8 +226,8 @@ async function handleResend(reg: AdminReg) {
 async function handleSendReminder(reg: AdminReg) {
   remindingId.value = reg.id
   try {
-    const res = await fetch(`${apiBaseUrl}/api/admin/registrations/${reg.id}/remind`, {
-      method: 'POST', headers: authHeaders(),
+    const res = await authFetch(`${apiBaseUrl}/api/admin/registrations/${reg.id}/remind`, {
+      method: 'POST',
     })
     const body = await res.json()
     if (!res.ok) throw new Error(body.error ?? 'Chyba')
@@ -243,7 +243,7 @@ function downloadRegPdf(reg: AdminReg) {
   const a = document.createElement('a')
   a.href = `${apiBaseUrl}/api/admin/registrations/${reg.id}/export/pdf`
   a.download = `prihlaska_${reg.startNumber}_${reg.teamName.replace(/\s+/g, '_')}.pdf`
-  fetch(a.href, { headers: authHeaders() })
+  authFetch(a.href)
     .then(r => r.blob())
     .then(blob => {
       const url = URL.createObjectURL(blob)
@@ -276,9 +276,7 @@ async function handleAssignStartNumber(reg: AdminReg) {
 
 async function downloadPdf() {
   try {
-    const res = await fetch(`${apiBaseUrl}/api/admin/registrations/export/pdf`, {
-      headers: authHeaders(),
-    })
+    const res = await authFetch(`${apiBaseUrl}/api/admin/registrations/export/pdf`)
     if (!res.ok) throw new Error()
     const blob = await res.blob()
     const url = URL.createObjectURL(blob)
@@ -296,9 +294,8 @@ async function handleCancel(reg: AdminReg) {
     : 'Opravdu chcete stornovat tuto přihlášku?'
   if (!confirm(msg)) return
   try {
-    const res = await fetch(`${apiBaseUrl}/api/admin/registrations/${reg.id}/cancel`, {
+    const res = await authFetch(`${apiBaseUrl}/api/admin/registrations/${reg.id}/cancel`, {
       method: 'POST',
-      headers: authHeaders(),
     })
     if (!res.ok) {
       const body = await res.json().catch(() => ({}))
@@ -313,9 +310,7 @@ async function handleCancel(reg: AdminReg) {
 
 async function downloadCsv() {
   try {
-    const res = await fetch(`${apiBaseUrl}/api/admin/registrations/export`, {
-      headers: authHeaders(),
-    })
+    const res = await authFetch(`${apiBaseUrl}/api/admin/registrations/export`)
     if (!res.ok) throw new Error()
     const blob = await res.blob()
     const url = URL.createObjectURL(blob)
@@ -369,9 +364,9 @@ async function saveEdit() {
     for (const key of allowed) {
       if (key in editForm.value) body[key] = editForm.value[key]
     }
-    const res = await fetch(`${apiBaseUrl}/api/admin/registrations/${selected.value.id}`, {
+    const res = await authFetch(`${apiBaseUrl}/api/admin/registrations/${selected.value.id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     })
     if (!res.ok) throw new Error()
@@ -475,18 +470,6 @@ const variantDeadline = computed(() => {
   return map
 })
 
-function overdueInfo(reg: AdminReg) {
-  if (reg.status === 'PAID' || reg.status === 'CANCELLED' || !reg.variant) return null
-  const deadline = variantDeadline.value[reg.variant]
-  if (!deadline) return null
-  const d = new Date(deadline + 'T00:00:00')
-  const now = new Date()
-  if (now <= d) return null
-  const days = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24))
-  if (days <= 0) return null
-  return days
-}
-
 async function loadVariantConfigs() {
   try {
     variantConfigs.value = await fetchAdminVariants(authHeaders())
@@ -508,76 +491,25 @@ async function loadVariantConfigs() {
       </div>
     </div>
 
-    <!-- Race Mode -->
-    <div class="mb-6 rounded-xl border p-4" :class="{
-      'border-success/30 bg-success/5': raceStatus?.started && !raceStatus?.finished,
-      'border-border bg-bg-alt': !raceStatus?.started,
-      'border-info/30 bg-info/5': raceStatus?.finished,
-    }">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div class="flex items-center gap-3">
-          <span class="text-label">Režim závodu:</span>
-          <span v-if="!raceStatus?.started" class="badge !bg-text-soft/10 !text-text-soft">Nezahájen</span>
-          <span v-else-if="!raceStatus?.finished" class="badge !bg-success/10 !text-success">Probíhá</span>
-          <span v-else class="badge !bg-info/10 !text-info">Ukončen</span>
-        </div>
-        <div class="flex gap-2 flex-wrap">
-          <button v-if="!raceStatus?.started" @click="handleRaceStart" class="btn-primary btn-xs">Zahájit závod</button>
-          <button v-if="raceStatus?.started && !raceStatus?.finished" @click="handleRaceFinish" class="btn-secondary btn-xs">Ukončit závod</button>
-          <button v-if="raceStatus?.started" @click="handleRaceReset" class="btn-ghost btn-xs">Reset</button>
-        </div>
-      </div>
-    </div>
+    <RaceControls
+      :race-status="raceStatus"
+      @start="handleRaceStart"
+      @finish="handleRaceFinish"
+      @reset="handleRaceReset"
+    />
 
-    <!-- Filters -->
-    <div class="flex flex-wrap gap-3 mb-6">
-      <select v-model="filterVariant" class="input-field !w-auto !h-[36px] text-body-sm">
-        <option value="all">Všechny varianty</option>
-        <option v-for="opt in variantOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-      </select>
-      <select v-model="filterStatus" class="input-field !w-auto !h-[36px] text-body-sm">
-        <option value="all">Všechny stavy</option>
-        <option value="PAID">Přihlášen a zaplaceno</option>
-        <option value="PENDING">Přihlášen, nezaplaceno</option>
-      </select>
-      <input v-model="filterSearch" placeholder="Hledat tým, SPZ, email…" class="input-field !w-full sm:!w-auto sm:!min-w-[200px] !h-[36px] text-body-sm flex-1" />
-    </div>
+    <RegistrationFilters
+      v-model:filter-variant="filterVariant"
+      v-model:filter-status="filterStatus"
+      v-model:filter-search="filterSearch"
+      :variants="variantOptions"
+      :selected-ids-size="selectedIds.size"
+      :batch-processing="batchProcessing"
+      @batch-action="batchAction"
+      @clear-selection="selectedIds = new Set()"
+    />
 
-    <!-- Batch actions -->
-    <div v-if="selectedIds.size > 0" class="mb-4 flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-2">
-      <span class="text-body-sm font-semibold text-text">{{ selectedIds.size }} vybráno</span>
-      <button @click="batchAction('paid')" :disabled="batchProcessing" class="btn-secondary btn-xs">Označit zaplaceno</button>
-      <button @click="batchAction('pending')" :disabled="batchProcessing" class="btn-ghost btn-xs">Vrátit na čeká</button>
-      <button @click="selectedIds = new Set()" class="btn-ghost btn-xs text-text-soft">Zrušit výběr</button>
-    </div>
-
-    <!-- Stats -->
-    <div v-if="stats" class="mb-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-      <div class="card !p-4 text-center">
-        <p class="text-kpi text-primary">{{ stats.totalCrews }}</p>
-        <p class="text-meta text-text-soft mt-0.5">Posádek</p>
-      </div>
-      <div class="card !p-4 text-center">
-        <p class="text-kpi text-primary">{{ stats.totalMembers }}</p>
-        <p class="text-meta text-text-soft mt-0.5">Členů</p>
-      </div>
-      <div class="card !p-4 text-center">
-        <p class="text-kpi" :class="stats.paid === stats.totalCrews ? 'text-success' : 'text-red'">{{ stats.paid }}<span class="text-body-sm text-text-soft">/{{ stats.totalCrews }}</span></p>
-        <p class="text-meta text-text-soft mt-0.5">Přihlášeno a zaplaceno</p>
-      </div>
-      <div class="card !p-4 text-center">
-        <p class="text-kpi" :class="stats.arrived === stats.totalCrews ? 'text-success' : 'text-text-muted'">{{ stats.arrived }}</p>
-        <p class="text-meta text-text-soft mt-0.5">Přijelo</p>
-      </div>
-      <div class="card !p-4 text-center">
-        <p class="text-kpi text-text-muted">{{ stats.cars }}</p>
-        <p class="text-meta text-text-soft mt-0.5">Automobilů</p>
-      </div>
-      <div class="card !p-4 text-center">
-        <p class="text-kpi text-text-muted">{{ stats.motos }}</p>
-        <p class="text-meta text-text-soft mt-0.5">Motocyklů</p>
-      </div>
-    </div>
+    <RegistrationStats :stats="stats" />
 
     <LoadingSpinner v-if="loading" />
     <p v-else-if="error" class="alert alert-error mb-4">{{ error }}</p>
@@ -586,85 +518,25 @@ async function loadVariantConfigs() {
       <p class="text-section-title text-text-soft">Žádné přihlášky neodpovídají filtrům</p>
     </div>
 
-    <!-- Table -->
-    <div v-else class="overflow-x-auto rounded-xl border border-border">
-      <table class="w-full">
-        <thead class="table-header">
-          <tr>
-            <th class="w-8">
-              <input type="checkbox" :checked="selectedIds.size === filtered.length && filtered.length > 0" @change="toggleSelectAll" class="cursor-pointer" />
-            </th>
-            <th class="w-8 text-center">#</th>
-            <th>Posádka</th>
-            <th class="hidden sm:table-cell">Varianta</th>
-            <th>Členové</th>
-            <th>Stav</th>
-            <th class="text-right">Akce</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="r in filtered" :key="r.id"
-            @click="selectReg(r)"
-            class="table-row cursor-pointer"
-          >
-            <td class="text-center" @click.stop>
-              <input type="checkbox" :checked="selectedIds.has(r.id)" @change="toggleSelect(r.id)" class="cursor-pointer" />
-            </td>
-            <td class="text-center font-mono font-bold text-primary">{{ r.startNumber }}</td>
-            <td>
-              <div class="font-medium text-text">{{ r.teamName }}</div>
-              <div class="text-meta text-text-soft">{{ r.vehicleCategory ? categoryLabel[r.vehicleCategory] ?? r.vehicleCategory : '' }}{{ r.vehicleMake ? ' · ' + r.vehicleMake : '' }}</div>
-            </td>
-            <td class="hidden sm:table-cell">
-              <span v-if="r.variant" class="text-body-sm text-text-muted">{{ variantLabel[r.variant] ?? r.variant }}</span>
-              <span v-else class="text-body-sm text-text-soft">—</span>
-            </td>
-            <td>
-              <div class="flex flex-wrap gap-1">
-                <span v-for="(cm, i) in r.crewMembers" :key="i"
-                  class="inline-flex items-center gap-1 rounded-full bg-primary/5 px-2 py-0.5 text-meta text-text-muted"
-                  :title="cm.email"
-                >{{ cm.firstName }} {{ cm.lastName }}</span>
-                <span v-if="!r.crewMembers?.length" class="text-meta text-text-soft">—</span>
-              </div>
-            </td>
-            <td>
-              <div class="flex flex-wrap gap-1.5">
-                <span v-if="r.status === 'CANCELLED'" class="badge !bg-red/10 !text-red">Stornováno</span>
-                <button v-else @click.stop="toggleStatus(r)"
-                  class="badge cursor-pointer transition-colors"
-                  :class="r.status === 'PAID' ? '!bg-success/10 !text-success' : 'badge-admin'"
-                >{{ r.status === 'PAID' ? 'Přihlášen a zaplaceno' : 'Přihlášen, nezaplaceno' }}</button>
-                <span v-if="r.arrived" class="badge !bg-info/10 !text-info">Přijel</span>
-                <span v-if="r.firstTime" class="badge !bg-red/10 !text-red">Nový</span>
-                <span v-if="overdueInfo(r) !== null" class="badge !bg-warning/10 !text-warning"
-                  :title="'Splatnost ' + (variantDeadline[r.variant ?? ''] ?? '?')">Po splatnosti {{ overdueInfo(r) }} dní</span>
-              </div>
-            </td>
-            <td class="text-right whitespace-nowrap">
-              <div class="flex gap-1.5 justify-end" @click.stop>
-                <button @click="handleResend(r)" :disabled="resendingId === r.id"
-                  class="btn-ghost btn-xs whitespace-nowrap" title="Znovu odeslat přihlašovací údaje"
-                >{{ resendingId === r.id ? '…' : 'Poslat údaje' }}</button>
-                <button v-if="r.status !== 'PAID'" @click="handleSendReminder(r)" :disabled="remindingId === r.id"
-                  class="btn-ghost btn-xs whitespace-nowrap" title="Odeslat upomínku o nezaplacení"
-                >{{ remindingId === r.id ? '…' : 'Upomínka' }}</button>
-                <button @click="downloadRegPdf(r)" class="btn-ghost btn-xs whitespace-nowrap" title="Stáhnout přihlášku k prezenci (PDF)"
-                >PDF</button>
-                <button @click="handleImpersonate(r)"
-                  class="btn-ghost btn-xs"
-                  title="Přihlásit jako tento tým"
-                >👁</button>
-                <button v-if="r.status === 'PAID' && (!r.startNumber || r.startNumber === 0)" @click.stop="handleAssignStartNumber(r)"
-                  class="btn-secondary btn-xs whitespace-nowrap"
-                  title="Přidělit startovní číslo"
-                >#</button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <RegistrationTable
+      v-else
+      :registrations="filtered"
+      :selected-ids="selectedIds"
+      :resending-id="resendingId"
+      :reminding-id="remindingId"
+      :variant-deadline="variantDeadline"
+      :variant-label="variantLabel"
+      :category-label="categoryLabel"
+      @toggle-select="toggleSelect"
+      @toggle-select-all="toggleSelectAll"
+      @toggle-status="toggleStatus"
+      @resend="handleResend"
+      @send-reminder="handleSendReminder"
+      @download-pdf="downloadRegPdf"
+      @impersonate="handleImpersonate"
+      @assign-start-number="handleAssignStartNumber"
+      @select-reg="selectReg"
+    />
 
     <!-- Detail modal -->
     <div v-if="selected" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 py-4 sm:py-8" @click.self="closeDetail">
@@ -914,7 +786,7 @@ async function loadVariantConfigs() {
             </div>
             <div>
               <label class="text-label text-text-soft mb-1 block">Bydliště</label>
-              <input v-model="editForm.address" class="input-field w-full" />
+              <RuiAnAutocomplete v-model="editForm.address" placeholder="Město, ulice" />
             </div>
             <div class="grid grid-cols-2 gap-3">
               <div>

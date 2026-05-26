@@ -39,7 +39,7 @@ export default {
         info: '#2563EB',
       },
       fontFamily: {
-        display: ['"Bebas Neue"', '"Oswald"', 'sans-serif'],
+        display: ['"Bebas Neue"', 'sans-serif'],
         body: ['"Inter"', '"Source Sans 3"', 'sans-serif'],
         accent: ['"Merriweather"', 'serif'],
       },

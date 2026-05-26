@@ -55,6 +55,14 @@ public class JwtService {
     return validate(token).get("role", String.class);
   }
 
+  public boolean isAccessToken(String token) {
+    try {
+      return "access".equals(validate(token).get("type", String.class));
+    } catch (JwtException e) {
+      return false;
+    }
+  }
+
   public boolean isExpired(String token) {
     try {
       validate(token);

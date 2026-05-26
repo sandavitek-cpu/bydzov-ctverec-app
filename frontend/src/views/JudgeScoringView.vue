@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
-import { apiBaseUrl, lookupRacerByStartNumber, submitScore, type RacerLookup } from '@/api'
+import { apiBaseUrl, authFetch, lookupRacerByStartNumber, submitScore, type RacerLookup } from '@/api'
 
-const router = useRouter()
-const { isLoggedIn, authHeaders } = useAuth()
+const { authHeaders } = useAuth()
 
 const startNumber = ref<number | null>(null)
 const selectedCheckpoint = ref<number | null>(null)
@@ -28,7 +26,7 @@ const selectedCpFull = ref<FullCheckpoint | null>(null)
 
 onMounted(async () => {
   try {
-    const res = await fetch(`${apiBaseUrl}/api/racer/checkpoints`, { headers: authHeaders() })
+    const res = await authFetch(`${apiBaseUrl}/api/racer/checkpoints`)
     if (res.ok) {
       checkpoints.value = await res.json()
       if (checkpoints.value.length > 0) {
@@ -90,9 +88,6 @@ function handleNext() {
   searched.value = false
 }
 
-if (!isLoggedIn.value) {
-  router.push('/admin/login')
-}
 </script>
 
 <template>

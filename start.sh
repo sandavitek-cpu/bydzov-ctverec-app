@@ -11,8 +11,11 @@ if [ -n "$PREV_PIDS" ]; then
   sleep 1
 fi
 
+echo "=== Instaluji závislosti frontendu ==="
+(cd "$ROOT/frontend" && npm install --silent)
+
 echo "=== Spouštím backend (Spring Boot, dev profil — H2) ==="
-(cd "$ROOT/backend" && mvn spring-boot:run -s .mvn/settings.xml -q -Dspring-boot.run.profiles=dev) &
+(cd "$ROOT/backend" && mvn spring-boot:run -s .mvn/settings.xml -q -Pdev -Dspring-boot.run.profiles=dev) &
 BACKEND_PID=$!
 
 echo "=== Spouštím frontend (Vite) ==="

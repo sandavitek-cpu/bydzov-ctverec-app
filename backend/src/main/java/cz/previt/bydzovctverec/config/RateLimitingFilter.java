@@ -1,0 +1,68 @@
+package cz.previt.bydzovctverec.config;
+
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
+
+@Component
+@Order(Integer.MIN_VALUE + 50)
+public class RateLimitingFilter implements Filter {
+
+  private static final Logger log = LoggerFactory.getLogger(RateLimitingFilter.class);
+  private static final int MAX_REQUESTS = 100;
+  private static final long WINDOW_MS = 60_000L;
+
+  private final ConcurrentMap<String, Window> counters = new ConcurrentHashMap<>();
+
+  @Override
+  public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+      throws IOException, ServletException {
+    HttpServletRequest req = (HttpServletRequest) request;
+    String path = req.getRequestURI();
+
+    if (path.startsWith("/api/auth/") || path.startsWith("/api/public/")) {
+      String ip = req.getRemoteAddr();
+      String key = ip + ":" + path;
+      Window w = counters.compute(key, (k, v) -> {
+        long now = System.currentTimeMillis();
+        if (v == null || now - v.start > WINDOW_MS) {
+          return new Window(now, 1);
+        }
+        v.count = v.count + 1;
+        return v;
+      });
+
+      if (w.count > MAX_REQUESTS) {
+        log.warn("Rate limit exceeded for {} from {}", path, ip);
+        HttpServletResponse res = (HttpServletResponse) response;
+        res.setStatus(429);
+        res.setContentType("application/json");
+        res.getWriter().write("{\"error\":\"Příliš mnoho požadavků, zkuste později\"}");
+        return;
+      }
+    }
+
+    chain.doFilter(request, response);
+  }
+
+  private static class Window {
+    long start;
+    int count;
+
+    Window(long start, int count) {
+      this.start = start;
+      this.count = count;
+    }
+  }
+}

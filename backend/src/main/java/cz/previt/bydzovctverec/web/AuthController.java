@@ -68,6 +68,26 @@ public class AuthController {
     }
   }
 
+  @PostMapping("/refresh")
+  public ResponseEntity<?> refresh(@Valid @RequestBody RefreshRequest request) {
+    try {
+      var claims = jwtService.validate(request.refreshToken());
+      if (!"refresh".equals(claims.get("type", String.class))) {
+        return ResponseEntity.status(401).body(new ErrorResponse("Token není refresh token"));
+      }
+      Long userId = Long.valueOf(claims.getSubject());
+      User user = userRepository.findById(userId).orElse(null);
+      if (user == null) {
+        return ResponseEntity.status(401).body(new ErrorResponse("Uživatel nenalezen"));
+      }
+      String newAccessToken = jwtService.generateAccessToken(user);
+      return ResponseEntity.ok(new RefreshResponse(newAccessToken));
+    } catch (Exception e) {
+      log.warn("Refresh failed: {}", e.getMessage());
+      return ResponseEntity.status(401).body(new ErrorResponse("Refresh token je neplatný nebo expirovaný"));
+    }
+  }
+
   @PostMapping("/google")
   public ResponseEntity<?> googleLogin(@RequestBody GoogleRequest request) {
     try {

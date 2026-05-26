@@ -1,6 +1,84 @@
 export const apiBaseUrl =
   import.meta.env.VITE_API_BASE_URL ?? 'https://bydzov-ctverec-api.onrender.com'
 
+const apiVersionPrefix = import.meta.env.VITE_API_VERSION ?? ''
+
+export function apiVersionedUrl(path: string): string {
+  return `${apiBaseUrl}/api${apiVersionPrefix}${path}`
+}
+
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+    public body?: unknown
+  ) {
+    super(message)
+    this.name = 'ApiError'
+  }
+}
+
+export async function handleApiError(res: Response): Promise<never> {
+  let message: string
+  try {
+    const body = await res.json()
+    message = body.error ?? body.message ?? `API ${res.status}`
+  } catch {
+    message = `API ${res.status}`
+  }
+  throw new ApiError(message, res.status)
+}
+
+function getToken(): string | null {
+  return localStorage.getItem('admin_token')
+}
+
+function getRefreshToken(): string | null {
+  return localStorage.getItem('admin_refresh_token')
+}
+
+async function tryRefreshToken(): Promise<boolean> {
+  const rt = getRefreshToken()
+  if (!rt) return false
+  try {
+    const res = await fetch(`${apiBaseUrl}/api/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken: rt }),
+    })
+    if (!res.ok) return false
+    const data = await res.json()
+    localStorage.setItem('admin_token', data.accessToken)
+    return true
+  } catch {
+    return false
+  }
+}
+
+function isTokenExpiring(token: string): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    return payload.exp * 1000 < Date.now() + 60000
+  } catch {
+    return true
+  }
+}
+
+export async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  let token = getToken()
+  if (token && isTokenExpiring(token)) {
+    await tryRefreshToken()
+    token = getToken()
+  }
+  const headers: Record<string, string> = {
+    ...(options.headers as Record<string, string> ?? {}),
+  }
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+  return fetch(url, { ...options, headers })
+}
+
 async function apiError(res: Response): Promise<string> {
   try {
     const body = await res.json()
@@ -9,6 +87,8 @@ async function apiError(res: Response): Promise<string> {
     return `API ${res.status}`
   }
 }
+
+export { apiError as legacyApiError }
 
 export async function fetchCurrentEdition() {
   const res = await fetch(`${apiBaseUrl}/api/public/editions/current`)
@@ -420,12 +500,40 @@ export async function closeAdminVariantReopen(id: number, headers: Record<string
   return res.json() as Promise<VariantConfig>
 }
 
+export interface RuiAnAddress {
+  kod: number
+  adresa: string
+  psc: number | null
+  cislodomovni: number | null
+  cisloorientacni: number | null
+  cisloorientacnipismeno: string | null
+}
+
+export async function searchRuiAnAddress(q: string): Promise<RuiAnAddress[]> {
+  if (!q.trim()) return []
+  const res = await fetch(`${apiBaseUrl}/api/public/ruian/search?q=${encodeURIComponent(q)}`)
+  if (!res.ok) throw new Error(await apiError(res))
+  return res.json() as Promise<RuiAnAddress[]>
+}
+
 export interface PublicVariant {
   variantCode: string
   label: string
   registrationDeadline: string | null
   registrationReopenedUntil: string | null
   raceDate: string | null
+}
+
+export interface FeeConfig {
+  baseDo1945: number
+  baseOd1946: number
+  extraPerson: number
+}
+
+export async function fetchFees() {
+  const res = await fetch(`${apiBaseUrl}/api/public/fees`)
+  if (!res.ok) throw new Error(await apiError(res))
+  return res.json() as Promise<Record<string, FeeConfig>>
 }
 
 export async function fetchPublicVariants() {

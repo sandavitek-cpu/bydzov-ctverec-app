@@ -1,5 +1,7 @@
 package cz.previt.bydzovctverec.web;
 
+import cz.previt.bydzovctverec.config.FeeConfig;
+import cz.previt.bydzovctverec.config.FeeConfig.VariantFee;
 import cz.previt.bydzovctverec.domain.ChangeLogEntryRepository;
 import cz.previt.bydzovctverec.domain.Edition;
 import cz.previt.bydzovctverec.domain.EditionRepository;
@@ -21,13 +23,16 @@ public class PublicInfoController {
   private final ChangeLogEntryRepository changelogRepository;
   private final EditionRepository editionRepository;
   private final VariantConfigRepository variantConfigRepository;
+  private final FeeConfig feeConfig;
 
   public PublicInfoController(BuildProperties buildProperties, ChangeLogEntryRepository changelogRepository,
-      EditionRepository editionRepository, VariantConfigRepository variantConfigRepository) {
+      EditionRepository editionRepository, VariantConfigRepository variantConfigRepository,
+      FeeConfig feeConfig) {
     this.buildProperties = buildProperties;
     this.changelogRepository = changelogRepository;
     this.editionRepository = editionRepository;
     this.variantConfigRepository = variantConfigRepository;
+    this.feeConfig = feeConfig;
   }
 
   @GetMapping("/info")
@@ -48,6 +53,11 @@ public class PublicInfoController {
     race.put("startedAt", edition != null && edition.getRaceStartedAt() != null ? edition.getRaceStartedAt().toString() : null);
     race.put("finishedAt", edition != null && edition.getRaceFinishedAt() != null ? edition.getRaceFinishedAt().toString() : null);
     return Map.of("version", version, "deployedAt", deployedAt, "changelog", changelog, "race", race);
+  }
+
+  @GetMapping("/fees")
+  public Map<String, VariantFee> fees() {
+    return feeConfig.feeSchedule();
   }
 
   @GetMapping("/variants")

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import { submitRegistration, fetchVehicles, createVehicle, fetchRacerProfile, lookupUserByEmail, fetchPublicVariants, type RegistrationResult, type CrewMemberInput, type VehicleData } from '@/api'
+import RuiAnAutocomplete from '@/components/RuiAnAutocomplete.vue'
+import { submitRegistration, fetchVehicles, createVehicle, fetchRacerProfile, lookupUserByEmail, fetchPublicVariants, fetchFees, type RegistrationResult, type CrewMemberInput, type VehicleData, type FeeConfig } from '@/api'
 import { useAuth } from '@/composables/useAuth'
 
 const { isLoggedIn, authHeaders } = useAuth()
@@ -12,17 +13,7 @@ const VEHICLE_TYPES = [
   { value: 'MOTO', label: 'Motocykl' },
 ]
 
-interface FeeRow {
-  baseDo1945: number
-  baseOd1946: number
-  extraPerson: number
-}
-
-const FEE: Record<string, FeeRow> = {
-  JEDNODENNI: { baseDo1945: 500, baseOd1946: 800, extraPerson: 500 },
-  DVODENNI_UZAVRENO: { baseDo1945: 1000, baseOd1946: 1200, extraPerson: 1000 },
-  DVODENNI_BEZ_UBYTOVANI: { baseDo1945: 600, baseOd1946: 900, extraPerson: 600 },
-}
+const FEE = ref<Record<string, FeeConfig>>({})
 
 const form = ref({
   teamName: '',
@@ -70,12 +61,16 @@ const vehiclesLoaded = ref(false)
 
 onMounted(async () => {
   try {
-    const publicVariants = await fetchPublicVariants()
+    const [publicVariants, fees] = await Promise.all([
+      fetchPublicVariants(),
+      fetchFees().catch(() => ({})),
+    ])
     VARIANTS.value = publicVariants.map(v => ({
       value: v.variantCode,
       label: v.label,
       deadline: v.registrationDeadline ? new Date(v.registrationDeadline + 'T00:00:00').toLocaleDateString('cs', { day: 'numeric', month: 'numeric', year: 'numeric' }) : '',
     }))
+    FEE.value = fees
   } catch { /* not critical */ }
   if (isLoggedIn.value) {
     try {
@@ -127,7 +122,7 @@ function onEmailInput(email: string, target: { firstName: string; lastName: stri
 
 const selectedVariant = computed(() => VARIANTS.value.find(v => v.value === form.value.variant))
 
-const feeConfig = computed(() => FEE[form.value.variant])
+const feeConfig = computed(() => FEE.value[form.value.variant])
 
 const isVintage = computed(() => form.value.vehicleYear < 1945)
 
@@ -295,7 +290,7 @@ const qrUrl = computed(() => {
         </div>
         <div>
           <label class="input-label">Bydliště</label>
-          <input v-model="form.address" required class="input-field" placeholder="Město" />
+          <RuiAnAutocomplete v-model="form.address" required placeholder="Město, ulice" />
         </div>
       </div>
 
@@ -421,7 +416,7 @@ const qrUrl = computed(() => {
             </div>
             <div>
               <label class="input-label">Bydliště</label>
-              <input v-model="cm.address" required class="input-field" placeholder="Město" />
+              <RuiAnAutocomplete v-model="cm.address" required placeholder="Město, ulice" />
             </div>
           </div>
           <div class="flex flex-wrap gap-6">

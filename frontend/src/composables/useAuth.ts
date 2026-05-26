@@ -2,13 +2,14 @@ import { computed, ref } from 'vue'
 import { apiBaseUrl } from '@/api'
 
 const token = ref(localStorage.getItem('admin_token') ?? '')
+const refreshToken = ref(localStorage.getItem('admin_refresh_token') ?? '')
 const role = ref(localStorage.getItem('admin_role') ?? '')
 const name = ref(localStorage.getItem('admin_name') ?? '')
 const username = ref(localStorage.getItem('admin_username') ?? '')
 const impersonating = ref(localStorage.getItem('admin_impersonating') === 'true')
 
 export function useAuth() {
-  function saveTokens(accessToken: string, userRole: string, userName: string, userUsername?: string) {
+  function saveTokens(accessToken: string, userRole: string, userName: string, userUsername?: string, rt?: string) {
     token.value = accessToken
     role.value = userRole
     name.value = userName
@@ -17,15 +18,21 @@ export function useAuth() {
     localStorage.setItem('admin_role', userRole)
     localStorage.setItem('admin_name', userName)
     if (userUsername) localStorage.setItem('admin_username', userUsername)
+    if (rt) {
+      refreshToken.value = rt
+      localStorage.setItem('admin_refresh_token', rt)
+    }
   }
 
   function logout() {
     token.value = ''
+    refreshToken.value = ''
     role.value = ''
     name.value = ''
     username.value = ''
     impersonating.value = false
     localStorage.removeItem('admin_token')
+    localStorage.removeItem('admin_refresh_token')
     localStorage.removeItem('admin_role')
     localStorage.removeItem('admin_name')
     localStorage.removeItem('admin_username')
@@ -42,6 +49,7 @@ export function useAuth() {
 
   function impersonateAs(newToken: string, newRole: string, newName: string, newUsername: string) {
     localStorage.setItem('admin_token_backup', localStorage.getItem('admin_token') ?? '')
+    localStorage.setItem('admin_refresh_token_backup', localStorage.getItem('admin_refresh_token') ?? '')
     localStorage.setItem('admin_role_backup', role.value)
     localStorage.setItem('admin_name_backup', name.value)
     localStorage.setItem('admin_username_backup', username.value)
@@ -56,13 +64,15 @@ export function useAuth() {
       logout()
       return
     }
+    const backupRt = localStorage.getItem('admin_refresh_token_backup') ?? undefined
     impersonating.value = false
     localStorage.removeItem('admin_impersonating')
     localStorage.removeItem('admin_token_backup')
+    localStorage.removeItem('admin_refresh_token_backup')
     const r = localStorage.getItem('admin_role_backup') ?? ''
     const n = localStorage.getItem('admin_name_backup') ?? ''
     const u = localStorage.getItem('admin_username_backup') ?? ''
-    saveTokens(backupToken, r, n, u)
+    saveTokens(backupToken, r, n, u, backupRt)
   }
 
   const roles = computed(() => role.value ? role.value.split(',') : [])
@@ -82,7 +92,7 @@ export function useAuth() {
     if (!res.ok) {
       throw new Error(data.error ?? 'Přihlášení selhalo')
     }
-    saveTokens(data.accessToken, data.role, data.name, data.username)
+    saveTokens(data.accessToken, data.role, data.name, data.username, data.refreshToken)
     return data
   }
 
@@ -96,7 +106,7 @@ export function useAuth() {
     if (!res.ok) {
       throw new Error(data.error ?? 'Google přihlášení selhalo')
     }
-    saveTokens(data.accessToken, data.role, data.name, data.username)
+    saveTokens(data.accessToken, data.role, data.name, data.username, data.refreshToken)
     return data
   }
 

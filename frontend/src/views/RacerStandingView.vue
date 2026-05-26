@@ -4,11 +4,11 @@ import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
-import { apiBaseUrl, fetchRacerStatus } from '@/api'
+import { apiBaseUrl, authFetch, fetchRacerStatus } from '@/api'
 import QrPayment from '@/components/QrPayment.vue'
 
 const router = useRouter()
-const { isLoggedIn, authHeaders, logout } = useAuth()
+const { authHeaders, logout } = useAuth()
 const { show: showToast } = useToast()
 
 interface ScoreRow {
@@ -51,7 +51,7 @@ let interval: ReturnType<typeof setInterval> | null = null
 async function load() {
   try {
     const [regRes, statusRes] = await Promise.all([
-      fetch(`${apiBaseUrl}/api/racer/registration`, { headers: authHeaders() }),
+      authFetch(`${apiBaseUrl}/api/racer/registration`),
       fetchRacerStatus(authHeaders()),
     ])
     if (regRes.status === 403) {
@@ -130,9 +130,9 @@ async function saveEdit() {
   saving.value = true
   editMessage.value = null
   try {
-    const res = await fetch(`${apiBaseUrl}/api/racer/registration`, {
+    const res = await authFetch(`${apiBaseUrl}/api/racer/registration`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(editForm.value),
     })
     if (!res.ok) throw new Error()
@@ -163,9 +163,8 @@ async function saveEdit() {
 async function handleCancel() {
   if (!confirm('Opravdu chcete stornovat přihlášku? Tuto akci nelze vrátit.')) return
   try {
-    const res = await fetch(`${apiBaseUrl}/api/racer/registration/cancel`, {
+    const res = await authFetch(`${apiBaseUrl}/api/racer/registration/cancel`, {
       method: 'POST',
-      headers: authHeaders(),
     })
     if (!res.ok) {
       const body = await res.json().catch(() => ({}))
@@ -184,9 +183,6 @@ async function handleCancel() {
   }
 }
 
-if (!isLoggedIn.value) {
-  router.push('/admin/login')
-}
 </script>
 
 <template>

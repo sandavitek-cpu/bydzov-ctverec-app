@@ -1,78 +1,21 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
-import { apiBaseUrl, fetchResults, type ResultRow } from '@/api'
-import { Client, type IFrame } from '@stomp/stompjs'
+
+import { useLiveResults } from '@/composables/useLiveResults'
 
 const route = useRoute()
 const year = Number(route.params.rok) || 2026
 
-const results = ref<ResultRow[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
-const wsConnected = ref(false)
-let interval: ReturnType<typeof setInterval> | null = null
-let stompClient: Client | null = null
 
-const wsUrl = apiBaseUrl.replace(/^https?/, 'ws') + '/ws/results'
+const { results, connected: wsConnected, start } = useLiveResults(year)
 
-async function load() {
-  try {
-    const data = await fetchResults(year)
-    results.value = data.results
-    error.value = null
-  } catch (e) {
-    if (!error.value) {
-      error.value = e instanceof Error ? e.message : 'Chyba načítání'
-    }
-  } finally {
-    loading.value = false
-  }
-}
-
-function onWsMessage(frame: IFrame) {
-  try {
-    const data = JSON.parse(frame.body)
-    if (data.year === year) {
-      results.value = data.results
-      error.value = null
-    }
-  } catch {
-  }
-}
-
-onMounted(() => {
-  load()
-
-  stompClient = new Client({
-    brokerURL: wsUrl,
-    reconnectDelay: 5000,
-  })
-
-  stompClient.onConnect = () => {
-    wsConnected.value = true
-    stompClient!.subscribe('/topic/results', onWsMessage)
-  }
-
-  stompClient.onDisconnect = () => {
-    wsConnected.value = false
-  }
-
-  stompClient.onStompError = () => {
-    wsConnected.value = false
-  }
-
-    stompClient.activate()
-
-    interval = setInterval(() => {
-    if (!wsConnected.value) load()
-  }, 15000)
-})
-
-onUnmounted(() => {
-  if (interval) clearInterval(interval)
-  if (stompClient) stompClient.deactivate()
+onMounted(async () => {
+  await start()
+  loading.value = false
 })
 
 const categoryLabel: Record<string, string> = {
