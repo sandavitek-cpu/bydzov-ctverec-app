@@ -27,6 +27,9 @@ public class DatabaseUrlEnvironmentPostProcessor implements EnvironmentPostProce
     if (environment.matchesProfiles("test") || environment.matchesProfiles("dev")) {
       return;
     }
+    if (environment.getPropertySources().contains("active-test-profiles")) {
+      return;
+    }
     String databaseUrl = resolveDatabaseUrl(environment);
     if (databaseUrl == null || databaseUrl.isBlank() || databaseUrl.startsWith("jdbc:")) {
       return;

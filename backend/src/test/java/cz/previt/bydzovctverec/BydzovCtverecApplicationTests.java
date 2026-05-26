@@ -20,6 +20,8 @@ import cz.previt.bydzovctverec.domain.ScheduleItemRepository;
 import cz.previt.bydzovctverec.domain.ScoreRepository;
 import cz.previt.bydzovctverec.domain.User;
 import cz.previt.bydzovctverec.domain.UserRepository;
+import cz.previt.bydzovctverec.domain.VariantConfig;
+import cz.previt.bydzovctverec.domain.VariantConfigRepository;
 import java.time.Instant;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,6 +50,7 @@ class BydzovCtverecApplicationTests {
   @Autowired private ScheduleItemRepository scheduleItemRepository;
   @Autowired private CheckpointRepository checkpointRepository;
   @Autowired private RaceCategoryRepository raceCategoryRepository;
+  @Autowired private VariantConfigRepository variantConfigRepository;
   @Autowired private PasswordEncoder passwordEncoder;
 
   @BeforeEach
@@ -58,9 +61,13 @@ class BydzovCtverecApplicationTests {
     crewMemberRepository.deleteAll();
     racerRegistrationRepository.deleteAll();
     raceCategoryRepository.deleteAll();
+    variantConfigRepository.deleteAll();
     editionRepository.deleteAll();
     userRepository.deleteAll();
-    editionRepository.save(new Edition(2026, "30. ročník Novobydžovského čtverce"));
+    Edition edition = editionRepository.save(new Edition(2026, "30. ročník Novobydžovského čtverce"));
+    variantConfigRepository.save(new VariantConfig(edition, "JEDNODENNI", "Jednodenní závod"));
+    variantConfigRepository.save(new VariantConfig(edition, "DVODENNI_UZAVRENO", "Dvoudenní závod – UZAVŘENO"));
+    variantConfigRepository.save(new VariantConfig(edition, "DVODENNI_BEZ_UBYTOVANI", "Dvoudenní závod bez ubytování"));
   }
 
   @Test
