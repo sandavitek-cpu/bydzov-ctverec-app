@@ -24,6 +24,7 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -63,6 +64,20 @@ public class AdminNotifyController {
     return ResponseEntity.ok(messageLogRepository.findAllByOrderByCreatedAtDesc());
   }
 
+  @GetMapping("/check/{type}")
+  public ResponseEntity<?> check(@PathVariable String type) {
+    var users = resolveUsers(type);
+    var result = users.stream().map(u -> Map.of(
+        "id", u.getId(),
+        "email", u.getEmail(),
+        "username", u.getUsername(),
+        "role", u.getRole().name(),
+        "appRoles", u.getAppRoles().stream().map(AppRole::getName).toList()
+    )).toList();
+    log.info("CHECK {}: {} users found: {}", type, result.size(), result);
+    return ResponseEntity.ok(Map.of("type", type, "users", result));
+  }
+
   @PostMapping
   @Transactional
   public ResponseEntity<?> send(@RequestBody Map<String, String> body) {
@@ -80,7 +95,15 @@ public class AdminNotifyController {
       return ResponseEntity.badRequest().body(Map.of("error", "Chybí zpráva"));
     }
 
+    log.info("SEND type={} subject='{}'", recipientType, subject);
+
+    var allUsersCheck = userRepository.findAll();
+    log.info("SEND all {} users: {}", allUsersCheck.size(),
+        allUsersCheck.stream().map(u -> u.getId() + ":" + u.getEmail() + ":role=" + u.getRole().name() + ":appRoles=" + u.getAppRoles().stream().map(AppRole::getName).toList()).toList());
+
     List<String> emails = resolveRecipients(recipientType);
+    log.info("SEND resolveRecipients({}) returned {} emails: {}", recipientType, emails.size(), emails);
+
     if (emails.isEmpty()) {
       return ResponseEntity.badRequest().body(Map.of("error", "Žádní příjemci"));
     }
@@ -123,38 +146,57 @@ public class AdminNotifyController {
   }
 
   private List<User> resolveUsers(String type) {
+    var all = userRepository.findAll();
     return switch (type) {
-      case "ALL_RACERS" -> {
-        Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
-        if (edition == null) yield List.of();
-        var emails = racerRegistrationRepository.findByEditionOrderByStartNumber(edition).stream()
-            .filter(r -> "PAID".equals(r.getStatus()))
-            .map(RacerRegistration::getEmail)
-            .filter(e -> e != null && !e.isBlank())
-            .distinct()
-            .toList();
-        yield userRepository.findAll().stream()
-            .filter(u -> u.getEmail() != null && emails.contains(u.getEmail()))
-            .toList();
-      }
-      case "ADMINS" -> {
-        var adminRole = appRoleRepository.findByName("ADMIN");
-        yield userRepository.findAll().stream()
-            .filter(u -> u.getRole() == UserRole.ADMIN
-                || (adminRole.isPresent()
-                    && u.getAppRoles().stream().anyMatch(r -> r.getId().equals(adminRole.get().getId()))))
-            .toList();
-      }
-      case "JUDGES" -> {
-        var judgeRole = appRoleRepository.findByName("JUDGE");
-        yield userRepository.findAll().stream()
-            .filter(u -> u.getRole() == UserRole.JUDGE
-                || (judgeRole.isPresent()
-                    && u.getAppRoles().stream().anyMatch(r -> r.getId().equals(judgeRole.get().getId()))))
-            .toList();
-      }
+      case "ALL_RACERS" -> resolveRacers(all);
+      case "ADMINS" -> resolveAdminUsers(all);
+      case "JUDGES" -> resolveJudgeUsers(all);
       default -> List.of();
     };
+  }
+
+  private List<User> resolveRacers(List<User> all) {
+    Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
+    if (edition == null) return List.of();
+    var emails = racerRegistrationRepository.findByEditionOrderByStartNumber(edition).stream()
+        .filter(r -> "PAID".equals(r.getStatus()))
+        .map(RacerRegistration::getEmail)
+        .filter(e -> e != null && !e.isBlank())
+        .distinct()
+        .toList();
+    return all.stream()
+        .filter(u -> u.getEmail() != null && emails.contains(u.getEmail()))
+        .toList();
+  }
+
+  private List<User> resolveAdminUsers(List<User> all) {
+    var adminRole = appRoleRepository.findByName("ADMIN");
+    return all.stream()
+        .filter(u -> u.getRole() == UserRole.ADMIN
+            || (adminRole.isPresent()
+                && u.getAppRoles().stream().anyMatch(r -> r.getId().equals(adminRole.get().getId()))))
+        .toList();
+  }
+
+  private List<User> resolveJudgeUsers(List<User> all) {
+    var judgeRole = appRoleRepository.findByName("JUDGE");
+    var matched = all.stream()
+        .filter(u -> {
+          boolean byRole = u.getRole() == UserRole.JUDGE;
+          boolean byAppRole = judgeRole.isPresent()
+              && u.getAppRoles().stream().anyMatch(r -> r.getId().equals(judgeRole.get().getId()));
+          if (!byRole && !byAppRole) {
+            log.debug("resolveUsers JUDGES: skip user id={} email={} role={} appRoles={}",
+                u.getId(), u.getEmail(), u.getRole(),
+                u.getAppRoles().stream().map(AppRole::getName).toList());
+          }
+          return byRole || byAppRole;
+        })
+        .toList();
+    log.info("resolveUsers JUDGES: {} matched out of {} total users. Matched: {}",
+        matched.size(), all.size(),
+        matched.stream().map(u -> u.getId() + ":" + u.getEmail() + ":role=" + u.getRole()).toList());
+    return matched;
   }
 
   private List<String> resolveRecipients(String type) {
@@ -181,10 +223,16 @@ public class AdminNotifyController {
       }
       case "JUDGES" -> {
         var judgeRole = appRoleRepository.findByName("JUDGE");
-        yield userRepository.findAll().stream()
+        var all = userRepository.findAll();
+        var matched = all.stream()
             .filter(u -> u.getRole() == UserRole.JUDGE
                 || (judgeRole.isPresent()
                     && u.getAppRoles().stream().anyMatch(r -> r.getId().equals(judgeRole.get().getId()))))
+            .toList();
+        log.info("resolveRecipients JUDGES: {} matched out of {} total users. Matched: {}",
+            matched.size(), all.size(),
+            matched.stream().map(u -> u.getId() + ":" + u.getEmail() + ":role=" + u.getRole()).toList());
+        yield matched.stream()
             .map(User::getEmail)
             .filter(e -> e != null && !e.isBlank())
             .toList();
