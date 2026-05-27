@@ -79,6 +79,12 @@ public class ScoreController {
       return ResponseEntity.badRequest().body(new ErrorResponse("Checkpoint not found"));
     }
 
+    boolean exists = scoreRepository.findByCheckpointId(cp.getId()).stream()
+        .anyMatch(s -> s.getRacerRegistration().getId().equals(request.racerRegistrationId()));
+    if (exists) {
+      return ResponseEntity.badRequest().body(new ErrorResponse("Posádka již byla na tomto stanovišti obodována"));
+    }
+
     Score score = new Score(racer, judge, cp, request.points(), request.note(), Instant.now());
     scoreRepository.save(score);
 

@@ -75,7 +75,7 @@ public class AdminScheduleController {
     if (body.containsKey("time")) item.setTime((String) body.get("time"));
     if (body.containsKey("label")) item.setLabel((String) body.get("label"));
     if (body.containsKey("description")) item.setDescription((String) body.get("description"));
-    if (body.containsKey("sortOrder")) item.setSortOrder(((Number) body.get("sortOrder")).intValue());
+    if (body.containsKey("sortOrder") && body.get("sortOrder") instanceof Number n) item.setSortOrder(n.intValue());
     scheduleItemRepository.save(item);
     broadcast();
     return ResponseEntity.ok(toMap(item));

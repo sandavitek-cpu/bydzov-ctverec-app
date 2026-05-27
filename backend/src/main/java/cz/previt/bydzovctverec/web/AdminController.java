@@ -661,11 +661,12 @@ Tým Novobydžovského čtverce
         </div>
         """.formatted(
             edition.getLabel(),
-            escHtml(r.getTeamName()), r.getStartNumber(),
+            escHtml(r.getTeamName()), r.getStartNumber() != null ? r.getStartNumber() : "",
             variantLabel, catLabel, escHtml(r.getVehicleMake()),
-            escHtml(r.getVehiclePlate()), r.getVehicleYear(), r.getCrewCount(),
+            escHtml(r.getVehiclePlate()), r.getVehicleYear() != null ? r.getVehicleYear() : "",
+            r.getCrewCount(),
             "PAID".equals(r.getStatus()) ? "paid" : "unpaid", stLabel,
-            r.getStartFee(), r.getPaymentReference(),
+            r.getStartFee() != null ? r.getStartFee() : "", r.getPaymentReference() != null ? r.getPaymentReference() : "",
             escHtml(r.getFirstName()), escHtml(r.getLastName()),
             r.getDriverAge(), escHtml(r.getPhone()),
             escHtml(r.getEmail()), escHtml(r.getAddress()), escHtml(r.getClub())
@@ -697,7 +698,9 @@ Tým Novobydžovského čtverce
       renderer.setDocumentFromString(html);
       renderer.layout();
       renderer.createPDF(bos);
-      String filename = "prihlaska_%d_%s.pdf".formatted(r.getStartNumber(), r.getTeamName().replaceAll("\\s+", "_"));
+      String teamName = r.getTeamName() != null ? r.getTeamName().replaceAll("\\s+", "_") : "neznámý";
+      String filename = "prihlaska_%d_%s.pdf".formatted(
+          r.getStartNumber() != null ? r.getStartNumber() : 0, teamName);
       return ResponseEntity.ok()
           .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"%s\"".formatted(filename))
           .contentType(MediaType.APPLICATION_PDF)
@@ -718,16 +721,16 @@ Tým Novobydžovského čtverce
     String header = "Startovní číslo,Jméno posádky,E-mail,Telefon,Kategorie,SPZ,Ročník,Počet osob,Startovné,Stav,Schváleno\n";
     String body = regs.stream()
         .map(r -> String.join(",",
-            String.valueOf(r.getStartNumber()),
+            csvEscape(r.getStartNumber() != null ? String.valueOf(r.getStartNumber()) : ""),
             csvEscape(r.getTeamName()),
             csvEscape(r.getEmail()),
             csvEscape(r.getPhone()),
             csvEscape(r.getVehicleCategory()),
             csvEscape(r.getVehiclePlate()),
-            String.valueOf(r.getVehicleYear()),
-            String.valueOf(r.getCrewCount()),
-            String.valueOf(r.getStartFee()),
-            statusLabel(r.getStatus()),
+            csvEscape(r.getVehicleYear() != null ? String.valueOf(r.getVehicleYear()) : ""),
+            csvEscape(String.valueOf(r.getCrewCount())),
+            csvEscape(r.getStartFee() != null ? String.valueOf(r.getStartFee()) : ""),
+            csvEscape(statusLabel(r.getStatus())),
             Boolean.TRUE.equals(r.getApproved()) ? "Ano" : "Ne"))
         .collect(Collectors.joining("\n"));
     return ResponseEntity.ok()

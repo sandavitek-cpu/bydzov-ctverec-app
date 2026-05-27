@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -233,15 +234,14 @@ public class RegistrationController {
   }
 
   @GetMapping("/lookup-user")
-  public ResponseEntity<?> lookupUserByEmail(String email) {
+  public ResponseEntity<?> lookupUserByEmail(@RequestParam String email) {
     if (email == null || email.isBlank()) {
       return ResponseEntity.badRequest().body(Map.of("error", "Email is required"));
     }
     return userRepository.findByEmail(email.trim())
         .map(u -> ResponseEntity.ok(Map.of(
-            "firstName", u.getFirstName(),
-            "lastName", u.getLastName())))
-        .orElse(ResponseEntity.ok(Map.of()));
+            "found", true)))
+        .orElse(ResponseEntity.ok(Map.of("found", false)));
   }
 
   @GetMapping("/lookup/{startNumber}")

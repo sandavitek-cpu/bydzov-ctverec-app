@@ -38,7 +38,7 @@ public class PublicInfoController {
   @GetMapping("/info")
   public Map<String, Object> info() {
     var version = buildProperties.getVersion();
-    var deployedAt = buildProperties.getTime().toString();
+    var deployedAt = buildProperties.getTime() != null ? buildProperties.getTime().toString() : null;
     var changelog = changelogRepository.findAllByOrderByCreatedAtDesc().stream()
         .map(e -> Map.<String, Object>of(
             "version", e.getVersion(),

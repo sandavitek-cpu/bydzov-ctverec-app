@@ -14,4 +14,5 @@ USER spring:spring
 COPY --from=build /app/target/bydzov-ctverec-api.jar app.jar
 EXPOSE 8080
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=80.0"
+ENV SPRING_PROFILES_ACTIVE=production
 ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar"]

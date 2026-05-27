@@ -18,17 +18,6 @@ export class ApiError extends Error {
   }
 }
 
-export async function handleApiError(res: Response): Promise<never> {
-  let message: string
-  try {
-    const body = await res.json()
-    message = body.error ?? body.message ?? `API ${res.status}`
-  } catch {
-    message = `API ${res.status}`
-  }
-  throw new ApiError(message, res.status)
-}
-
 function getToken(): string | null {
   return localStorage.getItem('admin_token')
 }
@@ -88,7 +77,7 @@ async function apiError(res: Response): Promise<string> {
   }
 }
 
-export { apiError as legacyApiError }
+
 
 export async function fetchCurrentEdition() {
   const res = await fetch(`${apiBaseUrl}/api/public/editions/current`)

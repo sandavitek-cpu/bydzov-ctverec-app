@@ -94,7 +94,9 @@ public class AdminRouteController {
     }
     if (body.containsKey("name")) route.setName(body.get("name"));
     if (body.containsKey("avgSpeedKmph")) {
-      try { route.setAvgSpeedKmph(Integer.parseInt(body.get("avgSpeedKmph"))); } catch (Exception ignored) {}
+      try { route.setAvgSpeedKmph(Integer.parseInt(body.get("avgSpeedKmph"))); } catch (NumberFormatException e) {
+        return ResponseEntity.badRequest().body(Map.of("error", "Neplatná hodnota pro průměrnou rychlost"));
+      }
     }
     routeRepository.save(route);
     var points = routePointRepository.findByRouteOrderBySortOrder(route);
@@ -121,11 +123,7 @@ public class AdminRouteController {
     if (route == null) {
       return ResponseEntity.badRequest().body(Map.of("error", "Trasa nenalezena"));
     }
-    if (Boolean.TRUE.equals(route.getPublished())) {
-      route.setPublished(false);
-    } else {
-      route.setPublished(true);
-    }
+    route.setPublished(true);
     routeRepository.save(route);
     var points = routePointRepository.findByRouteOrderBySortOrder(route);
     return ResponseEntity.ok(RouteResponse.from(route, points));
@@ -233,6 +231,7 @@ public class AdminRouteController {
   }
 
   private double toDouble(Object v) {
+    if (v == null) return 0;
     if (v instanceof Number n) return n.doubleValue();
     try { return Double.parseDouble(v.toString()); } catch (Exception e) { return 0; }
   }

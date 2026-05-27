@@ -9,10 +9,11 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
 
 @Entity
-@Table(name = "score")
+@Table(name = "score", uniqueConstraints = @UniqueConstraint(columnNames = {"racer_registration_id", "checkpoint_id"}))
 public class Score {
 
   @Id

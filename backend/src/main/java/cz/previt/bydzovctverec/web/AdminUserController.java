@@ -123,7 +123,9 @@ public class AdminUserController {
     }
     var roleStr = getStr(body, "role");
     if (roleStr != null) {
-      try { user.setRole(UserRole.valueOf(roleStr.toUpperCase())); } catch (IllegalArgumentException e) { /* ignore */ }
+      try { user.setRole(UserRole.valueOf(roleStr.toUpperCase())); } catch (IllegalArgumentException e) {
+        return ResponseEntity.badRequest().body(Map.of("error", "Neplatná role: " + roleStr));
+      }
     }
     userRepository.save(user);
     var respPhone = user.getPhone() != null ? user.getPhone() : "";
@@ -169,7 +171,9 @@ public class AdminUserController {
     var roleStr = getStr(body, "role");
     var userRole = UserRole.RACER;
     if (roleStr != null) {
-      try { userRole = UserRole.valueOf(roleStr.toUpperCase()); } catch (IllegalArgumentException e) { /* fallback to RACER */ }
+      try { userRole = UserRole.valueOf(roleStr.toUpperCase()); } catch (IllegalArgumentException e) {
+        return ResponseEntity.badRequest().body(Map.of("error", "Neplatná role: " + roleStr));
+      }
     }
     var user = new User(email, username, passwordEncoder.encode(password), userRole, firstName, lastName, java.time.Instant.now());
     var phone = getStr(body, "phone");

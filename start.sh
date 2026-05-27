@@ -15,12 +15,25 @@ echo "=== Instaluji závislosti frontendu ==="
 (cd "$ROOT/frontend" && npm install --silent)
 
 echo "=== Spouštím backend (Spring Boot, dev profil — H2) ==="
-(cd "$ROOT/backend" && mvn spring-boot:run -s .mvn/settings.xml -q -Pdev -Dspring-boot.run.profiles=dev) &
+cd "$ROOT/backend"
+mvn spring-boot:run -s .mvn/settings.xml -q -Pdev -Dspring-boot.run.profiles=dev &
 BACKEND_PID=$!
+cd "$ROOT"
+
+echo "=== Čekám na backend ==="
+for i in $(seq 1 30); do
+  if curl -sf http://localhost:8080/api/public/info > /dev/null 2>&1; then
+    echo "Backend ready"
+    break
+  fi
+  sleep 1
+done
 
 echo "=== Spouštím frontend (Vite) ==="
-(cd "$ROOT/frontend" && VITE_API_BASE_URL=http://localhost:8080 npm run dev) &
+cd "$ROOT/frontend"
+VITE_API_BASE_URL=http://localhost:8080 npm run dev &
 FRONTEND_PID=$!
+cd "$ROOT"
 
 echo ""
 echo "Backend:  http://localhost:8080 (dev profil, H2 databáze)"
