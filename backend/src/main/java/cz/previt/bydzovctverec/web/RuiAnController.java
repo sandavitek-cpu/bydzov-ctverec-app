@@ -1,5 +1,6 @@
 package cz.previt.bydzovctverec.web;
 
+import java.net.URI;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,13 +37,13 @@ public class RuiAnController {
         .replace("%", "\\%")
         .replace("_", "\\_");
 
-    String where = "upper(adresa) like upper('%" + escaped + "%') AND nespravny = 'N'";
-    String url = CUZK_ARCGIS_URL + "?where=" + java.net.URLEncoder.encode(where, java.nio.charset.StandardCharsets.UTF_8)
+    String where = "upper(adresa) like upper('%" + escaped + "%') AND (nespravny IS NULL OR nespravny = 'N')";
+    URI uri = URI.create(CUZK_ARCGIS_URL + "?where=" + java.net.URLEncoder.encode(where, java.nio.charset.StandardCharsets.UTF_8)
         + "&outFields=kod,adresa,psc,cislodomovni,cisloorientacni,cisloorientacnipismeno"
-        + "&returnGeometry=false&f=json&resultRecordCount=15";
+        + "&returnGeometry=false&f=json&resultRecordCount=15");
 
     try {
-      var response = restTemplate.getForObject(url, ArcGisResponse.class);
+      var response = restTemplate.getForObject(uri, ArcGisResponse.class);
       if (response == null || response.features == null) {
         return ResponseEntity.ok(List.of());
       }
