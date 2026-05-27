@@ -2,6 +2,15 @@ import L from 'leaflet'
 
 const routeCache = new Map<string, [number, number][]>()
 const addressCache = new Map<string, string>()
+const MAX_CACHE_SIZE = 200
+
+function cacheSet<K, V>(cache: Map<K, V>, key: K, value: V) {
+  if (cache.size >= MAX_CACHE_SIZE) {
+    const firstKey = cache.keys().next().value
+    if (firstKey !== undefined) cache.delete(firstKey)
+  }
+  cache.set(key, value)
+}
 
 export async function fetchRoadRoute(points: { lat: number; lng: number }[]): Promise<[number, number][]> {
   if (points.length < 2) return []
@@ -18,7 +27,7 @@ export async function fetchRoadRoute(points: { lat: number; lng: number }[]): Pr
     const result: [number, number][] = data.routes[0].geometry.coordinates.map(
       (c: [number, number]) => [c[1], c[0]]
     )
-    routeCache.set(key, result)
+    cacheSet(routeCache, key, result)
     return result
   } catch {
     return toLatLng(points)
@@ -102,7 +111,7 @@ export async function reverseGeocode(lat: number, lng: number): Promise<string> 
     const res = await fetch(url, { headers: { 'User-Agent': 'BydzovCtverec/1.0' } })
     const data = await res.json()
     if (data.error) {
-      addressCache.set(key, `${lat.toFixed(4)}, ${lng.toFixed(4)}`)
+      cacheSet(addressCache, key, `${lat.toFixed(4)}, ${lng.toFixed(4)}`)
       return `${lat.toFixed(4)}, ${lng.toFixed(4)}`
     }
     const a = data.address || {}
@@ -110,7 +119,7 @@ export async function reverseGeocode(lat: number, lng: number): Promise<string> 
     const street = parts.join(' ') || data.name || ''
     const village = a.village || a.town || a.city || a.municipality || ''
     const addr = [street, village].filter(Boolean).join(', ') || data.display_name || `${lat.toFixed(4)}, ${lng.toFixed(4)}`
-    addressCache.set(key, addr)
+    cacheSet(addressCache, key, addr)
     return addr
   } catch {
     return `${lat.toFixed(4)}, ${lng.toFixed(4)}`

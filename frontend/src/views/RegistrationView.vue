@@ -68,7 +68,7 @@ onMounted(async () => {
     VARIANTS.value = publicVariants.map(v => ({
       value: v.variantCode,
       label: v.label,
-      deadline: v.registrationDeadline ? new Date(v.registrationDeadline + 'T00:00:00').toLocaleDateString('cs', { day: 'numeric', month: 'numeric', year: 'numeric' }) : '',
+      deadline: v.registrationDeadline ? new Date(v.registrationDeadline + 'T00:00:00Z').toLocaleDateString('cs', { day: 'numeric', month: 'numeric', year: 'numeric' }) : '',
     }))
     FEE.value = fees
   } catch { /* not critical */ }
@@ -108,9 +108,9 @@ async function lookupEmail(email: string, target: { firstName: string; lastName:
   if (!email || !email.includes('@')) return
   try {
     const user = await lookupUserByEmail(email)
-    if (user && user.firstName) {
-      target.firstName = target.firstName || user.firstName
-      target.lastName = target.lastName || user.lastName
+    if (user && user.found && user.firstName) {
+      target.firstName = target.firstName || user.firstName || ''
+      target.lastName = target.lastName || user.lastName || ''
     }
   } catch { /* ignore */ }
 }

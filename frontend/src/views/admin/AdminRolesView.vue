@@ -4,17 +4,19 @@ import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { apiBaseUrl } from '@/api'
+import type { AdminUser } from '@/api'
+import type { AppRole } from '@/types/auth'
 
 const router = useRouter()
 const { isAdmin, authHeaders, logout } = useAuth()
 
-const roles = ref<any[]>([])
-const usersByRole = ref<Record<number, any[]>>({})
+const roles = ref<AppRole[]>([])
+const usersByRole = ref<Record<number, AdminUser[]>>({})
 const loading = ref(true)
 const error = ref<string | null>(null)
 
 const showForm = ref(false)
-const editing = ref<any | null>(null)
+const editing = ref<AppRole | null>(null)
 const formName = ref('')
 const formDisplayName = ref('')
 
@@ -33,12 +35,12 @@ async function load() {
     if (!res.ok) { const body = await res.json().catch(() => ({ error: `HTTP ${res.status}` })); throw new Error(body.error ?? `HTTP ${res.status}`) }
     roles.value = await res.json()
 
-    const entries = await Promise.all(roles.value.map(async (r: any) => {
+    const entries = await Promise.all(roles.value.map(async (r: AppRole) => {
       const ures = await fetch(`${apiBaseUrl}/api/admin/roles/${r.id}/users`, {
         headers: { ...authHeaders() },
       })
       const users = ures.ok ? await ures.json() : []
-      return [r.id, users] as [number, any[]]
+      return [r.id, users] as [number, AdminUser[]]
     }))
     usersByRole.value = Object.fromEntries(entries)
   } catch (e) {
@@ -56,7 +58,7 @@ function startCreate() {
   showForm.value = true
 }
 
-function startEdit(role: any) {
+function startEdit(role: AppRole) {
   editing.value = role
   formName.value = role.name
   formDisplayName.value = role.displayName ?? ''

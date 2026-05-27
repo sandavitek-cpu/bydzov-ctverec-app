@@ -4,16 +4,18 @@ import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { apiBaseUrl, fetchAdminUsers, impersonateUser } from '@/api'
+import type { AdminUser } from '@/api'
+import type { AppRole } from '@/types/auth'
 
 const router = useRouter()
 const { isAdmin, authHeaders, logout, impersonateAs } = useAuth()
 
-const users = ref<any[]>([])
-const roles = ref<any[]>([])
+const users = ref<AdminUser[]>([])
+const roles = ref<AppRole[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const searchQuery = ref('')
-const selectedUser = ref<any | null>(null)
+const selectedUser = ref<AdminUser | null>(null)
 const editFirstName = ref('')
 const editLastName = ref('')
 const editEmail = ref('')
@@ -64,6 +66,7 @@ async function selectUser(id: number) {
     })
     if (res.ok) {
       selectedUser.value = await res.json()
+      if (!selectedUser.value) return
       editFirstName.value = selectedUser.value.firstName
       editLastName.value = selectedUser.value.lastName ?? ''
       editEmail.value = selectedUser.value.email
@@ -426,16 +429,16 @@ onMounted(async () => {
           </div>
         </div>
 
-        <div class="mt-6">
+        <div v-if="selectedUser" class="mt-6">
           <h3 class="text-subsection text-text">Přidat roli</h3>
           <div class="mt-3 flex flex-wrap gap-2">
             <template v-for="r in roles" :key="r.id">
-              <button v-if="!selectedUser.appRoles.some((a: any) => a.id === r.id)"
+              <button v-if="!selectedUser.appRoles.some((a) => a.id === r.id)"
                 @click="addRole(r.id)"
                 class="btn-secondary btn-sm"
               >+ {{ r.displayName }}</button>
             </template>
-            <span v-if="roles.every((r: any) => selectedUser.appRoles.some((a: any) => a.id === r.id))"
+            <span v-if="selectedUser && roles.every((r) => selectedUser!.appRoles.some((a) => a.id === r.id))"
               class="text-body-sm text-text-soft">Uživatel má všechny role</span>
           </div>
         </div>

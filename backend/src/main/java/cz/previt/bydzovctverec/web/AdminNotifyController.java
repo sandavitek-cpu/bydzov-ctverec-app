@@ -74,7 +74,8 @@ public class AdminNotifyController {
         "role", u.getRole().name(),
         "appRoles", u.getAppRoles().stream().map(AppRole::getName).toList()
     )).toList();
-    log.info("CHECK {}: {} users found: {}", type, result.size(), result);
+    log.info("CHECK {}: {} users found", type, result.size());
+    log.debug("CHECK {} users: {}", type, result);
     return ResponseEntity.ok(Map.of("type", type, "users", result));
   }
 
@@ -97,12 +98,9 @@ public class AdminNotifyController {
 
     log.info("SEND type={} subject='{}'", recipientType, subject);
 
-    var allUsersCheck = userRepository.findAll();
-    log.info("SEND all {} users: {}", allUsersCheck.size(),
-        allUsersCheck.stream().map(u -> u.getId() + ":" + u.getEmail() + ":role=" + u.getRole().name() + ":appRoles=" + u.getAppRoles().stream().map(AppRole::getName).toList()).toList());
-
     List<String> emails = resolveRecipients(recipientType);
-    log.info("SEND resolveRecipients({}) returned {} emails: {}", recipientType, emails.size(), emails);
+    log.info("SEND resolveRecipients({}) returned {} emails", recipientType, emails.size());
+    log.debug("SEND emails: {}", emails);
 
     if (emails.isEmpty()) {
       return ResponseEntity.badRequest().body(Map.of("error", "Žádní příjemci"));
@@ -193,8 +191,8 @@ public class AdminNotifyController {
           return byRole || byAppRole;
         })
         .toList();
-    log.info("resolveUsers JUDGES: {} matched out of {} total users. Matched: {}",
-        matched.size(), all.size(),
+    log.info("resolveUsers JUDGES: {} matched out of {} total users", matched.size(), all.size());
+    log.debug("resolveUsers JUDGES matched: {}",
         matched.stream().map(u -> u.getId() + ":" + u.getEmail() + ":role=" + u.getRole()).toList());
     return matched;
   }
@@ -229,8 +227,8 @@ public class AdminNotifyController {
                 || (judgeRole.isPresent()
                     && u.getAppRoles().stream().anyMatch(r -> r.getId().equals(judgeRole.get().getId()))))
             .toList();
-        log.info("resolveRecipients JUDGES: {} matched out of {} total users. Matched: {}",
-            matched.size(), all.size(),
+        log.info("resolveRecipients JUDGES: {} matched out of {} total users", matched.size(), all.size());
+        log.debug("resolveRecipients JUDGES matched: {}",
             matched.stream().map(u -> u.getId() + ":" + u.getEmail() + ":role=" + u.getRole()).toList());
         yield matched.stream()
             .map(User::getEmail)

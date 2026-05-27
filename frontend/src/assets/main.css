@@ -4,26 +4,47 @@
 
 :root {
   --bg: #FFFFFF;
+  --bg-rgb: 255 255 255;
   --bg-alt: #F3F4F6;
+  --bg-alt-rgb: 243 244 246;
   --surface: #FFFFFF;
+  --surface-rgb: 255 255 255;
   --surface-2: #F9FAFB;
+  --surface-2-rgb: 249 250 251;
   --surface-strong: #E5E7EB;
+  --surface-strong-rgb: 229 231 235;
   --border: #D1D5DB;
+  --border-rgb: 209 213 219;
   --border-strong: #9CA3AF;
+  --border-strong-rgb: 156 163 175;
   --text: #111827;
+  --text-rgb: 17 24 39;
   --text-muted: #4B5563;
+  --text-muted-rgb: 75 85 99;
   --text-soft: #6B7280;
+  --text-soft-rgb: 107 114 128;
   --text-inverse: #FFFFFF;
+  --text-inverse-rgb: 255 255 255;
   --primary: #09097B;
+  --primary-rgb: 9 9 123;
   --primary-hover: #070763;
+  --primary-hover-rgb: 7 7 99;
   --primary-active: #05054B;
+  --primary-active-rgb: 5 5 75;
   --red: #DC2626;
+  --red-rgb: 220 38 38;
   --red-hover: #B91C1C;
+  --red-hover-rgb: 185 28 28;
   --red-light: #FEE2E2;
+  --red-light-rgb: 254 226 226;
   --success: #16A34A;
+  --success-rgb: 22 163 74;
   --warning: #D97706;
+  --warning-rgb: 217 119 6;
   --error: #DC2626;
+  --error-rgb: 220 38 38;
   --info: #2563EB;
+  --info-rgb: 37 99 235;
   --radius-sm: 4px;
   --radius-md: 6px;
   --radius-lg: 8px;
@@ -32,6 +53,54 @@
   --shadow-sm: 0 2px 6px rgba(42,36,28,0.06);
   --shadow-md: 0 8px 20px rgba(42,36,28,0.10);
   --shadow-lg: 0 16px 40px rgba(42,36,28,0.14);
+}
+
+.dark {
+  --bg: #0F172A;
+  --bg-rgb: 15 23 42;
+  --bg-alt: #1E293B;
+  --bg-alt-rgb: 30 41 59;
+  --surface: #1E293B;
+  --surface-rgb: 30 41 59;
+  --surface-2: #334155;
+  --surface-2-rgb: 51 65 85;
+  --surface-strong: #475569;
+  --surface-strong-rgb: 71 85 105;
+  --border: #475569;
+  --border-rgb: 71 85 105;
+  --border-strong: #64748B;
+  --border-strong-rgb: 100 116 139;
+  --text: #F1F5F9;
+  --text-rgb: 241 245 249;
+  --text-muted: #CBD5E1;
+  --text-muted-rgb: 203 213 225;
+  --text-soft: #94A3B8;
+  --text-soft-rgb: 148 163 184;
+  --text-inverse: #0F172A;
+  --text-inverse-rgb: 15 23 42;
+  --primary: #818CF8;
+  --primary-rgb: 129 140 248;
+  --primary-hover: #A5B4FC;
+  --primary-hover-rgb: 165 180 252;
+  --primary-active: #C7D2FE;
+  --primary-active-rgb: 199 210 254;
+  --red: #F87171;
+  --red-rgb: 248 113 113;
+  --red-hover: #FCA5A5;
+  --red-hover-rgb: 252 165 165;
+  --red-light: #450A0A;
+  --red-light-rgb: 69 10 10;
+  --success: #4ADE80;
+  --success-rgb: 74 222 128;
+  --warning: #FBBF24;
+  --warning-rgb: 251 191 36;
+  --error: #F87171;
+  --error-rgb: 248 113 113;
+  --info: #60A5FA;
+  --info-rgb: 96 165 250;
+  --shadow-sm: 0 2px 6px rgba(0,0,0,0.25);
+  --shadow-md: 0 8px 20px rgba(0,0,0,0.35);
+  --shadow-lg: 0 16px 40px rgba(0,0,0,0.45);
 }
 
 body {
@@ -49,6 +118,11 @@ body {
 ::-webkit-scrollbar-track { background: var(--bg-alt); }
 ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-soft); }
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 300ms;
+}
 
 @layer base {
   body {
@@ -169,15 +243,19 @@ body {
     line-height: 16px;
     font-weight: 600;
     border-radius: var(--radius-md);
-    transition: background-color 160ms ease-out;
+    transition: background-color 160ms ease-out, transform 160ms ease-out, box-shadow 160ms ease-out;
     cursor: pointer;
     border: none;
+    will-change: transform;
   }
   .btn-primary:hover {
     background-color: var(--primary-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   }
   .btn-primary:active {
     background-color: var(--primary-active);
+    transform: translateY(0);
   }
   .btn-primary:disabled {
     opacity: 0.5;
@@ -204,11 +282,14 @@ body {
     font-size: 14px;
     line-height: 16px;
     font-weight: 600;
-    transition: background-color 160ms ease-out;
+    transition: background-color 160ms ease-out, transform 160ms ease-out, box-shadow 160ms ease-out;
     cursor: pointer;
+    will-change: transform;
   }
   .btn-secondary:hover {
     background-color: var(--bg-alt);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
   }
   .btn-secondary:disabled {
     opacity: 0.5;
@@ -269,7 +350,7 @@ body {
   .input-field:focus {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(9,9,123,0.14);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent);
   }
 
   .input-label {
@@ -402,13 +483,24 @@ body {
     color: var(--primary);
   }
   .admin-sidebar-section {
-    padding: 8px 20px 4px;
-    font-size: 12px;
+    padding: 16px 20px 4px;
+    font-size: 11px;
     line-height: 16px;
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
     color: var(--text-soft);
+    position: relative;
+  }
+  .admin-sidebar-section::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 20px;
+    right: 20px;
+    height: 1px;
+    background: var(--border);
+    opacity: 0.5;
   }
 
   .heritage-year {
@@ -446,6 +538,36 @@ body {
   @keyframes spin {
     to { transform: rotate(360deg); }
   }
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  @keyframes fade-in-up {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .shimmer {
+    background: linear-gradient(90deg, var(--surface-strong) 25%, var(--surface-2) 50%, var(--surface-strong) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+
+  .fade-in-up {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  }
+  .fade-in-up.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .fade-in-up.delay-1 { transition-delay: 0.1s; }
+  .fade-in-up.delay-2 { transition-delay: 0.2s; }
+  .fade-in-up.delay-3 { transition-delay: 0.3s; }
+  .fade-in-up.delay-4 { transition-delay: 0.4s; }
 
   .dropdown-menu {
     border-radius: var(--radius-lg);

@@ -1,18 +1,19 @@
 import { ref } from 'vue'
 
-interface Toast {
+export interface ToastItem {
   id: number
   message: string
   type: 'success' | 'error' | 'info'
+  duration: number
 }
 
-const toasts = ref<Toast[]>([])
+const toasts = ref<ToastItem[]>([])
 let nextId = 0
 
 export function useToast() {
-  function show(message: string, type: Toast['type'] = 'info', duration = 4000) {
+  function show(message: string, type: ToastItem['type'] = 'info', duration = 4000) {
     const id = nextId++
-    toasts.value.push({ id, message, type })
+    toasts.value.push({ id, message, type, duration })
     setTimeout(() => {
       const idx = toasts.value.findIndex(t => t.id === id)
       if (idx !== -1) toasts.value.splice(idx, 1)

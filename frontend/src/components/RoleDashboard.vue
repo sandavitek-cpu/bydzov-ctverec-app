@@ -4,6 +4,54 @@ import { RouterLink } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { apiBaseUrl, lookupRacerByStartNumber, submitScore } from '@/api'
+import type { RacerLookup, ScheduleItemData } from '@/api'
+import type { AdminStats, AdminReg } from '@/types/registration'
+
+/** Inline types for RoleDashboard-specific API shapes */
+
+interface JudgeCheckpoint {
+  id: number
+  sortOrder: number
+  name: string
+  maxPoints: number | null
+  volunteers: string[]
+}
+
+interface RacerFullProfile {
+  id: number
+  startNumber: number
+  teamName: string
+  vehicleCategory: string
+  vehiclePlate: string
+  startFee: number
+  status: string
+  approved: boolean
+  rank?: number
+  totalRacers?: number
+  totalPoints?: number
+  scores?: unknown[]
+}
+
+interface RacerStanding {
+  rank: number
+  totalRacers: number
+  totalPoints: number
+  scores: unknown[]
+}
+
+interface CheckpointProgressItem {
+  id: number
+  sortOrder: number
+  name: string
+  scoredCount: number
+  totalRacers: number
+  complete: boolean
+}
+
+interface CheckpointProgressData {
+  overall: { total: number; complete: number; incomplete: number }
+  checkpoints: CheckpointProgressItem[]
+}
 
 const { hasAdmin, hasJudge, hasRacer, name, authHeaders } = useAuth()
 
@@ -15,13 +63,13 @@ const role = computed(() => {
 })
 
 const loading = ref(true)
-const stats = ref<any>(null)
-const registrations = ref<any[]>([])
-const checkpoints = ref<any[]>([])
-const racerRegistration = ref<any>(null)
-const racerStanding = ref<any>(null)
-const schedule = ref<any[]>([])
-const checkpointProgress = ref<any>(null)
+const stats = ref<AdminStats | null>(null)
+const registrations = ref<AdminReg[]>([])
+const checkpoints = ref<JudgeCheckpoint[]>([])
+const racerRegistration = ref<RacerFullProfile | null>(null)
+const racerStanding = ref<RacerStanding | null>(null)
+const schedule = ref<ScheduleItemData[]>([])
+const checkpointProgress = ref<CheckpointProgressData | null>(null)
 const error = ref<string | null>(null)
 
 const categoryLabel: Record<string, string> = {
@@ -49,7 +97,7 @@ onMounted(async () => {
       const res = await fetch(`${apiBaseUrl}/api/racer/checkpoints`, { headers: h })
       if (res.ok) {
         const all = await res.json()
-        checkpoints.value = all.filter((cp: any) =>
+        checkpoints.value = all.filter((cp: JudgeCheckpoint) =>
           cp.volunteers?.some((v: string) => v === name.value)
         )
         if (checkpoints.value.length > 0) {
@@ -84,7 +132,7 @@ onMounted(async () => {
 const quickStartNumber = ref<number | null>(null)
 const quickCheckpointId = ref<number | null>(null)
 const quickPoints = ref<number | null>(null)
-const quickRacer = ref<any>(null)
+const quickRacer = ref<RacerLookup | null>(null)
 const quickSaving = ref(false)
 const quickError = ref<string | null>(null)
 const quickSuccess = ref(false)

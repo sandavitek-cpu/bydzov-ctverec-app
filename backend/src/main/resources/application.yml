@@ -9,11 +9,13 @@ spring:
       maximum-pool-size: 5
       minimum-idle: 0
   flyway:
-    enabled: false
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     properties:
       hibernate:
         jdbc:
@@ -39,6 +41,9 @@ jwt:
 logging:
   file:
     name: ${LOG_FILE:logs/application.log}
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} [%X{correlationId}] - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} [%X{correlationId}] - %msg%n"
 
 server:
   port: ${PORT:8080}

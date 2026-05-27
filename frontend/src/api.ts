@@ -3,6 +3,7 @@ export const apiBaseUrl =
 
 const apiVersionPrefix = import.meta.env.VITE_API_VERSION ?? ''
 
+
 export function apiVersionedUrl(path: string): string {
   return `${apiBaseUrl}/api${apiVersionPrefix}${path}`
 }
@@ -165,8 +166,9 @@ export async function lookupRacerByStartNumber(startNumber: number) {
 }
 
 export interface UserLookup {
-  firstName: string
-  lastName: string
+  found: boolean
+  firstName?: string
+  lastName?: string
 }
 
 export async function lookupUserByEmail(email: string) {

@@ -1,42 +1,43 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: ['./index.html', './src/**/*.{vue,js,ts,jsx,tsx}'],
   theme: {
     extend: {
       colors: {
         bg: {
-          DEFAULT: '#FFFFFF',
-          alt: '#F3F4F6',
+          DEFAULT: 'rgb(var(--bg-rgb) / <alpha-value>)',
+          alt: 'rgb(var(--bg-alt-rgb) / <alpha-value>)',
         },
         surface: {
-          DEFAULT: '#FFFFFF',
-          2: '#F9FAFB',
-          strong: '#E5E7EB',
+          DEFAULT: 'rgb(var(--surface-rgb) / <alpha-value>)',
+          2: 'rgb(var(--surface-2-rgb) / <alpha-value>)',
+          strong: 'rgb(var(--surface-strong-rgb) / <alpha-value>)',
         },
         border: {
-          DEFAULT: '#D1D5DB',
-          strong: '#9CA3AF',
+          DEFAULT: 'rgb(var(--border-rgb) / <alpha-value>)',
+          strong: 'rgb(var(--border-strong-rgb) / <alpha-value>)',
         },
         text: {
-          DEFAULT: '#111827',
-          muted: '#4B5563',
-          soft: '#6B7280',
-          inverse: '#FFFFFF',
+          DEFAULT: 'rgb(var(--text-rgb) / <alpha-value>)',
+          muted: 'rgb(var(--text-muted-rgb) / <alpha-value>)',
+          soft: 'rgb(var(--text-soft-rgb) / <alpha-value>)',
+          inverse: 'rgb(var(--text-inverse-rgb) / <alpha-value>)',
         },
         primary: {
-          DEFAULT: '#09097B',
-          hover: '#070763',
-          active: '#05054B',
+          DEFAULT: 'rgb(var(--primary-rgb) / <alpha-value>)',
+          hover: 'rgb(var(--primary-hover-rgb) / <alpha-value>)',
+          active: 'rgb(var(--primary-active-rgb) / <alpha-value>)',
         },
         red: {
-          DEFAULT: '#DC2626',
-          hover: '#B91C1C',
-          light: '#FEE2E2',
+          DEFAULT: 'rgb(var(--red-rgb) / <alpha-value>)',
+          hover: 'rgb(var(--red-hover-rgb) / <alpha-value>)',
+          light: 'rgb(var(--red-light-rgb) / <alpha-value>)',
         },
-        success: '#16A34A',
-        warning: '#D97706',
-        error: '#DC2626',
-        info: '#2563EB',
+        success: 'rgb(var(--success-rgb) / <alpha-value>)',
+        warning: 'rgb(var(--warning-rgb) / <alpha-value>)',
+        error: 'rgb(var(--error-rgb) / <alpha-value>)',
+        info: 'rgb(var(--info-rgb) / <alpha-value>)',
       },
       fontFamily: {
         display: ['"Bebas Neue"', 'sans-serif'],

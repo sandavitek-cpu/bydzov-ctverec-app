@@ -52,7 +52,7 @@ public class JudgeController {
 
     List<Checkpoint> allCheckpoints = checkpointRepository.findByEditionOrderBySortOrder(edition);
     List<Checkpoint> assignedCheckpoints = allCheckpoints.stream()
-        .filter(cp -> cp.getVolunteers() != null && cp.getVolunteers().stream().anyMatch(v -> judgeName.equalsIgnoreCase(v.trim())))
+        .filter(cp -> cp.getVolunteers() != null && cp.getVolunteers().stream().anyMatch(v -> v != null && judgeName.equalsIgnoreCase(v.trim())))
         .toList();
 
     Set<Long> assignedCheckpointIds = new HashSet<>();

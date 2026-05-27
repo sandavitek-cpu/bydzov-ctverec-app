@@ -147,35 +147,34 @@ onMounted(load)
   <div class="relative min-h-screen">
     <!-- Fullscreen presentation overlay -->
     <div v-if="showOverlay"
-      class="fixed inset-0 z-[99999] flex flex-col items-center justify-center cursor-pointer select-none"
-      style="background: rgba(0,0,0,0.92)"
+      class="fixed inset-0 z-[99999] flex flex-col items-center justify-center cursor-pointer select-none ceremony-overlay"
       @click="overlayPhase === 'reveal' && nextSlide()"
     >
       <template v-if="overlayPhase === 'countdown'">
-        <div class="text-[15vw] font-black text-white" style="animation: ceremonyPulse 1s ease-in-out infinite">
+        <div class="text-[15vw] font-black ceremony-overlay-text ceremony-pulse">
           {{ overlayCountdown }}
         </div>
-        <p class="text-xl text-white/60 mt-4 tracking-widest uppercase">
+        <p class="text-xl ceremony-overlay-secondary mt-4 tracking-widest uppercase">
           {{ overlayCountdown === 3 ? 'Připravte se…' : overlayCountdown === 2 ? 'Bubnování…' : 'A vítězem se stává…' }}
         </p>
-        <p class="text-lg text-white/40 mt-2">{{ overlaySlide?.title }}</p>
+        <p class="text-lg ceremony-overlay-muted mt-2">{{ overlaySlide?.title }}</p>
       </template>
       <template v-else>
-        <div class="text-7xl sm:text-9xl mb-6" style="animation: ceremonyBounce 1s ease-in-out infinite">
+        <div class="text-7xl sm:text-9xl mb-6 ceremony-bounce">
           {{ overlaySlide?.rank === 1 ? '🏆' : overlaySlide?.rank === 2 ? '🥈' : overlaySlide?.rank === 3 ? '🥉' : '🏅' }}
         </div>
-        <p class="text-2xl text-white/60 mb-2">{{ overlaySlide?.title }}</p>
-        <p class="text-4xl sm:text-[8vw] font-black text-white text-center px-4 leading-tight">
+        <p class="text-2xl ceremony-overlay-secondary mb-2">{{ overlaySlide?.title }}</p>
+        <p class="text-4xl sm:text-[8vw] font-black ceremony-overlay-text text-center px-4 leading-tight">
           {{ overlaySlide?.winnerName || 'Bez vítěze' }}
         </p>
-        <div class="flex gap-6 mt-6 text-xl text-white/50">
+        <div class="flex gap-6 mt-6 text-xl ceremony-overlay-tertiary">
           <span v-if="overlaySlide?.winnerNumber">#{{ overlaySlide.winnerNumber }}</span>
           <span v-if="overlaySlide?.winnerPoints != null">{{ overlaySlide.winnerPoints }} bodů</span>
-          <span v-if="overlaySlide?.teamName && overlaySlide.teamName !== overlaySlide.winnerName" class="text-white/30">
+          <span v-if="overlaySlide?.teamName && overlaySlide.teamName !== overlaySlide.winnerName" class="opacity-50">
             {{ overlaySlide.teamName }}
           </span>
         </div>
-        <p class="mt-12 text-sm text-white/30">Kliknutím pokračovat</p>
+        <p class="mt-12 text-sm ceremony-overlay-muted">Kliknutím pokračovat</p>
       </template>
     </div>
 
@@ -247,6 +246,27 @@ onMounted(load)
 </template>
 
 <style scoped>
+.ceremony-overlay {
+  background: rgba(0, 0, 0, 0.92);
+}
+.ceremony-overlay-text {
+  color: #fff;
+}
+.ceremony-overlay-secondary {
+  color: rgba(255, 255, 255, 0.6);
+}
+.ceremony-overlay-tertiary {
+  color: rgba(255, 255, 255, 0.5);
+}
+.ceremony-overlay-muted {
+  color: rgba(255, 255, 255, 0.3);
+}
+.ceremony-pulse {
+  animation: ceremonyPulse 1s ease-in-out infinite;
+}
+.ceremony-bounce {
+  animation: ceremonyBounce 1s ease-in-out infinite;
+}
 @keyframes ceremonyPulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }

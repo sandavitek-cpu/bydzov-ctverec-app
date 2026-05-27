@@ -74,7 +74,7 @@ public class AccountController {
     var email = body.get("email");
     var phone = body.get("phone");
     if (firstName != null && !firstName.isBlank()) u.setFirstName(firstName);
-    if (lastName != null) u.setLastName(lastName);
+    if (lastName != null && !lastName.isBlank()) u.setLastName(lastName);
     if (email != null && !email.isBlank()) {
       if (!email.equals(u.getEmail()) && userRepository.findByEmail(email).isPresent()) {
         return ResponseEntity.badRequest().body(Map.of("error", "Email již existuje"));

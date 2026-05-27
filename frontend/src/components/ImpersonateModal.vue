@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { apiBaseUrl, impersonateUser } from '@/api'
+import type { AdminUser } from '@/api'
 
 const router = useRouter()
 const { authHeaders, impersonateAs } = useAuth()
@@ -12,7 +13,7 @@ const emit = defineEmits<{
   'close': []
 }>()
 
-const users = ref<any[]>([])
+const users = ref<AdminUser[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const searchQuery = ref('')
@@ -22,7 +23,7 @@ const impersonatingId = ref<number | null>(null)
 const filteredUsers = computed(() => {
   if (!searchQuery.value) return users.value
   const q = searchQuery.value.toLowerCase()
-  return users.value.filter((u: any) =>
+  return users.value.filter((u: AdminUser) =>
     u.name.toLowerCase().includes(q) ||
     u.email.toLowerCase().includes(q) ||
     u.username.toLowerCase().includes(q)

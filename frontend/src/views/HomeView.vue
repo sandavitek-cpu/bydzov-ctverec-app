@@ -2,10 +2,13 @@
 import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import { useScrollAnimation } from '@/composables/useScrollAnimation'
 import { fetchCurrentEdition } from '@/api'
 import RoleDashboard from '@/components/RoleDashboard.vue'
 
 const { isLoggedIn, hasAdmin, hasJudge, hasRacer } = useAuth()
+
+useScrollAnimation()
 
 const loading = ref(true)
 const error = ref<string | null>(null)
@@ -24,11 +27,28 @@ onMounted(async () => {
 
 <template>
   <RoleDashboard v-if="isLoggedIn && (hasAdmin || hasJudge || hasRacer)" />
-  <div v-else class="space-y-16">
+  <div v-else class="space-y-20">
     <!-- Hero -->
-    <section class="relative overflow-hidden rounded-xl bg-surface-strong px-4 sm:px-8 py-8 sm:py-12 lg:py-20 mb-4 border-l-4 border-l-red">
-      <div class="absolute inset-0 opacity-[0.03] pointer-events-none select-none" style="background-image: repeating-linear-gradient(45deg, transparent, transparent 40px, currentColor 40px, currentColor 41px);"></div>
-      <div class="relative z-10">
+    <section class="relative overflow-hidden rounded-xl min-h-[320px] sm:min-h-[400px] flex items-center px-6 sm:px-10 py-10 sm:py-16 lg:py-24 border-l-4 border-l-red"
+      style="background: linear-gradient(135deg, var(--bg-alt) 0%, var(--surface-strong) 50%, var(--bg-alt) 100%);"
+    >
+      <div class="absolute inset-0 opacity-[0.04] pointer-events-none select-none"
+        style="background-image:
+          linear-gradient(45deg, var(--text) 25%, transparent 25%),
+          linear-gradient(-45deg, var(--text) 25%, transparent 25%),
+          linear-gradient(45deg, transparent 75%, var(--text) 75%),
+          linear-gradient(-45deg, transparent 75%, var(--text) 75%);
+          background-size: 60px 60px;
+          background-position: 0 0, 0 30px, 30px -30px, -30px 0px;
+        "
+      ></div>
+      <div class="absolute top-0 right-0 w-1/3 h-full opacity-[0.06] pointer-events-none select-none"
+        style="background: radial-gradient(ellipse at center, var(--primary) 0%, transparent 70%);"
+      ></div>
+      <div class="absolute bottom-0 left-0 w-1/2 h-1/2 opacity-[0.04] pointer-events-none select-none"
+        style="background: radial-gradient(ellipse at center, var(--red) 0%, transparent 70%);"
+      ></div>
+      <div class="relative z-10 w-full">
         <p class="text-meta text-text-soft uppercase tracking-[0.12em]">30. ročník – 20.–21. června 2026</p>
         <h1 class="text-hero text-text mt-2">Novobydžovský Čtverec</h1>
         <p class="font-accent text-xl italic text-red mt-1">Memoriál Elišky Junkové</p>
@@ -49,7 +69,7 @@ onMounted(async () => {
     </section>
 
     <!-- About -->
-    <section>
+    <section class="fade-in-up">
       <h2 class="text-section-title text-text">O závodě</h2>
       <div class="mt-4 max-w-3xl text-body-lg text-text-muted space-y-4 leading-relaxed">
         <p>
@@ -73,24 +93,33 @@ onMounted(async () => {
 
     <!-- Why -->
     <section class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-      <div v-for="item in [
-        { icon: '🚗', title: 'Spoustu krásných vozidel', text: 'Historické automobily a motocykly všeho druhu' },
-        { icon: '🤝', title: 'Přátelská atmosféra', text: 'Mezi příznivci panuje více než přátelská atmosféra' },
-        { icon: '🎵', title: 'Živá hudba', text: 'Doprovodný program po celý den' },
-        { icon: '🍴', title: 'Stánky s občerstvením', text: 'Občerstvení po celou dobu závodu' },
-        { icon: '🧒', title: 'Dětský koutek', text: 'Zábava i pro nejmenší návštěvníky' },
-        { icon: '🏎️', title: 'Příjemná vyjížďka', text: 'Vyrazte se svým vozem do okolí' },
-        { icon: '📍', title: 'Spousta kontrol', text: 'Kontrolní stanoviště s různorodými úkoly' },
-        { icon: '🏆', title: 'Hodnotné ceny', text: 'Pamětní list pro každého účastníka' },
-      ]" :key="item.title" class="card text-center">
-        <span class="text-3xl">{{ item.icon }}</span>
-        <h3 class="text-subsection text-text mt-2">{{ item.title }}</h3>
+      <div v-for="(item, i) in [
+        { icon: 'car', title: 'Spoustu krásných vozidel', text: 'Historické automobily a motocykly všeho druhu' },
+        { icon: 'handshake', title: 'Přátelská atmosféra', text: 'Mezi příznivci panuje více než přátelská atmosféra' },
+        { icon: 'music', title: 'Živá hudba', text: 'Doprovodný program po celý den' },
+        { icon: 'food', title: 'Stánky s občerstvením', text: 'Občerstvení po celou dobu závodu' },
+        { icon: 'kids', title: 'Dětský koutek', text: 'Zábava i pro nejmenší návštěvníky' },
+        { icon: 'road', title: 'Příjemná vyjížďka', text: 'Vyrazte se svým vozem do okolí' },
+        { icon: 'map', title: 'Spousta kontrol', text: 'Kontrolní stanoviště s různorodými úkoly' },
+        { icon: 'trophy', title: 'Hodnotné ceny', text: 'Pamětní list pro každého účastníka' },
+      ]" :key="item.title" class="card text-center fade-in-up" :class="'delay-' + ((i % 4) + 1)">
+        <span class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 text-primary">
+          <svg v-if="item.icon === 'car'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M14 10h-2m-4 0H6m12 0h-2M5 13l1.2-3.6A2 2 0 018.1 8h7.8a2 2 0 011.9 1.4L19 13m-1 4h-1a2 2 0 01-2-2v-1m-6 3h-1a2 2 0 01-2-2v-1m10-5V7a2 2 0 00-2-2H8a2 2 0 00-2 2v2"/></svg>
+          <svg v-else-if="item.icon === 'handshake'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 9h4l2 3 3-3 3 3 2-3h4M4 15h4l2-3 3 3 3-3 2 3h4"/></svg>
+          <svg v-else-if="item.icon === 'music'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19V6l12-3v13M9 19a3 3 0 11-6 0 3 3 0 016 0zm12-3a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          <svg v-else-if="item.icon === 'food'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <svg v-else-if="item.icon === 'kids'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+          <svg v-else-if="item.icon === 'road'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          <svg v-else-if="item.icon === 'map'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+          <svg v-else-if="item.icon === 'trophy'" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 3h12v4a6 6 0 11-12 0V3zm0 0H3v2a4 4 0 004 4h2m10-6h3v2a4 4 0 01-4 4h-2m-4 10v2m0-2a4 4 0 01-4-4h8a4 4 0 01-4 4z"/></svg>
+        </span>
+        <h3 class="text-subsection text-text mt-3">{{ item.title }}</h3>
         <p class="text-body-sm text-text-muted mt-1">{{ item.text }}</p>
       </div>
     </section>
 
     <!-- Conditions -->
-    <section class="rounded-xl bg-surface-strong px-4 sm:px-8 py-8 border-l-4 border-l-primary">
+    <section class="rounded-xl bg-surface-strong px-4 sm:px-8 py-8 border-l-4 border-l-primary fade-in-up">
       <h2 class="text-section-title text-text">Podmínky závodníka</h2>
       <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div class="flex items-center gap-3">
@@ -113,7 +142,7 @@ onMounted(async () => {
     </section>
 
     <!-- Program -->
-    <section>
+    <section class="fade-in-up">
       <div class="flex items-center gap-3 mb-1">
         <h2 class="text-section-title text-text">Program</h2>
         <span class="hidden sm:inline h-px flex-1 bg-border"></span>
@@ -168,7 +197,7 @@ onMounted(async () => {
     </section>
 
     <!-- Fee -->
-    <section>
+    <section class="fade-in-up">
       <div class="flex items-center gap-3 mb-1">
         <h2 class="text-section-title text-text">Ceník startovného</h2>
         <span class="hidden sm:inline h-px flex-1 bg-border"></span>
@@ -225,7 +254,7 @@ onMounted(async () => {
     </section>
 
     <!-- Categories -->
-    <section class="rounded-xl bg-surface-strong px-8 py-8">
+    <section class="rounded-xl bg-surface-strong px-8 py-8 fade-in-up">
       <h2 class="text-section-title text-text">Závodní kategorie</h2>
       <div class="mt-6 grid gap-6 sm:grid-cols-2">
         <div>
@@ -256,7 +285,7 @@ onMounted(async () => {
     </section>
 
     <!-- Contact -->
-    <section class="card text-center">
+    <section class="card text-center fade-in-up">
       <p class="text-body-lg text-text-muted">Pro více informací nás neváhejte kontaktovat.</p>
       <p class="text-section-title text-text mt-2">Těšíme se na Vás!</p>
       <div class="mt-6">

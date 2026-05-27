@@ -63,6 +63,7 @@ const selectedIds = ref<Set<number>>(new Set())
 const batchProcessing = ref(false)
 
 const raceStatus = ref<{ started: boolean; finished: boolean } | null>(null)
+const raceLoading = ref<'start' | 'finish' | 'reset' | null>(null)
 
 const filtered = computed(() => {
   let list = registrations.value
@@ -137,6 +138,7 @@ async function fetchRaceStatus() {
 }
 
 async function handleRaceStart() {
+  raceLoading.value = 'start'
   try {
     const res = await authFetch(`${apiBaseUrl}/api/admin/race/start`, {
       method: 'POST',
@@ -145,9 +147,11 @@ async function handleRaceStart() {
     await fetchRaceStatus()
     showToast('Závod zahájen!', 'success')
   } catch { showToast('Chyba při spouštění závodu', 'error') }
+  finally { raceLoading.value = null }
 }
 
 async function handleRaceFinish() {
+  raceLoading.value = 'finish'
   try {
     const res = await authFetch(`${apiBaseUrl}/api/admin/race/finish`, {
       method: 'POST',
@@ -156,9 +160,11 @@ async function handleRaceFinish() {
     await fetchRaceStatus()
     showToast('Závod ukončen!', 'success')
   } catch { showToast('Chyba při ukončování závodu', 'error') }
+  finally { raceLoading.value = null }
 }
 
 async function handleRaceReset() {
+  raceLoading.value = 'reset'
   try {
     const res = await authFetch(`${apiBaseUrl}/api/admin/race/reset`, {
       method: 'POST',
@@ -167,6 +173,7 @@ async function handleRaceReset() {
     await fetchRaceStatus()
     showToast('Závod resetován', 'info')
   } catch { showToast('Chyba při resetu závodu', 'error') }
+  finally { raceLoading.value = null }
 }
 
 async function fetchAll() {
@@ -493,6 +500,7 @@ async function loadVariantConfigs() {
 
     <RaceControls
       :race-status="raceStatus"
+      :loading="raceLoading"
       @start="handleRaceStart"
       @finish="handleRaceFinish"
       @reset="handleRaceReset"

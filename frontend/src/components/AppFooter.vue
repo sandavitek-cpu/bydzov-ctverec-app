@@ -7,8 +7,8 @@ import logoPrevit from '@/assets/logo_previt.png'
   <footer class="bg-surface-strong mt-12 shrink-0">
     <div class="h-0.5 w-full" style="background: linear-gradient(90deg, var(--red), var(--primary), var(--red))"></div>
     <div class="mx-auto max-w-wide px-4 lg:px-8 py-10">
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-        <div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 text-center sm:text-left">
+        <div class="flex flex-col items-center sm:items-start">
           <div class="flex items-center gap-2 mb-3">
             <img :src="logoCtverec" alt="" class="h-7 w-auto object-contain opacity-60" />
             <span class="font-display text-lg tracking-[0.04em] text-text">Novobydžovský<br />Čtverec</span>
@@ -23,7 +23,7 @@ import logoPrevit from '@/assets/logo_previt.png'
           </p>
         </div>
 
-        <div>
+        <div class="flex flex-col items-center sm:items-start">
           <h4 class="text-label text-text mb-3">Kontaktní údaje</h4>
           <div class="space-y-2 text-body-sm text-text-muted">
             <p><span class="text-text-soft">IČO:</span> 26630061</p>
@@ -42,7 +42,7 @@ import logoPrevit from '@/assets/logo_previt.png'
           </div>
         </div>
 
-        <div class="flex flex-col items-start sm:items-end justify-between">
+        <div class="flex flex-col items-center sm:items-end justify-between">
           <div>
             <p class="text-meta text-text-soft mb-2">&copy; {{ new Date().getFullYear() }}</p>
           </div>

@@ -1,61 +1,153 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
-import RegistrationView from '../views/RegistrationView.vue'
-import AdminLoginView from '../views/admin/AdminLoginView.vue'
-import AdminDashboardView from '../views/admin/AdminDashboardView.vue'
-import AdminCheckpointsView from '../views/admin/AdminCheckpointsView.vue'
-import AdminCommunicationsView from '../views/admin/AdminCommunicationsView.vue'
-import AdminLoggingView from '../views/admin/AdminLoggingView.vue'
-import AdminRolesView from '../views/admin/AdminRolesView.vue'
-import AdminUsersView from '../views/admin/AdminUsersView.vue'
-import AdminRoutesView from '../views/admin/AdminRoutesView.vue'
 
-import AdminCheckpointScoresView from '../views/admin/AdminCheckpointScoresView.vue'
-import AdminVariantsView from '../views/admin/AdminVariantsView.vue'
-import AdminCategoriesView from '../views/admin/AdminCategoriesView.vue'
-import AdminScheduleView from '../views/admin/AdminScheduleView.vue'
-import CeremonyView from '../views/CeremonyView.vue'
-import JudgeScoringView from '../views/JudgeScoringView.vue'
-import JudgeDashboardView from '../views/JudgeDashboardView.vue'
-import ResultsView from '../views/ResultsView.vue'
-import ArchiveView from '../views/ArchiveView.vue'
-import RacerItineraryView from '../views/RacerItineraryView.vue'
-import RacerStandingView from '../views/RacerStandingView.vue'
-import RacerMapView from '../views/RacerMapView.vue'
-import RacerVehiclesView from '../views/RacerVehiclesView.vue'
-import AccountSettingsView from '../views/AccountSettingsView.vue'
+// ── Lazy-loaded route components for code splitting ──
+// HomeView is eagerly loaded for instant first render
+const routes = [
+  {
+    path: '/',
+    name: 'home',
+    component: () => import('../views/HomeView.vue'),
+  },
+  {
+    path: '/registrace',
+    name: 'registration',
+    component: () => import('../views/RegistrationView.vue'),
+  },
+  {
+    path: '/admin/login',
+    name: 'admin-login',
+    component: () => import('../views/admin/AdminLoginView.vue'),
+  },
+  {
+    path: '/admin/prihlaseni',
+    name: 'admin-dashboard',
+    component: () => import('../views/admin/AdminDashboardView.vue'),
+    meta: { requiresAdmin: true },
+  },
+  {
+    path: '/admin/stanoviste',
+    name: 'admin-checkpoints',
+    component: () => import('../views/admin/AdminCheckpointsView.vue'),
+    meta: { requiresAdmin: true },
+  },
+  {
+    path: '/admin/komunikace',
+    name: 'admin-communications',
+    component: () => import('../views/admin/AdminCommunicationsView.vue'),
+    meta: { requiresAdmin: true },
+  },
+  {
+    path: '/admin/logovani',
+    name: 'admin-logging',
+    component: () => import('../views/admin/AdminLoggingView.vue'),
+    meta: { requiresAdmin: true },
+  },
+  {
+    path: '/admin/role',
+    name: 'admin-roles',
+    component: () => import('../views/admin/AdminRolesView.vue'),
+    meta: { requiresAdmin: true },
+  },
+  {
+    path: '/admin/trasy',
+    name: 'admin-routes',
+    component: () => import('../views/admin/AdminRoutesView.vue'),
+    meta: { requiresAdmin: true },
+  },
+  {
+    path: '/admin/uzivatele',
+    name: 'admin-users',
+    component: () => import('../views/admin/AdminUsersView.vue'),
+    meta: { requiresAdmin: true },
+  },
+  {
+    path: '/admin/bodovani',
+    name: 'admin-scores',
+    component: () => import('../views/admin/AdminCheckpointScoresView.vue'),
+    meta: { requiresAdmin: true },
+  },
+  {
+    path: '/admin/varianty',
+    name: 'admin-variants',
+    component: () => import('../views/admin/AdminVariantsView.vue'),
+    meta: { requiresAdmin: true },
+  },
+  {
+    path: '/admin/kategorie',
+    name: 'admin-categories',
+    component: () => import('../views/admin/AdminCategoriesView.vue'),
+    meta: { requiresAdmin: true },
+  },
+  {
+    path: '/admin/program',
+    name: 'admin-schedule',
+    component: () => import('../views/admin/AdminScheduleView.vue'),
+    meta: { requiresAdmin: true },
+  },
+  {
+    path: '/ceremoniál/:rok',
+    name: 'ceremony',
+    component: () => import('../views/CeremonyView.vue'),
+  },
+  {
+    path: '/rozhodci',
+    redirect: '/komisari',
+  },
+  {
+    path: '/komisari',
+    name: 'judge-scoring',
+    component: () => import('../views/JudgeScoringView.vue'),
+  },
+  {
+    path: '/komisari/prehled',
+    name: 'judge-dashboard',
+    component: () => import('../views/JudgeDashboardView.vue'),
+  },
+  {
+    path: '/vysledky/:rok',
+    name: 'results',
+    component: () => import('../views/ResultsView.vue'),
+  },
+  {
+    path: '/archiv',
+    name: 'archive',
+    component: () => import('../views/ArchiveView.vue'),
+  },
+  {
+    path: '/archiv/:rok',
+    name: 'archive-year',
+    component: () => import('../views/ArchiveView.vue'),
+  },
+  {
+    path: '/zavodnik/itinerar',
+    name: 'racer-itinerary',
+    component: () => import('../views/RacerItineraryView.vue'),
+  },
+  {
+    path: '/zavodnik/stav',
+    name: 'racer-standing',
+    component: () => import('../views/RacerStandingView.vue'),
+  },
+  {
+    path: '/zavodnik/mapa',
+    name: 'racer-map',
+    component: () => import('../views/RacerMapView.vue'),
+  },
+  {
+    path: '/zavodnik/vozidla',
+    name: 'racer-vehicles',
+    component: () => import('../views/RacerVehiclesView.vue'),
+  },
+  {
+    path: '/ucet',
+    name: 'account',
+    component: () => import('../views/AccountSettingsView.vue'),
+  },
+]
 
 const router = createRouter({
   history: createWebHashHistory(),
-  routes: [
-    { path: '/', name: 'home', component: HomeView },
-    { path: '/registrace', name: 'registration', component: RegistrationView },
-    { path: '/admin/login', name: 'admin-login', component: AdminLoginView },
-    { path: '/admin/prihlaseni', name: 'admin-dashboard', component: AdminDashboardView, meta: { requiresAdmin: true } },
-    { path: '/admin/stanoviste', name: 'admin-checkpoints', component: AdminCheckpointsView, meta: { requiresAdmin: true } },
-    { path: '/admin/komunikace', name: 'admin-communications', component: AdminCommunicationsView, meta: { requiresAdmin: true } },
-    { path: '/admin/logovani', name: 'admin-logging', component: AdminLoggingView, meta: { requiresAdmin: true } },
-    { path: '/admin/role', name: 'admin-roles', component: AdminRolesView, meta: { requiresAdmin: true } },
-    { path: '/admin/trasy', name: 'admin-routes', component: AdminRoutesView, meta: { requiresAdmin: true } },
-    { path: '/admin/uzivatele', name: 'admin-users', component: AdminUsersView, meta: { requiresAdmin: true } },
-
-    { path: '/admin/bodovani', name: 'admin-scores', component: AdminCheckpointScoresView, meta: { requiresAdmin: true } },
-    { path: '/admin/varianty', name: 'admin-variants', component: AdminVariantsView, meta: { requiresAdmin: true } },
-    { path: '/admin/kategorie', name: 'admin-categories', component: AdminCategoriesView, meta: { requiresAdmin: true } },
-    { path: '/admin/program', name: 'admin-schedule', component: AdminScheduleView, meta: { requiresAdmin: true } },
-    { path: '/ceremoniál/:rok', name: 'ceremony', component: CeremonyView },
-    { path: '/rozhodci', redirect: '/komisari' },
-    { path: '/komisari', name: 'judge-scoring', component: JudgeScoringView },
-    { path: '/komisari/prehled', name: 'judge-dashboard', component: JudgeDashboardView },
-    { path: '/vysledky/:rok', name: 'results', component: ResultsView },
-    { path: '/archiv', name: 'archive', component: ArchiveView },
-    { path: '/archiv/:rok', name: 'archive-year', component: ArchiveView },
-    { path: '/zavodnik/itinerar', name: 'racer-itinerary', component: RacerItineraryView },
-    { path: '/zavodnik/stav', name: 'racer-standing', component: RacerStandingView },
-    { path: '/zavodnik/mapa', name: 'racer-map', component: RacerMapView },
-    { path: '/zavodnik/vozidla', name: 'racer-vehicles', component: RacerVehiclesView },
-    { path: '/ucet', name: 'account', component: AccountSettingsView },
-  ],
+  routes,
 })
 
 router.beforeEach((to, _from, next) => {

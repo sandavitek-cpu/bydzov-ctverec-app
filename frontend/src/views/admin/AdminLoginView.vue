@@ -86,9 +86,24 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div>
-    <div class="card">
+  <div class="relative">
+    <div class="absolute inset-0 opacity-[0.03] pointer-events-none select-none"
+      style="background-image:
+        linear-gradient(45deg, var(--text) 25%, transparent 25%),
+        linear-gradient(-45deg, var(--text) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, var(--text) 75%),
+        linear-gradient(-45deg, transparent 75%, var(--text) 75%);
+        background-size: 40px 40px;
+        background-position: 0 0, 0 20px, 20px -20px, -20px 0px;
+      "
+    ></div>
+    <div class="card relative">
       <div class="text-center mb-6">
+        <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+        </div>
         <p class="text-meta text-text-soft uppercase tracking-[0.12em]">Administrace</p>
         <h1 class="text-page-title text-text mt-1">Přihlášení</h1>
       </div>
@@ -110,14 +125,18 @@ onUnmounted(() => {
       <form @submit.prevent="handleLogin" class="space-y-5">
         <div>
           <label class="input-label">Uživatelské jméno nebo e-mail</label>
-          <input v-model="username" required class="input-field" />
+          <input v-model="username" required class="input-field" autocomplete="username" />
         </div>
         <div>
           <label class="input-label">Heslo</label>
-          <input v-model="password" type="password" required class="input-field" />
+          <input v-model="password" type="password" required class="input-field" autocomplete="current-password" />
         </div>
         <p v-if="error" class="text-body-sm text-error">{{ error }}</p>
         <button type="submit" :disabled="loading" class="btn-primary w-full">
+          <svg v-if="loading" class="h-4 w-4 animate-spin mr-2" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
           {{ loading ? 'Přihlašuji…' : 'Přihlásit' }}
         </button>
       </form>

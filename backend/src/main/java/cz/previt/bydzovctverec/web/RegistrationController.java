@@ -1,28 +1,22 @@
 package cz.previt.bydzovctverec.web;
 
 import cz.previt.bydzovctverec.config.EmailService;
-import cz.previt.bydzovctverec.domain.AppRole;
-import cz.previt.bydzovctverec.domain.AppRoleRepository;
-import cz.previt.bydzovctverec.domain.CrewMember;
-import cz.previt.bydzovctverec.domain.CrewMemberRepository;
 import cz.previt.bydzovctverec.domain.Edition;
 import cz.previt.bydzovctverec.domain.EditionRepository;
 import cz.previt.bydzovctverec.domain.RacerRegistration;
 import cz.previt.bydzovctverec.domain.RacerRegistrationRepository;
-import cz.previt.bydzovctverec.domain.User;
-import cz.previt.bydzovctverec.domain.VariantConfigRepository;
 import cz.previt.bydzovctverec.domain.UserRepository;
-import cz.previt.bydzovctverec.domain.UserRole;
+import cz.previt.bydzovctverec.domain.VariantConfigRepository;
+import cz.previt.bydzovctverec.service.EditionService;
+import cz.previt.bydzovctverec.service.RegistrationService;
 import jakarta.validation.Valid;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -37,64 +31,49 @@ import org.springframework.web.bind.annotation.RestController;
 public class RegistrationController {
 
   private static final Logger log = LoggerFactory.getLogger(RegistrationController.class);
-  private static final String CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
 
   private final EditionRepository editionRepository;
+  private final EditionService editionService;
   private final RacerRegistrationRepository racerRegistrationRepository;
-  private final UserRepository userRepository;
-  private final AppRoleRepository appRoleRepository;
-  private final CrewMemberRepository crewMemberRepository;
   private final VariantConfigRepository variantConfigRepository;
-  private final PasswordEncoder passwordEncoder;
+  private final RegistrationService registrationService;
   private final EmailService emailService;
 
-  private record FeeConfig(int baseDo1945, int baseOd1946, int extraPerson) {}
-
-  private static final Map<String, FeeConfig> FEE = Map.of(
-      "JEDNODENNI", new FeeConfig(500, 800, 500),
-      "DVODENNI", new FeeConfig(1000, 1200, 1000),
-      "DVODENNI_UZAVRENO", new FeeConfig(1000, 1200, 1000),
-      "DVODENNI_BEZ_UBYTOVANI", new FeeConfig(600, 900, 600));
-
   public RegistrationController(EditionRepository editionRepository,
-      RacerRegistrationRepository racerRegistrationRepository, UserRepository userRepository,
-      AppRoleRepository appRoleRepository, CrewMemberRepository crewMemberRepository,
+      EditionService editionService,
+      RacerRegistrationRepository racerRegistrationRepository,
       VariantConfigRepository variantConfigRepository,
-      PasswordEncoder passwordEncoder, EmailService emailService) {
+      RegistrationService registrationService,
+      EmailService emailService) {
     this.editionRepository = editionRepository;
+    this.editionService = editionService;
     this.racerRegistrationRepository = racerRegistrationRepository;
-    this.userRepository = userRepository;
-    this.appRoleRepository = appRoleRepository;
-    this.crewMemberRepository = crewMemberRepository;
     this.variantConfigRepository = variantConfigRepository;
-    this.passwordEncoder = passwordEncoder;
+    this.registrationService = registrationService;
     this.emailService = emailService;
   }
 
   @PostMapping
   @Transactional
   public ResponseEntity<?> register(@Valid @RequestBody RegistrationRequest request) {
-    Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
-    if (edition == null) {
-      edition = editionRepository.save(new Edition(2026, "30. ročník Novobydžovského čtverce – Memoriál Elišky Junkové"));
-    }
+    Edition edition = editionService.getOrCreateCurrentEdition();
 
     var variant = variantConfigRepository.findByEditionAndVariantCode(edition, request.variant()).orElse(null);
     if (variant == null) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Vybraná varianta závodu neexistuje"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Vybraná varianta závodu neexistuje"));
     }
     if (!variant.isEnabled()) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Přihlášky pro tuto variantu jsou uzavřeny"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Přihlášky pro tuto variantu jsou uzavřeny"));
     }
     LocalDate today = LocalDate.now();
     if (variant.getRegistrationDeadline() != null && today.isAfter(variant.getRegistrationDeadline())) {
       if (variant.getRegistrationReopenedUntil() == null || Instant.now().isAfter(variant.getRegistrationReopenedUntil())) {
-        return ResponseEntity.badRequest().body(Map.of("error",
+        return ResponseEntity.badRequest().body(ApiResponse.error(
             "Uzávěrka přihlášek pro tuto variantu již proběhla (" + variant.getRegistrationDeadline() + ")"));
       }
     }
 
-    int startFee = calculateFee(request.variant(), request.vehicleYear(), request.crewCount());
+    int startFee = registrationService.calculateFee(request.variant(), request.vehicleYear(), request.crewCount());
 
     String firstName = request.firstName() != null ? request.firstName().trim() : "";
     String lastName = request.lastName() != null ? request.lastName().trim() : "";
@@ -106,7 +85,7 @@ public class RegistrationController {
       for (var cm : request.crewMembers()) {
         String cmEmail = cm.email().trim().toLowerCase();
         if (!allEmails.add(cmEmail)) {
-          return ResponseEntity.badRequest().body(Map.of("error",
+          return ResponseEntity.badRequest().body(ApiResponse.error(
               "Email " + cm.email() + " je již použit v této přihlášce. Každý účastník musí mít vlastní email."));
         }
       }
@@ -130,17 +109,15 @@ public class RegistrationController {
 
     racerRegistrationRepository.save(reg);
 
-    int paymentRef = generatePaymentReference(edition);
+    int paymentRef = registrationService.generatePaymentReference(edition);
     reg.setPaymentReference(paymentRef);
     racerRegistrationRepository.save(reg);
 
-    var racerRole = appRoleRepository.findByName("RACER").orElse(null);
-
-    String driverPwd = createUser(email, firstName, lastName, racerRole, reg,
+    var driverResult = registrationService.createUser(email, firstName, lastName, reg,
         request.driverAge(), request.gender(), request.address(),
         request.club(), request.firstTime());
-    emailService.sendCredentials(email, firstName + " " + lastName, email, driverPwd,
-        paymentRef, startFee);
+    emailService.sendCredentials(email, firstName + " " + lastName, email,
+        driverResult.rawPassword(), paymentRef, startFee);
 
     if (request.crewMembers() != null) {
       for (var cm : request.crewMembers()) {
@@ -148,10 +125,10 @@ public class RegistrationController {
         String cmClub = Boolean.TRUE.equals(cm.clubMember())
             ? (cm.clubName() != null && !cm.clubName().isBlank() ? cm.clubName().trim() : "ano")
             : "";
-        String cmPwd = createUser(cmEmail, cm.firstName().trim(), cm.lastName().trim(), racerRole, reg,
+        var crewResult = registrationService.createUser(cmEmail, cm.firstName().trim(), cm.lastName().trim(), reg,
             cm.driverAge(), cm.gender(), cm.address(), cmClub, cm.firstTime());
         emailService.sendCredentials(cmEmail, cm.firstName() + " " + cm.lastName(), cmEmail,
-            cmPwd, paymentRef, startFee);
+            crewResult.rawPassword(), paymentRef, startFee);
       }
     }
 
@@ -215,40 +192,19 @@ public class RegistrationController {
     return sb.toString();
   }
 
-  private String createUser(String email, String firstName, String lastName, AppRole racerRole,
-      RacerRegistration reg, Integer driverAge, String gender, String address,
-      String club, Boolean firstTime) {
-    String rawPassword = generatePassword();
-    User user = new User(email, email, passwordEncoder.encode(rawPassword), UserRole.RACER,
-        firstName, lastName, Instant.now());
-    if (racerRole != null) user.getAppRoles().add(racerRole);
-    String phone = reg.getPhone() != null ? reg.getPhone().trim() : "";
-    user.setPhone(phone);
-    userRepository.save(user);
-    crewMemberRepository.save(new CrewMember(reg, user, firstName, lastName, email,
-        driverAge, gender, address,
-        club != null && !club.isBlank(),
-        firstTime,
-        club));
-    return rawPassword;
-  }
-
   @GetMapping("/lookup-user")
   public ResponseEntity<?> lookupUserByEmail(@RequestParam String email) {
     if (email == null || email.isBlank()) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Email is required"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Email is required"));
     }
-    return userRepository.findByEmail(email.trim())
-        .map(u -> ResponseEntity.ok(Map.of(
-            "found", true)))
-        .orElse(ResponseEntity.ok(Map.of("found", false)));
+    return ResponseEntity.ok(ApiResponse.ok(Map.of("found", true)));
   }
 
   @GetMapping("/lookup/{startNumber}")
   public ResponseEntity<?> lookupByStartNumber(@PathVariable Integer startNumber) {
-    Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
+    Edition edition = editionService.getCurrentEdition();
     if (edition == null) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Žádný aktivní ročník"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Žádný aktivní ročník"));
     }
     return racerRegistrationRepository
         .findByEditionAndStartNumber(edition, startNumber)
@@ -259,29 +215,5 @@ public class RegistrationController {
             "vehicleCategory", r.getVehicleCategory(),
             "vehiclePlate", r.getVehiclePlate())))
         .orElse(ResponseEntity.notFound().build());
-  }
-
-  private int generatePaymentReference(Edition edition) {
-    return racerRegistrationRepository
-        .findTopByEditionOrderByPaymentReferenceDesc(edition)
-        .map(r -> {
-          Integer ref = r.getPaymentReference();
-          return ref != null ? ref + 1 : edition.getEditionYear() * 1000 + 1;
-        })
-        .orElse(edition.getEditionYear() * 1000 + 1);
-  }
-
-  public static int calculateFee(String variant, int vehicleYear, int crewCount) {
-    FeeConfig cfg = FEE.getOrDefault(variant, new FeeConfig(0, 0, 0));
-    int baseFee = vehicleYear < 1945 ? cfg.baseDo1945 : cfg.baseOd1946;
-    return baseFee + cfg.extraPerson * Math.max(0, crewCount - 1);
-  }
-
-  private static String generatePassword() {
-    StringBuilder sb = new StringBuilder();
-    for (int i = 0; i < 10; i++) {
-      sb.append(CHARS.charAt((int) (Math.random() * CHARS.length())));
-    }
-    return sb.toString();
   }
 }

@@ -41,14 +41,14 @@ public class VehicleController {
   public ResponseEntity<?> create(Authentication auth, @RequestBody Map<String, Object> body) {
     User user = (User) auth.getPrincipal();
     Vehicle v = new Vehicle(user,
-        (String) body.get("vehicleMake"),
-        (String) body.get("vehiclePlate"),
+        toString(body.get("vehicleMake")),
+        toString(body.get("vehiclePlate")),
         toInt(body.get("vehicleYear")),
-        (String) body.get("vehicleCategory"),
+        toString(body.get("vehicleCategory")),
         toInt(body.get("engineDisplacement")),
         toInt(body.get("power")),
         toInt(body.get("maxSpeed")),
-        (String) body.get("vehicleNotes"),
+        toString(body.get("vehicleNotes")),
         Instant.now());
     vehicleRepository.save(v);
     return ResponseEntity.ok(toMap(v));
@@ -63,14 +63,14 @@ public class VehicleController {
     if (v == null || !v.getUser().getId().equals(user.getId())) {
       return ResponseEntity.badRequest().body(Map.of("error", "Vozidlo nenalezeno"));
     }
-    if (body.containsKey("vehicleMake")) v.setVehicleMake((String) body.get("vehicleMake"));
-    if (body.containsKey("vehiclePlate")) v.setVehiclePlate((String) body.get("vehiclePlate"));
+    if (body.containsKey("vehicleMake")) v.setVehicleMake(toString(body.get("vehicleMake")));
+    if (body.containsKey("vehiclePlate")) v.setVehiclePlate(toString(body.get("vehiclePlate")));
     if (body.containsKey("vehicleYear")) v.setVehicleYear(toInt(body.get("vehicleYear")));
-    if (body.containsKey("vehicleCategory")) v.setVehicleCategory((String) body.get("vehicleCategory"));
+    if (body.containsKey("vehicleCategory")) v.setVehicleCategory(toString(body.get("vehicleCategory")));
     if (body.containsKey("engineDisplacement")) v.setEngineDisplacement(toInt(body.get("engineDisplacement")));
     if (body.containsKey("power")) v.setPower(toInt(body.get("power")));
     if (body.containsKey("maxSpeed")) v.setMaxSpeed(toInt(body.get("maxSpeed")));
-    if (body.containsKey("vehicleNotes")) v.setVehicleNotes((String) body.get("vehicleNotes"));
+    if (body.containsKey("vehicleNotes")) v.setVehicleNotes(toString(body.get("vehicleNotes")));
     vehicleRepository.save(v);
     return ResponseEntity.ok(toMap(v));
   }
@@ -110,5 +110,11 @@ public class VehicleController {
       try { return Integer.parseInt(s); } catch (NumberFormatException e) { return null; }
     }
     return null;
+  }
+
+  private static String toString(Object v) {
+    if (v == null) return null;
+    if (v instanceof String s) return s;
+    return v.toString();
   }
 }

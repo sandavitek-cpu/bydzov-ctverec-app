@@ -48,11 +48,19 @@ const mobileSidebarOpen = ref(false)
       <div v-if="showAdminSidebar" class="flex flex-1">
         <AppSidebar :mobileOpen="mobileSidebarOpen" @close="mobileSidebarOpen = false" />
         <main class="flex-1 px-4 lg:px-8 py-8">
-          <RouterView />
+          <RouterView v-slot="{ Component, route: r }">
+            <Transition name="page-fade" mode="out-in">
+              <component :is="Component" :key="r.path" />
+            </Transition>
+          </RouterView>
         </main>
       </div>
       <main v-else class="flex-1 px-4 lg:px-8 py-8 lg:py-10" :class="isLoginPage ? 'max-w-form mx-auto w-full' : 'max-w-content mx-auto w-full'">
-        <RouterView />
+        <RouterView v-slot="{ Component, route: r }">
+          <Transition name="page-fade" mode="out-in">
+            <component :is="Component" :key="r.path" />
+          </Transition>
+        </RouterView>
       </main>
     </div>
 
@@ -113,6 +121,19 @@ const mobileSidebarOpen = ref(false)
   transform: translateY(-8px);
 }
 
+.page-fade-enter-active,
+.page-fade-leave-active {
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+}
+.page-fade-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+.page-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
 .nav-link {
   position: relative;
   padding: 0.5rem 1rem;
@@ -125,13 +146,32 @@ const mobileSidebarOpen = ref(false)
   border-radius: var(--radius-lg);
   transition: background-color 160ms ease-out, color 160ms ease-out;
 }
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background-color: var(--primary);
+  border-radius: 1px;
+  transition: width 200ms ease-out, left 200ms ease-out;
+}
 .nav-link:hover {
   background-color: var(--bg-alt);
   color: var(--text);
 }
+.nav-link:hover::after {
+  width: 60%;
+  left: 20%;
+}
 .nav-link-active {
   background-color: rgba(9,9,123,0.08);
   color: var(--primary);
+}
+.nav-link-active::after {
+  width: 60%;
+  left: 20%;
 }
 .nav-link-active:hover {
   background-color: rgba(9,9,123,0.12);

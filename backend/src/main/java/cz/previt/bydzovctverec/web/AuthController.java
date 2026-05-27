@@ -54,17 +54,17 @@ public class AuthController {
       String identity = request.login().trim();
       var userDetails = userDetailsService.loadUserByUsername(identity);
       if (!passwordEncoder.matches(request.password(), userDetails.getPassword())) {
-        return ResponseEntity.status(401).body(new ErrorResponse("Neplatné heslo"));
+        return ResponseEntity.status(401).body(ApiResponse.error("Neplatné heslo"));
       }
       User user = userRepository.findByUsername(identity)
           .orElseGet(() -> userRepository.findByEmail(identity).orElse(null));
       if (user == null) {
-        return ResponseEntity.status(401).body(new ErrorResponse("Uživatel nenalezen"));
+        return ResponseEntity.status(401).body(ApiResponse.error("Uživatel nenalezen"));
       }
       return ResponseEntity.ok(buildLoginResponse(user));
     } catch (Exception e) {
       log.warn("Login failed for {}: {}", request.login(), e.getMessage());
-      return ResponseEntity.status(401).body(new ErrorResponse("Přihlášení selhalo"));
+      return ResponseEntity.status(401).body(ApiResponse.error("Přihlášení selhalo"));
     }
   }
 
@@ -73,18 +73,18 @@ public class AuthController {
     try {
       var claims = jwtService.validate(request.refreshToken());
       if (!"refresh".equals(claims.get("type", String.class))) {
-        return ResponseEntity.status(401).body(new ErrorResponse("Token není refresh token"));
+        return ResponseEntity.status(401).body(ApiResponse.error("Token není refresh token"));
       }
       Long userId = Long.valueOf(claims.getSubject());
       User user = userRepository.findById(userId).orElse(null);
       if (user == null) {
-        return ResponseEntity.status(401).body(new ErrorResponse("Uživatel nenalezen"));
+        return ResponseEntity.status(401).body(ApiResponse.error("Uživatel nenalezen"));
       }
       String newAccessToken = jwtService.generateAccessToken(user);
       return ResponseEntity.ok(new RefreshResponse(newAccessToken));
     } catch (Exception e) {
       log.warn("Refresh failed: {}", e.getMessage());
-      return ResponseEntity.status(401).body(new ErrorResponse("Refresh token je neplatný nebo expirovaný"));
+      return ResponseEntity.status(401).body(ApiResponse.error("Refresh token je neplatný nebo expirovaný"));
     }
   }
 
@@ -92,14 +92,14 @@ public class AuthController {
   public ResponseEntity<?> googleLogin(@RequestBody GoogleRequest request) {
     try {
       if (googleClientId == null || googleClientId.isBlank()) {
-        return ResponseEntity.status(500).body(new ErrorResponse("Google přihlášení není nakonfigurováno"));
+        return ResponseEntity.status(500).body(ApiResponse.error("Google přihlášení není nakonfigurováno"));
       }
       GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), GsonFactory.getDefaultInstance())
           .setAudience(Collections.singletonList(googleClientId))
           .build();
       GoogleIdToken idToken = verifier.verify(request.credential());
       if (idToken == null) {
-        return ResponseEntity.status(401).body(new ErrorResponse("Neplatný Google token"));
+        return ResponseEntity.status(401).body(ApiResponse.error("Neplatný Google token"));
       }
       GoogleIdToken.Payload payload = idToken.getPayload();
       String email = payload.getEmail();
@@ -116,11 +116,10 @@ public class AuthController {
         userRepository.save(user);
         log.info("User created via Google: {}", email);
       }
-
       return ResponseEntity.ok(buildLoginResponse(user));
     } catch (Exception e) {
       log.warn("Google login failed: {}", e.getMessage());
-      return ResponseEntity.status(401).body(new ErrorResponse("Google přihlášení selhalo"));
+      return ResponseEntity.status(401).body(ApiResponse.error("Google přihlášení selhalo"));
     }
   }
 
@@ -138,5 +137,4 @@ public class AuthController {
   public record RefreshRequest(@NotBlank String refreshToken) {}
   public record RefreshResponse(String accessToken) {}
   public record GoogleRequest(@NotBlank String credential) {}
-  public record ErrorResponse(String error) {}
 }

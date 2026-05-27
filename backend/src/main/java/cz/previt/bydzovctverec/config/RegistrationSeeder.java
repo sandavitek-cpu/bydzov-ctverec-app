@@ -7,7 +7,7 @@ import cz.previt.bydzovctverec.domain.EditionRepository;
 import cz.previt.bydzovctverec.domain.RacerRegistration;
 import cz.previt.bydzovctverec.domain.RacerRegistrationRepository;
 import cz.previt.bydzovctverec.domain.UserRepository;
-import cz.previt.bydzovctverec.web.RegistrationController;
+import cz.previt.bydzovctverec.service.RegistrationService;
 import java.time.Instant;
 import java.util.List;
 import org.slf4j.Logger;
@@ -25,7 +25,8 @@ public class RegistrationSeeder {
   @Bean
   @Order(5)
   CommandLineRunner seedRegistrations(EditionRepository editionRepository, RacerRegistrationRepository repo,
-      UserRepository userRepository, CrewMemberRepository crewMemberRepository) {
+      UserRepository userRepository, CrewMemberRepository crewMemberRepository,
+      RegistrationService registrationService) {
     return args -> {
       try {
         if (repo.count() > 0) {
@@ -72,7 +73,7 @@ public class RegistrationSeeder {
 
         for (Object[] a : jednodenni) {
           sn++;
-          repo.save(create(edition, sn, a));
+          repo.save(create(edition, sn, a, registrationService));
         }
 
         // ===== DVODENNÍ ===== (21 posádek / 55 členů)
@@ -102,7 +103,7 @@ public class RegistrationSeeder {
 
         for (Object[] a : dvoudenni) {
           sn++;
-          repo.save(create(edition, sn, a));
+          repo.save(create(edition, sn, a, registrationService));
         }
 
         // ===== PŘIDEJ BEZ UBYTOVÁNÍ (= null variant) jednu posádku =====
@@ -110,7 +111,7 @@ public class RegistrationSeeder {
         repo.save(new RacerRegistration(
             edition, "Zapůjčené vozidlo", "zapujceno@test.cz", "777111401",
             "OSOBNI", "Citroën 2CV", "5H0 0050", 1968, 2, sn,
-            RegistrationController.calculateFee("JEDNODENNI", 1968, 2),
+            registrationService.calculateFee("JEDNODENNI", 1968, 2),
             null, "Testovací", "Řidič", false, "M", 33, null, null,
             null, null, null, null, null, null, null, null, false, true, false, true, false, Instant.now()));
 
@@ -121,7 +122,7 @@ public class RegistrationSeeder {
         }
         if (!foundRacer2) {
           sn++;
-          RacerRegistration racerReg = repo.save(create(edition, sn, new Object[]{
+          RacerRegistration racerReg = repo.save(create(edition, sn, new Object[]{, registrationService
               "Testovací jezdec", "racer@bydzov-ctverec.cz", "777111501",
               "OSOBNI", "Škoda 1000 MB", "5H0 0051", 1967, 2, "JEDNODENNI",
               "Testovací", "jezdec", true, "M", 35, "Test klub",
@@ -153,11 +154,11 @@ public class RegistrationSeeder {
         contacted, properlyRegistered, arrived, consent};
   }
 
-  private static RacerRegistration create(Edition edition, int startNumber, Object[] a) {
+  private static RacerRegistration create(Edition edition, int startNumber, Object[] a, RegistrationService registrationService) {
     String variant = (String) a[8];
     int vehicleYear = (int) a[6];
     int crewCount = (int) a[7];
-    int fee = RegistrationController.calculateFee(variant, vehicleYear, crewCount);
+    int fee = registrationService.calculateFee(variant, vehicleYear, crewCount);
     return new RacerRegistration(
         edition, (String) a[0], (String) a[1], (String) a[2],
         (String) a[3], (String) a[4], (String) a[5],

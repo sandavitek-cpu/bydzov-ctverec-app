@@ -29,7 +29,17 @@ public class AdminArchiveController {
   @GetMapping
   public ResponseEntity<?> list() {
     List<ArchiveEntry> entries = archiveEntryRepository.findAllByOrderByEditionYearDescRankAsc();
-    return ResponseEntity.ok(entries);
+    List<Map<String, Object>> dto = entries.stream().map(e -> {
+      Map<String, Object> m = new java.util.LinkedHashMap<>();
+      m.put("id", e.getId());
+      m.put("editionYear", e.getEditionYear());
+      m.put("rank", e.getRank());
+      m.put("racerName", e.getRacerName());
+      m.put("vehicle", e.getVehicle());
+      m.put("points", e.getPoints());
+      return m;
+    }).toList();
+    return ResponseEntity.ok(dto);
   }
 
   @PostMapping
@@ -47,7 +57,13 @@ public class AdminArchiveController {
 
     ArchiveEntry entry = new ArchiveEntry(editionYear, rank, racerName, vehicle, points);
     archiveEntryRepository.save(entry);
-    return ResponseEntity.ok(entry);
+    return ResponseEntity.ok(Map.of(
+        "id", entry.getId(),
+        "editionYear", entry.getEditionYear(),
+        "rank", entry.getRank(),
+        "racerName", entry.getRacerName(),
+        "vehicle", entry.getVehicle(),
+        "points", entry.getPoints()));
   }
 
   @DeleteMapping("/{id}")

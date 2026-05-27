@@ -1,4 +1,5 @@
 import { ref, onUnmounted } from 'vue'
+import { Client } from '@stomp/stompjs'
 import { apiBaseUrl } from '@/api'
 
 export interface LiveRunScore {
@@ -17,11 +18,14 @@ export interface LiveResultRow {
   runs: LiveRunScore[]
 }
 
+const MAX_RECONNECT_ATTEMPTS = 10
+
 export function useLiveResults(year: number) {
   const results = ref<LiveResultRow[]>([])
   const connected = ref(false)
-  let ws: WebSocket | null = null
+  let stompClient: Client | null = null
   let pollingTimer: ReturnType<typeof setInterval> | null = null
+  let reconnectAttempts = 0
 
   async function fetchResults() {
     try {
@@ -36,33 +40,37 @@ export function useLiveResults(year: number) {
   }
 
   function connectWs() {
-    const wsUrl = apiBaseUrl.replace(/^http/, 'ws') + '/ws/results'
-    try {
-      ws = new WebSocket(wsUrl)
-      ws.onopen = () => {
-        connected.value = true
-        ws?.send(JSON.stringify({ destination: '/topic/results' }))
-      }
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data)
-          if (data.year === year || !data.year) {
-            results.value = data.results ?? []
-          }
-        } catch { /* ignore */ }
-      }
-      ws.onclose = () => {
-        connected.value = false
-        setTimeout(connectWs, 5000)
-      }
-      ws.onerror = () => {
-        ws?.close()
-      }
-    } catch {
-      // WS failed, fall back to polling
+    if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
       connected.value = false
       pollingTimer = setInterval(fetchResults, 10000)
+      return
     }
+    reconnectAttempts++
+
+    const wsUrl = apiBaseUrl.replace(/^http/, 'ws') + '/ws/results'
+    stompClient = new Client({
+      brokerURL: wsUrl,
+      reconnectDelay: 5000,
+      onConnect: () => {
+        connected.value = true
+        reconnectAttempts = 0
+        stompClient?.subscribe('/topic/results', (message) => {
+          try {
+            const data = JSON.parse(message.body)
+            if (data.year === year || !data.year) {
+              results.value = data.results ?? []
+            }
+          } catch { /* ignore */ }
+        })
+      },
+      onDisconnect: () => {
+        connected.value = false
+      },
+      onStompError: () => {
+        connected.value = false
+      },
+    })
+    stompClient.activate()
   }
 
   async function start() {
@@ -71,7 +79,10 @@ export function useLiveResults(year: number) {
   }
 
   function stop() {
-    if (ws) { ws.close(); ws = null }
+    if (stompClient) {
+      stompClient.deactivate()
+      stompClient = null
+    }
     if (pollingTimer) { clearInterval(pollingTimer); pollingTimer = null }
   }
 
