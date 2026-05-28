@@ -23,6 +23,7 @@ import cz.previt.bydzovctverec.domain.UserRepository;
 import cz.previt.bydzovctverec.domain.VariantConfig;
 import cz.previt.bydzovctverec.domain.VariantConfigRepository;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -120,6 +121,8 @@ class BydzovCtverecApplicationTests {
     Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElseThrow();
     RacerRegistration racer = racerRegistrationRepository.save(new RacerRegistration(edition, "John", "Doe", "john@test.cz", "Kart", Instant.now()));
     Checkpoint cp = checkpointRepository.save(new Checkpoint(edition, "Test CP", 50.0, 15.0, 100, 1));
+    cp.setVolunteers(List.of("judge"));
+    checkpointRepository.save(cp);
 
     MvcResult loginResult = mockMvc
         .perform(post("/api/auth/login")
