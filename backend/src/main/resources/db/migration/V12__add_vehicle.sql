@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS vehicle (
     power INT,
     max_speed INT,
     vehicle_notes VARCHAR(500),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_vehicle_user ON vehicle (user_id);

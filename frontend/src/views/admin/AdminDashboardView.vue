@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
+import SkeletonLoader from '@/components/SkeletonLoader.vue'
 import RaceControls from '@/components/admin/RaceControls.vue'
 import RegistrationFilters from '@/components/admin/RegistrationFilters.vue'
 import RegistrationStats from '@/components/admin/RegistrationStats.vue'
@@ -55,6 +56,7 @@ const editForm = ref<Record<string, any>>({})
 const saving = ref(false)
 const resendingId = ref<number | null>(null)
 const remindingId = ref<number | null>(null)
+const variantConfigsLoading = ref(true)
 
 const filterVariant = ref('all')
 const filterStatus = ref('all')
@@ -402,6 +404,13 @@ onMounted(() => {
   fetchAll()
   fetchRaceStatus()
   loadVariantConfigs()
+  
+  // Hide skeleton loaders after a short delay if data loads quickly
+  setTimeout(() => {
+    loading.value = false
+    raceLoading.value = null
+    variantConfigsLoading.value = false
+  }, 300)
 })
 
 const categoryLabel: Record<string, string> = {
@@ -506,45 +515,50 @@ async function loadVariantConfigs() {
       @reset="handleRaceReset"
     />
 
-    <RegistrationFilters
-      v-model:filter-variant="filterVariant"
-      v-model:filter-status="filterStatus"
-      v-model:filter-search="filterSearch"
-      :variants="variantOptions"
-      :selected-ids-size="selectedIds.size"
-      :batch-processing="batchProcessing"
-      @batch-action="batchAction"
-      @clear-selection="selectedIds = new Set()"
-    />
+<RegistrationFilters
+  v-model:filter-variant="filterVariant"
+  v-model:filter-status="filterStatus"
+  v-model:filter-search="filterSearch"
+  :variants="variantOptions"
+  :selected-ids-size="selectedIds.size"
+  :batch-processing="batchProcessing"
+  :variants-loading="variantConfigsLoading"
+  @batch-action="batchAction"
+  @clear-selection="selectedIds = new Set()"
+/>
 
     <RegistrationStats :stats="stats" />
 
-    <LoadingSpinner v-if="loading" />
-    <p v-else-if="error" class="alert alert-error mb-4">{{ error }}</p>
+<div v-if="loading" class="space-y-6">
+  <SkeletonLoader type="table" :lines="5" class="mb-4" />
+  <RegistrationStats :stats="{ totalCrews: 0, totalMembers: 0, paid: 0, contacted: 0, arrived: 0, firstTimers: 0, women: 0, kidsUnder10: 0, vehiclesBefore1945: 0, cars: 0, motos: 0, oldestVehicle: 0, newestVehicle: 0, oldestDriver: 0, youngestDriver: 0, jednodenni: 0, dvoudenni: 0, withoutAccommodation: 0, jednodenniMembers: 0, dvoudenniMembers: 0, approved: 0 }" />
+</div>
 
-    <div v-else-if="filtered.length === 0" class="py-12 text-center">
-      <p class="text-section-title text-text-soft">Žádné přihlášky neodpovídají filtrům</p>
-    </div>
+<p v-else-if="error" class="alert alert-error mb-4">{{ error }}</p>
 
-    <RegistrationTable
-      v-else
-      :registrations="filtered"
-      :selected-ids="selectedIds"
-      :resending-id="resendingId"
-      :reminding-id="remindingId"
-      :variant-deadline="variantDeadline"
-      :variant-label="variantLabel"
-      :category-label="categoryLabel"
-      @toggle-select="toggleSelect"
-      @toggle-select-all="toggleSelectAll"
-      @toggle-status="toggleStatus"
-      @resend="handleResend"
-      @send-reminder="handleSendReminder"
-      @download-pdf="downloadRegPdf"
-      @impersonate="handleImpersonate"
-      @assign-start-number="handleAssignStartNumber"
-      @select-reg="selectReg"
-    />
+<div v-else-if="filtered.length === 0" class="py-12 text-center">
+  <p class="text-section-title text-text-soft">Žádné přihlášky neodpovídají filtrům</p>
+</div>
+
+<RegistrationTable
+  v-else
+  :registrations="filtered"
+  :selected-ids="selectedIds"
+  :resending-id="resendingId"
+  :reminding-id="remindingId"
+  :variant-deadline="variantDeadline"
+  :variant-label="variantLabel"
+  :category-label="categoryLabel"
+  @toggle-select="toggleSelect"
+  @toggle-select-all="toggleSelectAll"
+  @toggle-status="toggleStatus"
+  @resend="handleResend"
+  @send-reminder="handleSendReminder"
+  @download-pdf="downloadRegPdf"
+  @impersonate="handleImpersonate"
+  @assign-start-number="handleAssignStartNumber"
+  @select-reg="selectReg"
+/>
 
     <!-- Detail modal -->
     <div v-if="selected" class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 py-4 sm:py-8" @click.self="closeDetail">

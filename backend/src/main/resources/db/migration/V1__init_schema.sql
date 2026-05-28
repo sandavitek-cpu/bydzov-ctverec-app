@@ -11,7 +11,7 @@ CREATE TABLE racer_registration (
     last_name VARCHAR(100) NOT NULL,
     email VARCHAR(255) NOT NULL,
     vehicle_description VARCHAR(500),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX idx_racer_registration_edition ON racer_registration (edition_id);

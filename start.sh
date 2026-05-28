@@ -16,6 +16,7 @@ echo "=== Instaluji závislosti frontendu ==="
 
 echo "=== Spouštím backend (Spring Boot, dev profil — H2) ==="
 cd "$ROOT/backend"
+echo "Active profiles: dev"
 mvn spring-boot:run -s .mvn/settings.xml -q -Pdev -Dspring-boot.run.profiles=dev &
 BACKEND_PID=$!
 cd "$ROOT"

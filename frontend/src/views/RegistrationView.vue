@@ -3,6 +3,7 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import RuiAnAutocomplete from '@/components/RuiAnAutocomplete.vue'
 import { submitRegistration, fetchVehicles, createVehicle, fetchRacerProfile, lookupUserByEmail, fetchPublicVariants, fetchFees, type RegistrationResult, type CrewMemberInput, type VehicleData, type FeeConfig } from '@/api'
 import { useAuth } from '@/composables/useAuth'
+import SkeletonLoader from '@/components/SkeletonLoader.vue'
 
 const { isLoggedIn, authHeaders } = useAuth()
 
@@ -58,12 +59,18 @@ const myVehicles = ref<VehicleData[]>([])
 const selectedVehicleId = ref<number | null>(null)
 const saveToFleet = ref(false)
 const vehiclesLoaded = ref(false)
+const variantsLoading = ref(true)
+const feesLoading = ref(true)
+const vehiclesLoading = ref(true)
+const variantsLoading = ref(true)
+const feesLoading = ref(true)
+const vehiclesLoading = ref(true)
 
 onMounted(async () => {
   try {
     const [publicVariants, fees] = await Promise.all([
-      fetchPublicVariants(),
-      fetchFees().catch(() => ({})),
+      fetchPublicVariants().finally(() => variantsLoading.value = false),
+      fetchFees().catch(() => ({})).finally(() => feesLoading.value = false),
     ])
     VARIANTS.value = publicVariants.map(v => ({
       value: v.variantCode,
@@ -72,6 +79,7 @@ onMounted(async () => {
     }))
     FEE.value = fees
   } catch { /* not critical */ }
+  
   if (isLoggedIn.value) {
     try {
       const profile = await fetchRacerProfile(authHeaders())
@@ -82,9 +90,18 @@ onMounted(async () => {
     } catch { /* not critical */ }
     try {
       myVehicles.value = await fetchVehicles(authHeaders())
-    } catch { /* not critical */ }
-    vehiclesLoaded.value = true
+    } catch { /* not critical */ } finally {
+      vehiclesLoading.value = false
+    }
+  } else {
+    vehiclesLoading.value = false
   }
+  
+  // Hide skeleton loaders after a short delay if data loads quickly
+  setTimeout(() => {
+    variantsLoading.value = false
+    feesLoading.value = false
+  }, 300)
 })
 
 function selectVehicle(id: number | string) {
@@ -243,22 +260,28 @@ const qrUrl = computed(() => {
 
     <!-- Form -->
     <form v-else @submit.prevent="handleSubmit" class="mt-6 space-y-5 max-w-form">
-      <!-- Variant -->
+<!-- Variant -->
+<div>
+  <label class="input-label">Varianta závodu</label>
+  <div v-if="variantsLoading" class="space-y-2">
+    <div v-for="i in 3" :key="i" class="flex items-start gap-3 rounded-lg border border-border p-4">
+      <div class="h-4 rounded shimmer" style="width: 60%"></div>
+      <div class="h-4 rounded shimmer mt-1" style="width: 40%"></div>
+    </div>
+  </div>
+  <div v-else class="space-y-2">
+    <label v-for="v in VARIANTS" :key="v.value"
+      class="flex items-start gap-3 rounded-lg border border-border p-4 cursor-pointer transition-colors"
+      :class="form.variant === v.value ? 'border-primary bg-primary/5' : 'hover:bg-bg-alt'"
+    >
+      <input type="radio" :value="v.value" v-model="form.variant" class="mt-0.5 accent-primary" />
       <div>
-        <label class="input-label">Varianta závodu</label>
-        <div class="space-y-2">
-          <label v-for="v in VARIANTS" :key="v.value"
-            class="flex items-start gap-3 rounded-lg border border-border p-4 cursor-pointer transition-colors"
-            :class="form.variant === v.value ? 'border-primary bg-primary/5' : 'hover:bg-bg-alt'"
-          >
-            <input type="radio" :value="v.value" v-model="form.variant" class="mt-0.5 accent-primary" />
-            <div>
-              <span class="font-medium text-text">{{ v.label }}</span>
-              <p class="text-meta text-text-soft">Uzávěrka přihlášek: {{ v.deadline }}</p>
-            </div>
-          </label>
-        </div>
+        <span class="font-medium text-text">{{ v.label }}</span>
+        <p class="text-meta text-text-soft">Uzávěrka přihlášek: {{ v.deadline }}</p>
       </div>
+    </label>
+  </div>
+</div>
 
       <!-- Team name -->
       <div>
@@ -326,16 +349,24 @@ const qrUrl = computed(() => {
         </div>
       </div>
 
-      <!-- Vehicle -->
-      <div v-if="hasVehicles" class="rounded-lg border border-border bg-bg-alt p-4">
-        <label class="input-label">Vybrat z mých vozidel</label>
-        <select v-model="selectedVehicleId" class="input-field w-full mt-1">
-          <option :value="null">– Nové vozidlo –</option>
-          <option v-for="v in myVehicles" :key="v.id" :value="v.id">
-            {{ v.vehicleMake }} ({{ v.vehiclePlate }}) – {{ v.vehicleYear }}
-          </option>
-        </select>
-      </div>
+<!-- Vehicle -->
+<div v-if="vehiclesLoading" class="rounded-lg border border-border bg-bg-alt p-4">
+  <div class="space-y-2">
+    <div v-for="i in 2" :key="i" class="flex items-start gap-3">
+      <div class="h-4 rounded shimmer" style="width: 60%"></div>
+      <div class="h-4 rounded shimmer mt-1" style="width: 40%"></div>
+    </div>
+  </div>
+</div>
+<div v-else v-if="hasVehicles" class="rounded-lg border border-border bg-bg-alt p-4">
+  <label class="input-label">Vybrat z mých vozidel</label>
+  <select v-model="selectedVehicleId" class="input-field w-full mt-1">
+    <option :value="null">– Nové vozidlo –</option>
+    <option v-for="v in myVehicles" :key="v.id" :value="v.id">
+      {{ v.vehicleMake }} ({{ v.vehiclePlate }}) – {{ v.vehicleYear }}
+    </option>
+  </select>
+</div>
 
       <div>
         <label class="input-label">Typ vozidla</label>
@@ -440,31 +471,39 @@ const qrUrl = computed(() => {
         </div>
       </div>
 
-      <!-- Fee breakdown -->
-      <div v-if="selectedVariant && form.vehicleCategory && form.vehicleYear" class="rounded-lg border border-border bg-bg-alt p-4 space-y-1 text-body-sm">
-        <div class="flex items-center justify-between">
-          <span class="text-text-soft">Varianta:</span>
-          <span class="text-text font-medium">{{ selectedVariant.label }}</span>
-        </div>
-        <div class="flex items-center justify-between">
-          <span class="text-text-soft">Vozidlo:</span>
-          <span class="text-text" :class="isVintage ? 'text-red font-semibold' : ''">{{ isVintage ? 'do 1945 (veterán)' : 'od 1946' }}</span>
-        </div>
-        <hr class="border-border my-1" />
-        <div class="flex items-center justify-between">
-          <span class="text-text-soft">Základ (řidič):</span>
-          <span class="text-text font-mono">{{ feeBreakdown?.base }} Kč</span>
-        </div>
-        <div v-if="feeBreakdown?.extra" class="flex items-center justify-between">
-          <span class="text-text-soft">{{ form.crewCount - 1 }} osoba/y navíc:</span>
-          <span class="text-text font-mono">+ {{ feeBreakdown.extra }} Kč</span>
-        </div>
-        <hr class="border-border my-1" />
-        <div class="flex items-center justify-between">
-          <span class="font-semibold text-text">Celkem:</span>
-          <span class="text-kpi text-primary">{{ totalFee }} Kč</span>
-        </div>
-      </div>
+<!-- Fee breakdown -->
+<div v-if="feesLoading" class="rounded-lg border border-border bg-bg-alt p-4 space-y-1 text-body-sm">
+  <div class="space-y-2">
+    <div v-for="i in 4" :key="i" class="flex items-center justify-between">
+      <span class="h-4 rounded shimmer" style="width: 60%"></span>
+      <span class="h-4 rounded shimmer" style="width: 40%"></span>
+    </div>
+  </div>
+</div>
+<div v-else v-if="selectedVariant && form.vehicleCategory && form.vehicleYear" class="rounded-lg border border-border bg-bg-alt p-4 space-y-1 text-body-sm">
+  <div class="flex items-center justify-between">
+    <span class="text-text-soft">Varianta:</span>
+    <span class="text-text font-medium">{{ selectedVariant.label }}</span>
+  </div>
+  <div class="flex items-center justify-between">
+    <span class="text-text-soft">Vozidlo:</span>
+    <span class="text-text" :class="isVintage ? 'text-red font-semibold' : ''">{{ isVintage ? 'do 1945 (veterán)' : 'od 1946' }}</span>
+  </div>
+  <hr class="border-border my-1" />
+  <div class="flex items-center justify-between">
+    <span class="text-text-soft">Základ (řidič):</span>
+    <span class="text-text font-mono">{{ feeBreakdown?.base }} Kč</span>
+  </div>
+  <div v-if="feeBreakdown?.extra" class="flex items-center justify-between">
+    <span class="text-text-soft">{{ form.crewCount - 1 }} osoba/y navíc:</span>
+    <span class="text-text font-mono">+ {{ feeBreakdown.extra }} Kč</span>
+  </div>
+  <hr class="border-border my-1" />
+  <div class="flex items-center justify-between">
+    <span class="font-semibold text-text">Celkem:</span>
+    <span class="text-kpi text-primary">{{ totalFee }} Kč</span>
+  </div>
+</div>
 
       <!-- Consent -->
       <label class="flex items-start gap-3 cursor-pointer">

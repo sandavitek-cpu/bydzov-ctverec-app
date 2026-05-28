@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS racer_registration (
     last_name VARCHAR(100) NOT NULL,
     email VARCHAR(255) NOT NULL,
     vehicle_description VARCHAR(500),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_racer_registration_edition ON racer_registration (edition_id);
@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS app_user (
     password VARCHAR(255) NOT NULL,
     role VARCHAR(20) NOT NULL,
     name VARCHAR(255) NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS score (
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS score (
     run_number INT NOT NULL,
     points INT NOT NULL,
     note VARCHAR(500),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_score_racer ON score (racer_registration_id);
