@@ -62,9 +62,6 @@ const vehiclesLoaded = ref(false)
 const variantsLoading = ref(true)
 const feesLoading = ref(true)
 const vehiclesLoading = ref(true)
-const variantsLoading = ref(true)
-const feesLoading = ref(true)
-const vehiclesLoading = ref(true)
 
 onMounted(async () => {
   try {
