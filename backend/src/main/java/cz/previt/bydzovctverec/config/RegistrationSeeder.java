@@ -122,12 +122,12 @@ public class RegistrationSeeder {
         }
         if (!foundRacer2) {
           sn++;
-          RacerRegistration racerReg = repo.save(create(edition, sn, new Object[]{, registrationService
+          RacerRegistration racerReg = repo.save(create(edition, sn, new Object[]{
               "Testovací jezdec", "racer@bydzov-ctverec.cz", "777111501",
               "OSOBNI", "Škoda 1000 MB", "5H0 0051", 1967, 2, "JEDNODENNI",
               "Testovací", "jezdec", true, "M", 35, "Test klub",
               null, null, 0, 0, 0, "",
-              true, true, true, true}));
+              true, true, true, true}, registrationService));
           userRepository.findByEmail("racer@bydzov-ctverec.cz").ifPresent(u -> {
             crewMemberRepository.save(new CrewMember(racerReg, u, "Testovací", "jezdec", "racer@bydzov-ctverec.cz"));
             log.info("CrewMember created for seeded racer user");
