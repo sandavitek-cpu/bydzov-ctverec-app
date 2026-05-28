@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onUnmounted } from 'vue'
 import { searchRuiAnAddress, type RuiAnAddress } from '@/api'
 
 const props = withDefaults(defineProps<{
@@ -21,7 +21,13 @@ const loading = ref(false)
 const open = ref(false)
 const selectedIndex = ref(-1)
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
+let blurTimer: ReturnType<typeof setTimeout> | null = null
 const inputRef = ref<HTMLInputElement | null>(null)
+
+onUnmounted(() => {
+  if (debounceTimer) clearTimeout(debounceTimer)
+  if (blurTimer) clearTimeout(blurTimer)
+})
 
 watch(() => props.modelValue, (val) => {
   if (val !== query.value) {
@@ -60,8 +66,10 @@ function select(item: RuiAnAddress) {
 }
 
 function onBlur() {
-  setTimeout(() => {
+  if (blurTimer) clearTimeout(blurTimer)
+  blurTimer = setTimeout(() => {
     open.value = false
+    blurTimer = null
   }, 200)
 }
 

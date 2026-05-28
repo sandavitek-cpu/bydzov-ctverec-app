@@ -112,7 +112,7 @@ public class AdminUserController {
     if (lastName != null) user.setLastName(lastName);
     if (email != null && !email.isBlank()) {
       if (!email.equals(user.getEmail()) && userRepository.findByEmail(email).isPresent()) {
-        return ResponseEntity.badRequest().body(Map.of("error", "Email již existuje"));
+        return ResponseEntity.badRequest().body(ApiResponse.error("Email již existuje"));
       }
       user.setEmail(email);
     }
@@ -124,7 +124,7 @@ public class AdminUserController {
     var roleStr = getStr(body, "role");
     if (roleStr != null) {
       try { user.setRole(UserRole.valueOf(roleStr.toUpperCase())); } catch (IllegalArgumentException e) {
-        return ResponseEntity.badRequest().body(Map.of("error", "Neplatná role: " + roleStr));
+        return ResponseEntity.badRequest().body(ApiResponse.error("Neplatná role: " + roleStr));
       }
     }
     userRepository.save(user);
@@ -156,23 +156,23 @@ public class AdminUserController {
         || email == null || email.isBlank()
         || password == null || password.isBlank()
         || firstName == null || firstName.isBlank()) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Chybí povinná pole"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Chybí povinná pole"));
     }
     if (lastName == null) lastName = "";
     if (password.length() < 6) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Heslo musí mít alespoň 6 znaků"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Heslo musí mít alespoň 6 znaků"));
     }
     if (userRepository.findByUsername(username).isPresent()) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Uživatelské jméno již existuje"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Uživatelské jméno již existuje"));
     }
     if (userRepository.findByEmail(email).isPresent()) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Email již existuje"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Email již existuje"));
     }
     var roleStr = getStr(body, "role");
     var userRole = UserRole.RACER;
     if (roleStr != null) {
       try { userRole = UserRole.valueOf(roleStr.toUpperCase()); } catch (IllegalArgumentException e) {
-        return ResponseEntity.badRequest().body(Map.of("error", "Neplatná role: " + roleStr));
+        return ResponseEntity.badRequest().body(ApiResponse.error("Neplatná role: " + roleStr));
       }
     }
     var user = new User(email, username, passwordEncoder.encode(password), userRole, firstName, lastName, java.time.Instant.now());
@@ -191,7 +191,7 @@ public class AdminUserController {
       }
     }
     userRepository.save(user);
-    return ResponseEntity.ok(Map.of("id", user.getId(), "message", "Uživatel vytvořen"));
+    return ResponseEntity.ok(ApiResponse.ok(Map.of("id", user.getId(), "message", "Uživatel vytvořen")));
   }
 
   private static String getStr(Map<String, Object> map, String key) {
@@ -215,11 +215,11 @@ public class AdminUserController {
     if (userOpt.isEmpty()) return ResponseEntity.notFound().build();
     var newPassword = body.get("newPassword");
     if (newPassword == null || newPassword.isBlank() || newPassword.length() < 6) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Heslo musí mít alespoň 6 znaků"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Heslo musí mít alespoň 6 znaků"));
     }
     userOpt.get().setPassword(passwordEncoder.encode(newPassword));
     userRepository.save(userOpt.get());
-    return ResponseEntity.ok(Map.of("message", "Heslo změněno"));
+    return ResponseEntity.ok(ApiResponse.ok(Map.of("message", "Heslo změněno")));
   }
 
   @PostMapping("/{userId}/roles")
@@ -228,12 +228,12 @@ public class AdminUserController {
     var user = userRepository.findById(userId);
     if (user.isEmpty()) return ResponseEntity.notFound().build();
     var roleId = body.get("roleId");
-    if (roleId == null) return ResponseEntity.badRequest().body(Map.of("error", "Chybí roleId"));
+    if (roleId == null) return ResponseEntity.badRequest().body(ApiResponse.error("Chybí roleId"));
     var role = appRoleRepository.findById(((Number) roleId).longValue());
-    if (role.isEmpty()) return ResponseEntity.badRequest().body(Map.of("error", "Role neexistuje"));
+    if (role.isEmpty()) return ResponseEntity.badRequest().body(ApiResponse.error("Role neexistuje"));
     user.get().getAppRoles().add(role.get());
     userRepository.save(user.get());
-    return ResponseEntity.ok(Map.of("message", "Role přidána"));
+    return ResponseEntity.ok(ApiResponse.ok(Map.of("message", "Role přidána")));
   }
 
   @DeleteMapping("/{userId}/roles/{roleId}")
@@ -250,12 +250,12 @@ public class AdminUserController {
   @PostMapping("/{id}/impersonate")
   public ResponseEntity<?> impersonate(@PathVariable Long id) {
     var userOpt = userRepository.findById(id);
-    if (userOpt.isEmpty()) return ResponseEntity.badRequest().body(Map.of("error", "Uživatel nenalezen"));
+    if (userOpt.isEmpty()) return ResponseEntity.badRequest().body(ApiResponse.error("Uživatel nenalezen"));
     var user = userOpt.get();
     String accessToken = jwtService.generateAccessToken(user);
     String roleStr = user.getAppRoles().isEmpty()
         ? user.getRole().name()
         : user.getAppRoles().stream().map(AppRole::getName).collect(Collectors.joining(","));
-    return ResponseEntity.ok(Map.of("accessToken", accessToken, "username", user.getUsername(), "name", user.getName(), "role", roleStr));
+    return ResponseEntity.ok(ApiResponse.ok(Map.of("accessToken", accessToken, "username", user.getUsername(), "name", user.getName(), "role", roleStr)));
   }
 }

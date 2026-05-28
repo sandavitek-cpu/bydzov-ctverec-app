@@ -61,7 +61,7 @@ public class VehicleController {
     User user = (User) auth.getPrincipal();
     Vehicle v = vehicleRepository.findById(id).orElse(null);
     if (v == null || !v.getUser().getId().equals(user.getId())) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Vozidlo nenalezeno"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Vozidlo nenalezeno"));
     }
     if (body.containsKey("vehicleMake")) v.setVehicleMake(toString(body.get("vehicleMake")));
     if (body.containsKey("vehiclePlate")) v.setVehiclePlate(toString(body.get("vehiclePlate")));
@@ -81,10 +81,10 @@ public class VehicleController {
     User user = (User) auth.getPrincipal();
     Vehicle v = vehicleRepository.findById(id).orElse(null);
     if (v == null || !v.getUser().getId().equals(user.getId())) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Vozidlo nenalezeno"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Vozidlo nenalezeno"));
     }
     vehicleRepository.delete(v);
-    return ResponseEntity.ok(Map.of("deleted", true));
+    return ResponseEntity.ok(ApiResponse.ok(Map.of("deleted", true)));
   }
 
   private static Map<String, Object> toMap(Vehicle v) {

@@ -42,24 +42,24 @@ public class AdminLoggingController {
       case "DEBUG" -> "DEBUG";
       default -> "INFO";
     };
-    return ResponseEntity.ok(Map.of("level", label));
+    return ResponseEntity.ok(ApiResponse.ok(Map.of("level", label)));
   }
 
   @PostMapping("/level")
   public ResponseEntity<?> setLevel(@RequestBody Map<String, String> body) {
     String level = body.get("level");
     if (level == null || (!level.equals("INFO") && !level.equals("DEBUG"))) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Neplatná úroveň (INFO / DEBUG)"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Neplatná úroveň (INFO / DEBUG)"));
     }
     loggingSystem.setLogLevel("ROOT", LogLevel.valueOf(level));
-    return ResponseEntity.ok(Map.of("level", level));
+    return ResponseEntity.ok(ApiResponse.ok(Map.of("level", level)));
   }
 
   @GetMapping("/download")
   public ResponseEntity<?> download() {
     File file = new File(LOG_FILE);
     if (!file.exists()) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Log soubor nenalezen"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Log soubor nenalezen"));
     }
 
     LocalDateTime cutoff = LocalDateTime.now().minusMinutes(10);
@@ -83,7 +83,7 @@ public class AdminLoggingController {
         }
       }
     } catch (Exception e) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Chyba čtení logu: " + e.getMessage()));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Chyba čtení logu: " + e.getMessage()));
     }
 
     String content = String.join("\n", lines);

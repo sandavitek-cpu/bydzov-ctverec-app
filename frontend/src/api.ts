@@ -54,10 +54,15 @@ function isTokenExpiring(token: string): boolean {
   }
 }
 
+let refreshPromise: Promise<boolean> | null = null
+
 export async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
   let token = getToken()
   if (token && isTokenExpiring(token)) {
-    await tryRefreshToken()
+    if (!refreshPromise) {
+      refreshPromise = tryRefreshToken().finally(() => { refreshPromise = null })
+    }
+    await refreshPromise
     token = getToken()
   }
   const headers: Record<string, string> = {

@@ -2,7 +2,9 @@ package cz.previt.bydzovctverec.service;
 
 import cz.previt.bydzovctverec.domain.Edition;
 import cz.previt.bydzovctverec.domain.EditionRepository;
+import java.time.LocalDate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class EditionService {
@@ -17,11 +19,13 @@ public class EditionService {
     return editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
   }
 
+  @Transactional
   public Edition getOrCreateCurrentEdition() {
     Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
     if (edition == null) {
+      int year = LocalDate.now().getYear();
       edition = editionRepository.save(
-          new Edition(2026, "30. ročník Novobydžovského čtverce – Memoriál Elišky Junkové"));
+          new Edition(year, year + ". ročník Novobydžovského čtverce – Memoriál Elišky Junkové"));
     }
     return edition;
   }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import RuiAnAutocomplete from '@/components/RuiAnAutocomplete.vue'
 import { submitRegistration, fetchVehicles, createVehicle, fetchRacerProfile, lookupUserByEmail, fetchPublicVariants, fetchFees, type RegistrationResult, type CrewMemberInput, type VehicleData, type FeeConfig } from '@/api'
 import { useAuth } from '@/composables/useAuth'
@@ -103,6 +103,10 @@ watch(selectedVehicleId, (id) => {
 const hasVehicles = computed(() => myVehicles.value.length > 0)
 
 let emailLookupTimer: ReturnType<typeof setTimeout> | null = null
+
+onUnmounted(() => {
+  if (emailLookupTimer) clearTimeout(emailLookupTimer)
+})
 
 async function lookupEmail(email: string, target: { firstName: string; lastName: string }) {
   if (!email || !email.includes('@')) return

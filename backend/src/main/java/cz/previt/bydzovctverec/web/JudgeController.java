@@ -3,12 +3,12 @@ package cz.previt.bydzovctverec.web;
 import cz.previt.bydzovctverec.domain.Checkpoint;
 import cz.previt.bydzovctverec.domain.CheckpointRepository;
 import cz.previt.bydzovctverec.domain.Edition;
-import cz.previt.bydzovctverec.domain.EditionRepository;
 import cz.previt.bydzovctverec.domain.RacerRegistration;
 import cz.previt.bydzovctverec.domain.RacerRegistrationRepository;
 import cz.previt.bydzovctverec.domain.Score;
 import cz.previt.bydzovctverec.domain.ScoreRepository;
 import cz.previt.bydzovctverec.domain.User;
+import cz.previt.bydzovctverec.service.EditionService;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -25,16 +25,16 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/judge")
 public class JudgeController {
 
-  private final EditionRepository editionRepository;
+  private final EditionService editionService;
   private final RacerRegistrationRepository racerRegistrationRepository;
   private final CheckpointRepository checkpointRepository;
   private final ScoreRepository scoreRepository;
 
-  public JudgeController(EditionRepository editionRepository,
+  public JudgeController(EditionService editionService,
       RacerRegistrationRepository racerRegistrationRepository,
       CheckpointRepository checkpointRepository,
       ScoreRepository scoreRepository) {
-    this.editionRepository = editionRepository;
+    this.editionService = editionService;
     this.racerRegistrationRepository = racerRegistrationRepository;
     this.checkpointRepository = checkpointRepository;
     this.scoreRepository = scoreRepository;
@@ -43,9 +43,9 @@ public class JudgeController {
   @GetMapping("/overview")
   @Transactional(readOnly = true)
   public ResponseEntity<?> overview(@AuthenticationPrincipal User user) {
-    Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
+    Edition edition = editionService.getCurrentEdition();
     if (edition == null) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Žádný aktivní ročník"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Žádný aktivní ročník"));
     }
 
     String judgeName = user.getUsername() != null ? user.getUsername() : user.getFirstName();

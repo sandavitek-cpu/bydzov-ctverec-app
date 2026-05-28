@@ -1,6 +1,8 @@
 package cz.previt.bydzovctverec.service;
 
 import cz.previt.bydzovctverec.domain.AppRoleRepository;
+import cz.previt.bydzovctverec.domain.Edition;
+import cz.previt.bydzovctverec.domain.EditionRepository;
 import cz.previt.bydzovctverec.domain.Notification;
 import cz.previt.bydzovctverec.domain.NotificationRepository;
 import cz.previt.bydzovctverec.domain.RacerRegistration;
@@ -13,6 +15,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class NotificationService {
@@ -23,16 +26,20 @@ public class NotificationService {
   private final UserRepository userRepository;
   private final AppRoleRepository appRoleRepository;
   private final RacerRegistrationRepository racerRegistrationRepository;
+  private final EditionRepository editionRepository;
 
   public NotificationService(NotificationRepository notificationRepository,
       UserRepository userRepository, AppRoleRepository appRoleRepository,
-      RacerRegistrationRepository racerRegistrationRepository) {
+      RacerRegistrationRepository racerRegistrationRepository,
+      EditionRepository editionRepository) {
     this.notificationRepository = notificationRepository;
     this.userRepository = userRepository;
     this.appRoleRepository = appRoleRepository;
     this.racerRegistrationRepository = racerRegistrationRepository;
+    this.editionRepository = editionRepository;
   }
 
+  @Transactional
   public void notifyAdmins(String title, String message, String link) {
     var adminRole = appRoleRepository.findByName("ADMIN");
     if (adminRole.isEmpty()) return;
@@ -58,7 +65,9 @@ public class NotificationService {
   }
 
   public List<User> resolveRacers() {
-    return racerRegistrationRepository.findAll().stream()
+    Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
+    if (edition == null) return List.of();
+    return racerRegistrationRepository.findByEditionOrderByStartNumber(edition).stream()
         .filter(r -> "PAID".equals(r.getStatus()))
         .map(r -> userRepository.findByEmail(r.getEmail()).orElse(null))
         .filter(u -> u != null)

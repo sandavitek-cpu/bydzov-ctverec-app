@@ -1,10 +1,10 @@
 package cz.previt.bydzovctverec.web;
 
 import cz.previt.bydzovctverec.domain.Edition;
-import cz.previt.bydzovctverec.domain.EditionRepository;
 import cz.previt.bydzovctverec.domain.Route;
 import cz.previt.bydzovctverec.domain.RoutePointRepository;
 import cz.previt.bydzovctverec.domain.RouteRepository;
+import cz.previt.bydzovctverec.service.EditionService;
 import java.util.List;
 import java.util.Map;
 import org.springframework.http.ResponseEntity;
@@ -17,23 +17,23 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/public/routes")
 public class PublicRouteController {
 
-  private final EditionRepository editionRepository;
+  private final EditionService editionService;
   private final RouteRepository routeRepository;
   private final RoutePointRepository routePointRepository;
 
-  public PublicRouteController(EditionRepository editionRepository,
+  public PublicRouteController(EditionService editionService,
       RouteRepository routeRepository,
       RoutePointRepository routePointRepository) {
-    this.editionRepository = editionRepository;
+    this.editionService = editionService;
     this.routeRepository = routeRepository;
     this.routePointRepository = routePointRepository;
   }
 
   @GetMapping("/{year}")
   public ResponseEntity<?> getPublishedRoutes(@PathVariable Integer year) {
-    Edition edition = editionRepository.findByEditionYear(year).orElse(null);
+    Edition edition = editionService.getByYear(year);
     if (edition == null) {
-      return ResponseEntity.ok(List.of());
+      return ResponseEntity.ok(ApiResponse.ok(List.of()));
     }
     var routes = routeRepository.findByEditionAndPublishedTrue(edition);
     var result = routes.stream().map(r -> {
@@ -46,9 +46,9 @@ public class PublicRouteController {
   @GetMapping("/{year}/variant/{variant}")
   public ResponseEntity<?> getRouteByVariant(@PathVariable Integer year,
       @PathVariable String variant) {
-    Edition edition = editionRepository.findByEditionYear(year).orElse(null);
+    Edition edition = editionService.getByYear(year);
     if (edition == null) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Ročník nenalezen"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Ročník nenalezen"));
     }
     var route = routeRepository.findByEditionAndVariant(edition, variant);
     if (route.isEmpty() || !Boolean.TRUE.equals(route.get().getPublished())) {

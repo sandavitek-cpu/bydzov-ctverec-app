@@ -39,6 +39,9 @@ function toLatLng(points: { lat: number; lng: number }[]): [number, number][] {
 }
 
 export function addFullscreenControl(map: L.Map) {
+  const handler = () => {
+    setTimeout(() => map.invalidateSize(), 300)
+  }
   const FullscreenControl = L.Control.extend({
     onAdd: function () {
       const btn = L.DomUtil.create('button', 'leaflet-bar')
@@ -53,10 +56,11 @@ export function addFullscreenControl(map: L.Map) {
           container.requestFullscreen?.()
         }
       }
-      document.addEventListener('fullscreenchange', () => {
-        setTimeout(() => map.invalidateSize(), 300)
-      })
+      document.addEventListener('fullscreenchange', handler)
       return btn
+    },
+    onRemove: function () {
+      document.removeEventListener('fullscreenchange', handler)
     },
   })
   new FullscreenControl({ position: 'topright' }).addTo(map)

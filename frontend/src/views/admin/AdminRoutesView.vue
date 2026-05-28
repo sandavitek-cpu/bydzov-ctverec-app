@@ -164,12 +164,18 @@ async function saveRoute() {
       if (res.status === 403) { logout(); router.push('/admin/login'); return }
       if (!res.ok) throw new Error((await res.json()).error ?? 'Chyba uložení')
       routeId = editingRoute.value.id
-      for (const pt of editingRoute.value.points) {
+      const oldPoints = [...editingRoute.value.points]
+      for (const pt of oldPoints) {
         if (pt.id) {
-          await fetch(`${apiBaseUrl}/api/admin/routes/${routeId}/points/${pt.id}`, {
+          const delRes = await fetch(`${apiBaseUrl}/api/admin/routes/${routeId}/points/${pt.id}`, {
             method: 'DELETE',
             headers: h,
           })
+          if (!delRes.ok) {
+            error.value = 'Chyba při mazání starých bodů'
+            saving.value = false
+            return
+          }
         }
       }
     } else {
@@ -190,7 +196,10 @@ async function saveRoute() {
         headers: { 'Content-Type': 'application/json', ...h },
         body: JSON.stringify({ lat: pt.lat, lng: pt.lng }),
       })
-      if (!res.ok) throw new Error('Chyba přidání bodu')
+      if (!res.ok) {
+        await load()
+        throw new Error('Chyba přidání bodu')
+      }
     }
 
     cancelEdit()

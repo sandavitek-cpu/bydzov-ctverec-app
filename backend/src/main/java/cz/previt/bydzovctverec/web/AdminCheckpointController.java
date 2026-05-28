@@ -57,7 +57,7 @@ public class AdminCheckpointController {
     List<Checkpoint> checkpoints = checkpointRepository.findByEditionOrderBySortOrder(edition);
     List<RacerRegistration> activeRacers = racerRegistrationRepository.findByEditionOrderByStartNumber(edition)
         .stream().filter(r -> "PAID".equals(r.getStatus())).toList();
-    var allScores = scoreRepository.findAll();
+    var allScores = scoreRepository.findByEditionYearWithRacer(edition.getEditionYear());
     var scoredByCp = allScores.stream()
         .collect(Collectors.groupingBy(s -> s.getCheckpoint().getId()));
     List<Map<String, Object>> cpProgress = new ArrayList<>();
@@ -85,12 +85,12 @@ public class AdminCheckpointController {
   public ResponseEntity<?> create(@RequestBody Map<String, Object> body) {
     Edition edition = editionService.getCurrentEdition();
     if (edition == null) return ResponseEntity.badRequest().body(ApiResponse.error("Žádný aktivní ročník"));
-    Checkpoint cp = new Checkpoint(edition, (String) body.get("name"),
+    Checkpoint cp = new Checkpoint(edition, WebUtils.toString(body.get("name")),
         body.get("lat") != null ? ((Number) body.get("lat")).doubleValue() : null,
         body.get("lng") != null ? ((Number) body.get("lng")).doubleValue() : null,
         body.get("radius") != null ? ((Number) body.get("radius")).intValue() : 300,
         body.get("sortOrder") != null ? ((Number) body.get("sortOrder")).intValue() : 0);
-    if (body.containsKey("taskDescription")) cp.setTaskDescription((String) body.get("taskDescription"));
+    if (body.containsKey("taskDescription")) cp.setTaskDescription(WebUtils.toString(body.get("taskDescription")));
     if (body.containsKey("maxPoints")) cp.setMaxPoints(((Number) body.get("maxPoints")).intValue());
     if (body.containsKey("volunteers")) cp.setVolunteers(toStringList(body.get("volunteers")));
     checkpointRepository.save(cp);
@@ -102,13 +102,13 @@ public class AdminCheckpointController {
   public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Map<String, Object> body) {
     Checkpoint cp = checkpointRepository.findById(id).orElse(null);
     if (cp == null) return ResponseEntity.badRequest().body(ApiResponse.error("Kontrola nenalezena"));
-    if (body.containsKey("name")) cp.setName((String) body.get("name"));
-    if (body.containsKey("lat")) cp.setLat(((Number) body.get("lat")).doubleValue());
-    if (body.containsKey("lng")) cp.setLng(((Number) body.get("lng")).doubleValue());
-    if (body.containsKey("radius")) cp.setRadius(((Number) body.get("radius")).intValue());
-    if (body.containsKey("sortOrder")) cp.setSortOrder(((Number) body.get("sortOrder")).intValue());
-    if (body.containsKey("taskDescription")) cp.setTaskDescription((String) body.get("taskDescription"));
-    if (body.containsKey("maxPoints")) cp.setMaxPoints(((Number) body.get("maxPoints")).intValue());
+    if (body.containsKey("name")) cp.setName(WebUtils.toString(body.get("name")));
+    if (body.containsKey("lat") && body.get("lat") instanceof Number n) cp.setLat(n.doubleValue());
+    if (body.containsKey("lng") && body.get("lng") instanceof Number n) cp.setLng(n.doubleValue());
+    if (body.containsKey("radius") && body.get("radius") instanceof Number n) cp.setRadius(n.intValue());
+    if (body.containsKey("sortOrder") && body.get("sortOrder") instanceof Number n) cp.setSortOrder(n.intValue());
+    if (body.containsKey("taskDescription")) cp.setTaskDescription(WebUtils.toString(body.get("taskDescription")));
+    if (body.containsKey("maxPoints") && body.get("maxPoints") instanceof Number n) cp.setMaxPoints(n.intValue());
     if (body.containsKey("volunteers")) cp.setVolunteers(toStringList(body.get("volunteers")));
     checkpointRepository.save(cp);
     return ResponseEntity.ok(toMap(cp));

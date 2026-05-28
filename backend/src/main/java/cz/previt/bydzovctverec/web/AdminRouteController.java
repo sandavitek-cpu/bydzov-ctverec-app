@@ -1,11 +1,11 @@
 package cz.previt.bydzovctverec.web;
 
 import cz.previt.bydzovctverec.domain.Edition;
-import cz.previt.bydzovctverec.domain.EditionRepository;
 import cz.previt.bydzovctverec.domain.Route;
 import cz.previt.bydzovctverec.domain.RoutePoint;
 import cz.previt.bydzovctverec.domain.RoutePointRepository;
 import cz.previt.bydzovctverec.domain.RouteRepository;
+import cz.previt.bydzovctverec.service.EditionService;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -24,21 +24,20 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/admin/routes")
 public class AdminRouteController {
 
-  private final EditionRepository editionRepository;
+  private final EditionService editionService;
   private final RouteRepository routeRepository;
   private final RoutePointRepository routePointRepository;
 
-  public AdminRouteController(EditionRepository editionRepository,
+  public AdminRouteController(EditionService editionService,
       RouteRepository routeRepository,
       RoutePointRepository routePointRepository) {
-    this.editionRepository = editionRepository;
+    this.editionService = editionService;
     this.routeRepository = routeRepository;
     this.routePointRepository = routePointRepository;
   }
 
   private Edition currentEdition() {
-    return editionRepository.findTopByOrderByEditionYearDesc()
-        .orElseGet(() -> editionRepository.save(new Edition(2026, "30. ročník Novobydžovského čtverce – Memoriál Elišky Junkové")));
+    return editionService.getOrCreateCurrentEdition();
   }
 
   @GetMapping
@@ -56,7 +55,7 @@ public class AdminRouteController {
   public ResponseEntity<?> get(@PathVariable Long id) {
     Route route = routeRepository.findById(id).orElse(null);
     if (route == null) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Trasa nenalezena"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Trasa nenalezena"));
     }
     var points = routePointRepository.findByRouteOrderBySortOrder(route);
     return ResponseEntity.ok(RouteResponse.from(route, points));
@@ -68,7 +67,7 @@ public class AdminRouteController {
     String variant = body.get("variant");
     String name = body.get("name");
     if (variant == null || variant.isBlank()) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Varianta je povinná"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Varianta je povinná"));
     }
     if (name == null) name = switch (variant) {
       case "JEDNODENNI" -> "Jednodenní trasa";
@@ -78,7 +77,7 @@ public class AdminRouteController {
     Edition edition = currentEdition();
     var existing = routeRepository.findByEditionAndVariant(edition, variant);
     if (existing.isPresent()) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Trasa pro tuto variantu již existuje"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Trasa pro tuto variantu již existuje"));
     }
     Route route = new Route(edition, variant, name, Instant.now());
     routeRepository.save(route);
@@ -90,12 +89,12 @@ public class AdminRouteController {
   public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Map<String, String> body) {
     Route route = routeRepository.findById(id).orElse(null);
     if (route == null) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Trasa nenalezena"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Trasa nenalezena"));
     }
     if (body.containsKey("name")) route.setName(body.get("name"));
     if (body.containsKey("avgSpeedKmph")) {
       try { route.setAvgSpeedKmph(Integer.parseInt(body.get("avgSpeedKmph"))); } catch (NumberFormatException e) {
-        return ResponseEntity.badRequest().body(Map.of("error", "Neplatná hodnota pro průměrnou rychlost"));
+        return ResponseEntity.badRequest().body(ApiResponse.error("Neplatná hodnota pro průměrnou rychlost"));
       }
     }
     routeRepository.save(route);
@@ -108,12 +107,12 @@ public class AdminRouteController {
   public ResponseEntity<?> delete(@PathVariable Long id) {
     Route route = routeRepository.findById(id).orElse(null);
     if (route == null) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Trasa nenalezena"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Trasa nenalezena"));
     }
     var points = routePointRepository.findByRouteOrderBySortOrder(route);
     routePointRepository.deleteAll(points);
     routeRepository.delete(route);
-    return ResponseEntity.ok(Map.of("deleted", true));
+    return ResponseEntity.ok(ApiResponse.ok(Map.of("deleted", true)));
   }
 
   @PostMapping("/{id}/publish")
@@ -121,7 +120,7 @@ public class AdminRouteController {
   public ResponseEntity<?> publish(@PathVariable Long id) {
     Route route = routeRepository.findById(id).orElse(null);
     if (route == null) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Trasa nenalezena"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Trasa nenalezena"));
     }
     route.setPublished(true);
     routeRepository.save(route);
@@ -134,12 +133,12 @@ public class AdminRouteController {
   public ResponseEntity<?> addPoint(@PathVariable Long id, @RequestBody Map<String, Object> body) {
     Route route = routeRepository.findById(id).orElse(null);
     if (route == null) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Trasa nenalezena"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Trasa nenalezena"));
     }
     double lat = toDouble(body.get("lat"));
     double lng = toDouble(body.get("lng"));
     if (lat == 0 && lng == 0) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Neplatné souřadnice"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Neplatné souřadnice"));
     }
     var existing = routePointRepository.findByRouteOrderBySortOrder(route);
     int nextOrder = existing.size() + 1;
@@ -165,11 +164,11 @@ public class AdminRouteController {
       @RequestBody Map<String, Object> body) {
     Route route = routeRepository.findById(id).orElse(null);
     if (route == null) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Trasa nenalezena"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Trasa nenalezena"));
     }
     RoutePoint point = routePointRepository.findById(pointId).orElse(null);
     if (point == null || !point.getRoute().getId().equals(route.getId())) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Bod nenalezen"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Bod nenalezen"));
     }
     if (body.containsKey("lat")) point.setLat(toDouble(body.get("lat")));
     if (body.containsKey("lng")) point.setLng(toDouble(body.get("lng")));
@@ -187,7 +186,7 @@ public class AdminRouteController {
   public ResponseEntity<?> removePoint(@PathVariable Long id, @PathVariable Long pointId) {
     Route route = routeRepository.findById(id).orElse(null);
     if (route == null) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Trasa nenalezena"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Trasa nenalezena"));
     }
     routePointRepository.deleteById(pointId);
 

@@ -31,7 +31,7 @@ public class AccountController {
     var u = (User) authentication.getPrincipal();
     var phone = u.getPhone() != null ? u.getPhone() : "";
     var memberSince = u.getMemberSince() != null ? u.getMemberSince().toString() : "";
-    return ResponseEntity.ok(Map.of(
+    return ResponseEntity.ok(ApiResponse.ok(Map.of(
         "id", u.getId(),
         "email", u.getEmail(),
         "username", u.getUsername(),
@@ -40,7 +40,7 @@ public class AccountController {
         "name", u.getName(),
         "phone", phone,
         "memberSince", memberSince,
-        "role", u.getRole().name()));
+        "role", u.getRole().name())));
   }
 
   @PutMapping("/password")
@@ -51,17 +51,17 @@ public class AccountController {
     var currentPassword = body.get("currentPassword");
     var newPassword = body.get("newPassword");
     if (currentPassword == null || newPassword == null || newPassword.isBlank()) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Chybí heslo"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Chybí heslo"));
     }
     if (newPassword.length() < 6) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Nové heslo musí mít alespoň 6 znaků"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Nové heslo musí mít alespoň 6 znaků"));
     }
     if (!passwordEncoder.matches(currentPassword, u.getPassword())) {
-      return ResponseEntity.status(401).body(Map.of("error", "Současné heslo nesouhlasí"));
+      return ResponseEntity.status(401).body(ApiResponse.error("Současné heslo nesouhlasí"));
     }
     u.setPassword(passwordEncoder.encode(newPassword));
     userRepository.save(u);
-    return ResponseEntity.ok(Map.of("message", "Heslo změněno"));
+    return ResponseEntity.ok(ApiResponse.ok(Map.of("message", "Heslo změněno")));
   }
 
   @PutMapping
@@ -77,7 +77,7 @@ public class AccountController {
     if (lastName != null && !lastName.isBlank()) u.setLastName(lastName);
     if (email != null && !email.isBlank()) {
       if (!email.equals(u.getEmail()) && userRepository.findByEmail(email).isPresent()) {
-        return ResponseEntity.badRequest().body(Map.of("error", "Email již existuje"));
+        return ResponseEntity.badRequest().body(ApiResponse.error("Email již existuje"));
       }
       u.setEmail(email);
     }
@@ -85,7 +85,7 @@ public class AccountController {
     userRepository.save(u);
     var respPhone = u.getPhone() != null ? u.getPhone() : "";
     var memberSince = u.getMemberSince() != null ? u.getMemberSince().toString() : "";
-    return ResponseEntity.ok(Map.of(
+    return ResponseEntity.ok(ApiResponse.ok(Map.of(
         "id", u.getId(),
         "email", u.getEmail(),
         "username", u.getUsername(),
@@ -94,6 +94,6 @@ public class AccountController {
         "name", u.getName(),
         "phone", respPhone,
         "memberSince", memberSince,
-        "role", u.getRole().name()));
+        "role", u.getRole().name())));
   }
 }

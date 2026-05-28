@@ -1,8 +1,8 @@
 package cz.previt.bydzovctverec.web;
 
 import cz.previt.bydzovctverec.domain.Edition;
-import cz.previt.bydzovctverec.domain.EditionRepository;
 import cz.previt.bydzovctverec.domain.MessageLog;
+import cz.previt.bydzovctverec.service.EditionService;
 import cz.previt.bydzovctverec.domain.MessageLogRepository;
 import cz.previt.bydzovctverec.domain.Notification;
 import cz.previt.bydzovctverec.domain.NotificationRepository;
@@ -38,21 +38,21 @@ public class AdminNotifyController {
 
   private final RacerRegistrationRepository racerRegistrationRepository;
   private final UserRepository userRepository;
-  private final EditionRepository editionRepository;
+  private final EditionService editionService;
   private final MessageLogRepository messageLogRepository;
   private final NotificationRepository notificationRepository;
   private final JavaMailSender mailSender;
   private final AppRoleRepository appRoleRepository;
 
   public AdminNotifyController(RacerRegistrationRepository racerRegistrationRepository,
-      UserRepository userRepository, EditionRepository editionRepository,
+      UserRepository userRepository, EditionService editionService,
       MessageLogRepository messageLogRepository,
       NotificationRepository notificationRepository,
       JavaMailSender mailSender,
       AppRoleRepository appRoleRepository) {
     this.racerRegistrationRepository = racerRegistrationRepository;
     this.userRepository = userRepository;
-    this.editionRepository = editionRepository;
+    this.editionService = editionService;
     this.messageLogRepository = messageLogRepository;
     this.notificationRepository = notificationRepository;
     this.mailSender = mailSender;
@@ -76,7 +76,7 @@ public class AdminNotifyController {
     )).toList();
     log.info("CHECK {}: {} users found", type, result.size());
     log.debug("CHECK {} users: {}", type, result);
-    return ResponseEntity.ok(Map.of("type", type, "users", result));
+    return ResponseEntity.ok(ApiResponse.ok(Map.of("type", type, "users", result)));
   }
 
   @PostMapping
@@ -87,13 +87,13 @@ public class AdminNotifyController {
     String messageBody = body.get("body");
 
     if (recipientType == null || recipientType.isBlank()) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Chybí typ příjemce"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Chybí typ příjemce"));
     }
     if (subject == null || subject.isBlank()) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Chybí předmět"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Chybí předmět"));
     }
     if (messageBody == null || messageBody.isBlank()) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Chybí zpráva"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Chybí zpráva"));
     }
 
     log.info("SEND type={} subject='{}'", recipientType, subject);
@@ -103,7 +103,7 @@ public class AdminNotifyController {
     log.debug("SEND emails: {}", emails);
 
     if (emails.isEmpty()) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Žádní příjemci"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Žádní příjemci"));
     }
 
     int sent = 0;
@@ -125,10 +125,10 @@ public class AdminNotifyController {
     messageLogRepository.save(new MessageLog(recipientType, subject, messageBody, sent, Instant.now()));
     log.info("Notified {} / {} recipients (type={})", sent, emails.size(), recipientType);
 
-    return ResponseEntity.ok(Map.of(
+    return ResponseEntity.ok(ApiResponse.ok(Map.of(
         "sent", sent,
         "total", emails.size(),
-        "recipientType", recipientType));
+        "recipientType", recipientType)));
   }
 
   private void createNotifications(String type, String title, String message) {
@@ -154,7 +154,7 @@ public class AdminNotifyController {
   }
 
   private List<User> resolveRacers(List<User> all) {
-    Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
+    Edition edition = editionService.getCurrentEdition();
     if (edition == null) return List.of();
     var emails = racerRegistrationRepository.findByEditionOrderByStartNumber(edition).stream()
         .filter(r -> "PAID".equals(r.getStatus()))
@@ -200,7 +200,7 @@ public class AdminNotifyController {
   private List<String> resolveRecipients(String type) {
     return switch (type) {
       case "ALL_RACERS" -> {
-        Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
+        Edition edition = editionService.getCurrentEdition();
         if (edition == null) yield List.of();
         yield racerRegistrationRepository.findByEditionOrderByStartNumber(edition).stream()
             .filter(r -> "PAID".equals(r.getStatus()))

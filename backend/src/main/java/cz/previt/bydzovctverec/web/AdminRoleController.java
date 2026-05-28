@@ -62,16 +62,16 @@ public class AdminRoleController {
     var name = body.get("name");
     var displayName = body.get("displayName");
     if (name == null || name.isBlank()) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Chybí název role"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Chybí název role"));
     }
     if (appRoleRepository.findByName(name.toUpperCase()).isPresent()) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Role již existuje"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Role již existuje"));
     }
     var role = appRoleRepository.save(new AppRole(name.toUpperCase(), displayName, Instant.now()));
-    return ResponseEntity.ok(Map.of(
+    return ResponseEntity.ok(ApiResponse.ok(Map.of(
         "id", role.getId(),
         "name", role.getName(),
-        "displayName", role.getDisplayName()));
+        "displayName", role.getDisplayName())));
   }
 
   @PutMapping("/{id}")
@@ -84,22 +84,22 @@ public class AdminRoleController {
       role.setDisplayName(displayName);
     }
     appRoleRepository.save(role);
-    return ResponseEntity.ok(Map.of(
+    return ResponseEntity.ok(ApiResponse.ok(Map.of(
         "id", role.getId(),
         "name", role.getName(),
-        "displayName", role.getDisplayName()));
+        "displayName", role.getDisplayName())));
   }
 
   @DeleteMapping("/{id}")
   @Transactional
   public ResponseEntity<?> delete(@PathVariable Long id) {
     if (!appRoleRepository.existsById(id)) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Role nenalezena"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Role nenalezena"));
     }
     boolean hasUsers = userRepository.findAll().stream()
         .anyMatch(u -> u.getAppRoles().stream().anyMatch(r -> r.getId().equals(id)));
     if (hasUsers) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Roli nelze smazat – je přiřazena uživatelům"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Roli nelze smazat – je přiřazena uživatelům"));
     }
     appRoleRepository.deleteById(id);
     return ResponseEntity.noContent().build();

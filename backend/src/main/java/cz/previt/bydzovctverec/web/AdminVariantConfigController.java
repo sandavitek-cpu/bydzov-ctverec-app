@@ -1,9 +1,9 @@
 package cz.previt.bydzovctverec.web;
 
 import cz.previt.bydzovctverec.domain.Edition;
-import cz.previt.bydzovctverec.domain.EditionRepository;
 import cz.previt.bydzovctverec.domain.VariantConfig;
 import cz.previt.bydzovctverec.domain.VariantConfigRepository;
+import cz.previt.bydzovctverec.service.EditionService;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -27,18 +27,18 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminVariantConfigController {
 
   private final VariantConfigRepository variantConfigRepository;
-  private final EditionRepository editionRepository;
+  private final EditionService editionService;
 
-  public AdminVariantConfigController(VariantConfigRepository variantConfigRepository, EditionRepository editionRepository) {
+  public AdminVariantConfigController(VariantConfigRepository variantConfigRepository, EditionService editionService) {
     this.variantConfigRepository = variantConfigRepository;
-    this.editionRepository = editionRepository;
+    this.editionService = editionService;
   }
 
   @GetMapping
   public ResponseEntity<?> list() {
-    Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
+    Edition edition = editionService.getCurrentEdition();
     if (edition == null) {
-      return ResponseEntity.ok(List.of());
+      return ResponseEntity.ok(ApiResponse.ok(List.of()));
     }
     List<Map<String, Object>> result = variantConfigRepository.findByEdition(edition).stream()
         .map(this::toMap)
@@ -49,14 +49,14 @@ public class AdminVariantConfigController {
   @PostMapping
   @Transactional
   public ResponseEntity<?> create(@RequestBody Map<String, Object> body) {
-    Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
+    Edition edition = editionService.getCurrentEdition();
     if (edition == null) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Žádný aktivní ročník"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Žádný aktivní ročník"));
     }
-    String variantCode = (String) body.get("variantCode");
-    String label = (String) body.get("label");
+    String variantCode = WebUtils.toString(body.get("variantCode"));
+    String label = WebUtils.toString(body.get("label"));
     if (variantCode == null || variantCode.isBlank() || label == null || label.isBlank()) {
-      return ResponseEntity.badRequest().body(Map.of("error", "variantCode a label jsou povinné"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("variantCode a label jsou povinné"));
     }
     VariantConfig vc = new VariantConfig(edition, variantCode, label);
     vc.setRegistrationDeadline(parseDate(body.get("registrationDeadline")));
@@ -71,10 +71,10 @@ public class AdminVariantConfigController {
   public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Map<String, Object> body) {
     VariantConfig vc = variantConfigRepository.findById(id).orElse(null);
     if (vc == null) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Varianta nenalezena"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Varianta nenalezena"));
     }
-    if (body.containsKey("variantCode")) vc.setVariantCode((String) body.get("variantCode"));
-    if (body.containsKey("label")) vc.setLabel((String) body.get("label"));
+    if (body.containsKey("variantCode")) vc.setVariantCode(WebUtils.toString(body.get("variantCode")));
+    if (body.containsKey("label")) vc.setLabel(WebUtils.toString(body.get("label")));
     if (body.containsKey("registrationDeadline")) vc.setRegistrationDeadline(parseDate(body.get("registrationDeadline")));
     if (body.containsKey("raceDate")) vc.setRaceDate(parseDate(body.get("raceDate")));
     if (body.containsKey("enabled")) vc.setEnabled(Boolean.TRUE.equals(body.get("enabled")));
@@ -87,7 +87,7 @@ public class AdminVariantConfigController {
   public ResponseEntity<?> reopen(@PathVariable Long id, @RequestBody Map<String, Object> body) {
     VariantConfig vc = variantConfigRepository.findById(id).orElse(null);
     if (vc == null) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Varianta nenalezena"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Varianta nenalezena"));
     }
     Instant until;
     if (Boolean.TRUE.equals(body.get("untilMidnight"))) {
@@ -95,13 +95,13 @@ public class AdminVariantConfigController {
     } else {
       Object duration = body.get("durationMinutes");
       if (duration == null) {
-        return ResponseEntity.badRequest().body(Map.of("error", "durationMinutes nebo untilMidnight je vyžadováno"));
+        return ResponseEntity.badRequest().body(ApiResponse.error("durationMinutes nebo untilMidnight je vyžadováno"));
       }
       long minutes;
       try {
         minutes = Long.parseLong(duration.toString());
       } catch (NumberFormatException e) {
-        return ResponseEntity.badRequest().body(Map.of("error", "durationMinutes musí být číslo"));
+        return ResponseEntity.badRequest().body(ApiResponse.error("durationMinutes musí být číslo"));
       }
       until = Instant.now().plusSeconds(minutes * 60);
     }
@@ -115,7 +115,7 @@ public class AdminVariantConfigController {
   public ResponseEntity<?> closeReopen(@PathVariable Long id) {
     VariantConfig vc = variantConfigRepository.findById(id).orElse(null);
     if (vc == null) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Varianta nenalezena"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Varianta nenalezena"));
     }
     vc.setRegistrationReopenedUntil(null);
     variantConfigRepository.save(vc);
@@ -127,10 +127,10 @@ public class AdminVariantConfigController {
   public ResponseEntity<?> delete(@PathVariable Long id) {
     VariantConfig vc = variantConfigRepository.findById(id).orElse(null);
     if (vc == null) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Varianta nenalezena"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Varianta nenalezena"));
     }
     variantConfigRepository.delete(vc);
-    return ResponseEntity.ok(Map.of("deleted", true));
+    return ResponseEntity.ok(ApiResponse.ok(Map.of("deleted", true)));
   }
 
   private Map<String, Object> toMap(VariantConfig vc) {

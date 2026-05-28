@@ -45,35 +45,35 @@ public class AdminArchiveController {
   @PostMapping
   @Transactional
   public ResponseEntity<?> create(@RequestBody Map<String, Object> body) {
-    Integer editionYear = (Integer) body.get("editionYear");
-    Integer rank = (Integer) body.get("rank");
-    String racerName = (String) body.get("racerName");
-    String vehicle = (String) body.get("vehicle");
-    Integer points = (Integer) body.get("points");
+    Integer editionYear = WebUtils.toInt(body.get("editionYear"));
+    Integer rank = WebUtils.toInt(body.get("rank"));
+    String racerName = WebUtils.toString(body.get("racerName"));
+    String vehicle = WebUtils.toString(body.get("vehicle"));
+    Integer points = WebUtils.toInt(body.get("points"));
 
     if (editionYear == null || rank == null || racerName == null || points == null) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Chybí povinná pole"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Chybí povinná pole"));
     }
 
     ArchiveEntry entry = new ArchiveEntry(editionYear, rank, racerName, vehicle, points);
     archiveEntryRepository.save(entry);
-    return ResponseEntity.ok(Map.of(
+    return ResponseEntity.ok(ApiResponse.ok(Map.of(
         "id", entry.getId(),
         "editionYear", entry.getEditionYear(),
         "rank", entry.getRank(),
         "racerName", entry.getRacerName(),
         "vehicle", entry.getVehicle(),
-        "points", entry.getPoints()));
+        "points", entry.getPoints())));
   }
 
   @DeleteMapping("/{id}")
   @Transactional
   public ResponseEntity<?> delete(@PathVariable Long id) {
     if (!archiveEntryRepository.existsById(id)) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Záznam nenalezen"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Záznam nenalezen"));
     }
     archiveEntryRepository.deleteById(id);
-    return ResponseEntity.ok(Map.of("deleted", true));
+    return ResponseEntity.ok(ApiResponse.ok(Map.of("deleted", true)));
   }
 
   @PostMapping(value = "/import", consumes = MediaType.TEXT_PLAIN_VALUE)
@@ -97,6 +97,6 @@ public class AdminArchiveController {
         saved.add(archiveEntryRepository.save(new ArchiveEntry(year, rank, name, veh, pts)));
       } catch (NumberFormatException ignored) {}
     }
-    return ResponseEntity.ok(Map.of("imported", saved.size()));
+    return ResponseEntity.ok(ApiResponse.ok(Map.of("imported", saved.size())));
   }
 }

@@ -1,7 +1,6 @@
 package cz.previt.bydzovctverec.web;
 
 import cz.previt.bydzovctverec.domain.Edition;
-import cz.previt.bydzovctverec.domain.EditionRepository;
 import cz.previt.bydzovctverec.domain.RaceCategory;
 import cz.previt.bydzovctverec.domain.RaceCategoryRepository;
 import cz.previt.bydzovctverec.domain.RacerRegistration;
@@ -9,6 +8,7 @@ import cz.previt.bydzovctverec.domain.RacerRegistrationRepository;
 import cz.previt.bydzovctverec.domain.Score;
 import cz.previt.bydzovctverec.domain.ScoreRepository;
 import cz.previt.bydzovctverec.service.CeremonyService;
+import cz.previt.bydzovctverec.service.EditionService;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -31,21 +31,21 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminCategoryController {
 
   private final RaceCategoryRepository raceCategoryRepository;
-  private final EditionRepository editionRepository;
+  private final EditionService editionService;
   private final CeremonyService ceremonyService;
 
   public AdminCategoryController(RaceCategoryRepository raceCategoryRepository,
-      EditionRepository editionRepository, CeremonyService ceremonyService) {
+      EditionService editionService, CeremonyService ceremonyService) {
     this.raceCategoryRepository = raceCategoryRepository;
-    this.editionRepository = editionRepository;
+    this.editionService = editionService;
     this.ceremonyService = ceremonyService;
   }
 
   @GetMapping
   public ResponseEntity<?> list() {
-    Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
+    Edition edition = editionService.getCurrentEdition();
     if (edition == null) {
-      return ResponseEntity.ok(List.of());
+      return ResponseEntity.ok(ApiResponse.ok(List.of()));
     }
     return ResponseEntity.ok(
         raceCategoryRepository.findByEditionOrderBySortOrder(edition).stream()
@@ -55,18 +55,18 @@ public class AdminCategoryController {
   @PostMapping
   @Transactional
   public ResponseEntity<?> create(@RequestBody Map<String, Object> body) {
-    Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
+    Edition edition = editionService.getCurrentEdition();
     if (edition == null) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Žádný aktivní ročník"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Žádný aktivní ročník"));
     }
-    String name = (String) body.get("name");
+    String name = WebUtils.toString(body.get("name"));
     if (name == null || name.isBlank()) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Název kategorie je povinný"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Název kategorie je povinný"));
     }
     RaceCategory cat = new RaceCategory(edition, name,
-        (String) body.get("code"),
-        (String) body.get("variant"),
-        (String) body.get("determination"),
+        WebUtils.toString(body.get("code")),
+        WebUtils.toString(body.get("variant")),
+        WebUtils.toString(body.get("determination")),
         body.get("sortOrder") instanceof Number n ? n.intValue() : 0);
     raceCategoryRepository.save(cat);
     return ResponseEntity.ok(toMap(cat));
@@ -77,19 +77,19 @@ public class AdminCategoryController {
   public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Map<String, Object> body) {
     RaceCategory cat = raceCategoryRepository.findById(id).orElse(null);
     if (cat == null) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Kategorie nenalezena"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Kategorie nenalezena"));
     }
-    if (body.containsKey("name")) cat.setName((String) body.get("name"));
-    if (body.containsKey("code")) cat.setCode((String) body.get("code"));
-    if (body.containsKey("variant")) cat.setVariant((String) body.get("variant"));
-    if (body.containsKey("determination")) cat.setDetermination((String) body.get("determination"));
+    if (body.containsKey("name")) cat.setName(WebUtils.toString(body.get("name")));
+    if (body.containsKey("code")) cat.setCode(WebUtils.toString(body.get("code")));
+    if (body.containsKey("variant")) cat.setVariant(WebUtils.toString(body.get("variant")));
+    if (body.containsKey("determination")) cat.setDetermination(WebUtils.toString(body.get("determination")));
     if (body.containsKey("sortOrder") && body.get("sortOrder") instanceof Number n) cat.setSortOrder(n.intValue());
     if (body.containsKey("winnerRegistrationId")) {
       cat.setWinnerRegistrationId(body.get("winnerRegistrationId") != null
           ? ((Number) body.get("winnerRegistrationId")).longValue() : null);
     }
-    if (body.containsKey("winnerName")) cat.setWinnerName((String) body.get("winnerName"));
-    if (body.containsKey("winnerTeam")) cat.setWinnerTeam((String) body.get("winnerTeam"));
+    if (body.containsKey("winnerName")) cat.setWinnerName(WebUtils.toString(body.get("winnerName")));
+    if (body.containsKey("winnerTeam")) cat.setWinnerTeam(WebUtils.toString(body.get("winnerTeam")));
     if (body.containsKey("winnerNumber")) {
       cat.setWinnerNumber(body.get("winnerNumber") != null
           ? ((Number) body.get("winnerNumber")).intValue() : null);
@@ -107,21 +107,21 @@ public class AdminCategoryController {
   public ResponseEntity<?> delete(@PathVariable Long id) {
     RaceCategory cat = raceCategoryRepository.findById(id).orElse(null);
     if (cat == null) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Kategorie nenalezena"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Kategorie nenalezena"));
     }
     raceCategoryRepository.delete(cat);
-    return ResponseEntity.ok(Map.of("deleted", true));
+    return ResponseEntity.ok(ApiResponse.ok(Map.of("deleted", true)));
   }
 
   @PostMapping("/compute")
   @Transactional
   public ResponseEntity<?> computeWinners() {
-    Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
+    Edition edition = editionService.getCurrentEdition();
     if (edition == null) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Žádný aktivní ročník"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Žádný aktivní ročník"));
     }
     int count = ceremonyService.computeCategoryWinners();
-    return ResponseEntity.ok(Map.of("computed", true, "count", count));
+    return ResponseEntity.ok(ApiResponse.ok(Map.of("computed", true, "count", count)));
   }
 
   private Map<String, Object> toMap(RaceCategory cat) {

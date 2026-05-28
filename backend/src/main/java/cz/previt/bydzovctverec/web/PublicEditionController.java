@@ -3,7 +3,7 @@ package cz.previt.bydzovctverec.web;
 import cz.previt.bydzovctverec.domain.Checkpoint;
 import cz.previt.bydzovctverec.domain.CheckpointRepository;
 import cz.previt.bydzovctverec.domain.Edition;
-import cz.previt.bydzovctverec.domain.EditionRepository;
+import cz.previt.bydzovctverec.service.EditionService;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,21 +17,17 @@ import org.springframework.web.bind.annotation.RestController;
 public class PublicEditionController {
 
   private static final Logger log = LoggerFactory.getLogger(PublicEditionController.class);
-  private final EditionRepository editionRepository;
+  private final EditionService editionService;
   private final CheckpointRepository checkpointRepository;
 
-  public PublicEditionController(EditionRepository editionRepository, CheckpointRepository checkpointRepository) {
-    this.editionRepository = editionRepository;
+  public PublicEditionController(EditionService editionService, CheckpointRepository checkpointRepository) {
+    this.editionService = editionService;
     this.checkpointRepository = checkpointRepository;
   }
 
   @GetMapping("/current")
   public ResponseEntity<EditionResponse> current() {
-    Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
-    if (edition == null) {
-      edition = editionRepository.save(new Edition(2026, "30. ročník Novobydžovského čtverce – Memoriál Elišky Junkové"));
-      seedCheckpoints(edition);
-    }
+    Edition edition = editionService.getOrCreateCurrentEdition();
 
     List<Checkpoint> existing = checkpointRepository.findByEditionOrderBySortOrder(edition);
     if (existing.isEmpty()) {

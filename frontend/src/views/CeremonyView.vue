@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { fetchCeremonyCategories, generateCeremonyPresentation, type CeremonyData } from '@/api'
 
@@ -28,6 +28,13 @@ const overlayCountdown = ref(3)
 const overlaySlide = ref<Slide | null>(null)
 const doneIds = ref<Set<string>>(new Set())
 const isAdmin = ref(false)
+let countdownInterval: ReturnType<typeof setInterval> | null = null
+const pendingTimeouts: ReturnType<typeof setTimeout>[] = []
+
+onUnmounted(() => {
+  if (countdownInterval) clearInterval(countdownInterval)
+  pendingTimeouts.forEach(clearTimeout)
+})
 
 const adminToken = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null
 const adminRole = typeof window !== 'undefined' ? localStorage.getItem('admin_role') : null
@@ -78,15 +85,17 @@ function showSlide(index: number) {
     showOverlay.value = false
     return
   }
+  if (countdownInterval) clearInterval(countdownInterval)
   overlaySlide.value = slides.value[index]
   overlayPhase.value = 'countdown'
   overlayCountdown.value = 3
   let count = 3
-  const t = setInterval(() => {
+  countdownInterval = setInterval(() => {
     count--
     overlayCountdown.value = count
     if (count <= 0) {
-      clearInterval(t)
+      clearInterval(countdownInterval!)
+      countdownInterval = null
       overlayPhase.value = 'reveal'
       doneIds.value = new Set([...doneIds.value, overlaySlide.value!.id])
     }

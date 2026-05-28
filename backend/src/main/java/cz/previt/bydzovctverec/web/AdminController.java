@@ -129,30 +129,30 @@ public class AdminController {
     if (reg == null) {
       return ResponseEntity.badRequest().body(ApiResponse.error("Přihláška nenalezena"));
     }
-    if (body.containsKey("variant")) reg.setVariant((String) body.get("variant"));
-    if (body.containsKey("teamName")) reg.setTeamName((String) body.get("teamName"));
-    if (body.containsKey("phone")) reg.setPhone((String) body.get("phone"));
-    if (body.containsKey("vehicleCategory")) reg.setVehicleCategory((String) body.get("vehicleCategory"));
-    if (body.containsKey("vehicleMake")) reg.setVehicleMake((String) body.get("vehicleMake"));
-    if (body.containsKey("vehiclePlate")) reg.setVehiclePlate((String) body.get("vehiclePlate"));
+    if (body.containsKey("variant")) reg.setVariant(toString(body.get("variant")));
+    if (body.containsKey("teamName")) reg.setTeamName(toString(body.get("teamName")));
+    if (body.containsKey("phone")) reg.setPhone(toString(body.get("phone")));
+    if (body.containsKey("vehicleCategory")) reg.setVehicleCategory(toString(body.get("vehicleCategory")));
+    if (body.containsKey("vehicleMake")) reg.setVehicleMake(toString(body.get("vehicleMake")));
+    if (body.containsKey("vehiclePlate")) reg.setVehiclePlate(toString(body.get("vehiclePlate")));
     if (body.containsKey("vehicleYear")) reg.setVehicleYear(toInt(body.get("vehicleYear")));
     if (body.containsKey("crewCount")) reg.setCrewCount(toInt(body.get("crewCount")));
-    if (body.containsKey("firstTime")) reg.setFirstTime((Boolean) body.get("firstTime"));
-    if (body.containsKey("gender")) reg.setGender((String) body.get("gender"));
+    if (body.containsKey("firstTime")) reg.setFirstTime(toBoolean(body.get("firstTime")));
+    if (body.containsKey("gender")) reg.setGender(toString(body.get("gender")));
     if (body.containsKey("driverAge")) reg.setDriverAge(toInt(body.get("driverAge")));
-    if (body.containsKey("club")) reg.setClub((String) body.get("club"));
-    if (body.containsKey("address")) reg.setAddress((String) body.get("address"));
+    if (body.containsKey("club")) reg.setClub(toString(body.get("club")));
+    if (body.containsKey("address")) reg.setAddress(toString(body.get("address")));
     if (body.containsKey("youngestAge")) reg.setYoungestAge(toInt(body.get("youngestAge")));
-    if (body.containsKey("youngestName")) reg.setYoungestName((String) body.get("youngestName"));
+    if (body.containsKey("youngestName")) reg.setYoungestName(toString(body.get("youngestName")));
     if (body.containsKey("engineDisplacement")) reg.setEngineDisplacement(toInt(body.get("engineDisplacement")));
     if (body.containsKey("power")) reg.setPower(toInt(body.get("power")));
     if (body.containsKey("maxSpeed")) reg.setMaxSpeed(toInt(body.get("maxSpeed")));
-    if (body.containsKey("vehicleNotes")) reg.setVehicleNotes((String) body.get("vehicleNotes"));
-    if (body.containsKey("notes")) reg.setNotes((String) body.get("notes"));
-    if (body.containsKey("contacted")) reg.setContacted((Boolean) body.get("contacted"));
-    if (body.containsKey("properlyRegistered")) reg.setProperlyRegistered((Boolean) body.get("properlyRegistered"));
-    if (body.containsKey("arrived")) reg.setArrived((Boolean) body.get("arrived"));
-    if (body.containsKey("consent")) reg.setConsent((Boolean) body.get("consent"));
+    if (body.containsKey("vehicleNotes")) reg.setVehicleNotes(toString(body.get("vehicleNotes")));
+    if (body.containsKey("notes")) reg.setNotes(toString(body.get("notes")));
+    if (body.containsKey("contacted")) reg.setContacted(toBoolean(body.get("contacted")));
+    if (body.containsKey("properlyRegistered")) reg.setProperlyRegistered(toBoolean(body.get("properlyRegistered")));
+    if (body.containsKey("arrived")) reg.setArrived(toBoolean(body.get("arrived")));
+    if (body.containsKey("consent")) reg.setConsent(toBoolean(body.get("consent")));
 
     boolean feeAffected = body.containsKey("variant") || body.containsKey("vehicleYear") || body.containsKey("crewCount");
     String message = null;
@@ -606,5 +606,17 @@ Tým Novobydžovského čtverce
     if (v == null) return null;
     if (v instanceof Number n) return n.intValue();
     try { return Integer.parseInt(v.toString()); } catch (NumberFormatException e) { return null; }
+  }
+
+  private String toString(Object v) {
+    if (v == null) return null;
+    if (v instanceof String s) return s;
+    return v.toString();
+  }
+
+  private Boolean toBoolean(Object v) {
+    if (v == null) return null;
+    if (v instanceof Boolean b) return b;
+    return "true".equalsIgnoreCase(v.toString());
   }
 }

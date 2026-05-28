@@ -1,9 +1,9 @@
 package cz.previt.bydzovctverec.web;
 
 import cz.previt.bydzovctverec.domain.Edition;
-import cz.previt.bydzovctverec.domain.EditionRepository;
 import cz.previt.bydzovctverec.domain.ScheduleItem;
 import cz.previt.bydzovctverec.domain.ScheduleItemRepository;
+import cz.previt.bydzovctverec.service.EditionService;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,21 +24,21 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminScheduleController {
 
   private final ScheduleItemRepository scheduleItemRepository;
-  private final EditionRepository editionRepository;
+  private final EditionService editionService;
   private final SimpMessagingTemplate messagingTemplate;
 
   public AdminScheduleController(ScheduleItemRepository scheduleItemRepository,
-      EditionRepository editionRepository, SimpMessagingTemplate messagingTemplate) {
+      EditionService editionService, SimpMessagingTemplate messagingTemplate) {
     this.scheduleItemRepository = scheduleItemRepository;
-    this.editionRepository = editionRepository;
+    this.editionService = editionService;
     this.messagingTemplate = messagingTemplate;
   }
 
   @GetMapping
   public ResponseEntity<?> list() {
-    Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
+    Edition edition = editionService.getCurrentEdition();
     if (edition == null) {
-      return ResponseEntity.ok(List.of());
+      return ResponseEntity.ok(ApiResponse.ok(List.of()));
     }
     return ResponseEntity.ok(
         scheduleItemRepository.findByEditionOrderBySortOrder(edition).stream()
@@ -48,17 +48,17 @@ public class AdminScheduleController {
   @PostMapping
   @Transactional
   public ResponseEntity<?> create(@RequestBody Map<String, Object> body) {
-    Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
+    Edition edition = editionService.getCurrentEdition();
     if (edition == null) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Žádný aktivní ročník"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Žádný aktivní ročník"));
     }
-    String time = (String) body.get("time");
-    String label = (String) body.get("label");
+    String time = WebUtils.toString(body.get("time"));
+    String label = WebUtils.toString(body.get("label"));
     if (time == null || label == null || time.isBlank() || label.isBlank()) {
-      return ResponseEntity.badRequest().body(Map.of("error", "time a label jsou povinné"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("time a label jsou povinné"));
     }
     ScheduleItem item = new ScheduleItem(edition, time, label,
-        (String) body.get("description"),
+        WebUtils.toString(body.get("description")),
         body.get("sortOrder") instanceof Number n ? n.intValue() : 0);
     scheduleItemRepository.save(item);
     broadcast();
@@ -70,11 +70,11 @@ public class AdminScheduleController {
   public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Map<String, Object> body) {
     ScheduleItem item = scheduleItemRepository.findById(id).orElse(null);
     if (item == null) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Položka nenalezena"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Položka nenalezena"));
     }
-    if (body.containsKey("time")) item.setTime((String) body.get("time"));
-    if (body.containsKey("label")) item.setLabel((String) body.get("label"));
-    if (body.containsKey("description")) item.setDescription((String) body.get("description"));
+    if (body.containsKey("time")) item.setTime(WebUtils.toString(body.get("time")));
+    if (body.containsKey("label")) item.setLabel(WebUtils.toString(body.get("label")));
+    if (body.containsKey("description")) item.setDescription(WebUtils.toString(body.get("description")));
     if (body.containsKey("sortOrder") && body.get("sortOrder") instanceof Number n) item.setSortOrder(n.intValue());
     scheduleItemRepository.save(item);
     broadcast();
@@ -86,15 +86,15 @@ public class AdminScheduleController {
   public ResponseEntity<?> delete(@PathVariable Long id) {
     ScheduleItem item = scheduleItemRepository.findById(id).orElse(null);
     if (item == null) {
-      return ResponseEntity.badRequest().body(Map.of("error", "Položka nenalezena"));
+      return ResponseEntity.badRequest().body(ApiResponse.error("Položka nenalezena"));
     }
     scheduleItemRepository.delete(item);
     broadcast();
-    return ResponseEntity.ok(Map.of("deleted", true));
+    return ResponseEntity.ok(ApiResponse.ok(Map.of("deleted", true)));
   }
 
   private void broadcast() {
-    Edition edition = editionRepository.findTopByOrderByEditionYearDesc().orElse(null);
+    Edition edition = editionService.getCurrentEdition();
     if (edition == null) return;
     List<Map<String, Object>> items = scheduleItemRepository
         .findByEditionOrderBySortOrder(edition).stream()
