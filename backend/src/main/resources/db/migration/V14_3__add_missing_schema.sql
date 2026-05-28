@@ -20,6 +20,8 @@ ALTER TABLE app_user ADD COLUMN IF NOT EXISTS member_since DATE;
 UPDATE app_user SET username = email WHERE username = '';
 UPDATE app_user SET first_name = name WHERE first_name = '';
 
+ALTER TABLE app_user ALTER COLUMN name DROP NOT NULL;
+
 ALTER TABLE racer_registration ADD COLUMN IF NOT EXISTS team_name VARCHAR(200);
 ALTER TABLE racer_registration ADD COLUMN IF NOT EXISTS phone VARCHAR(30);
 ALTER TABLE racer_registration ADD COLUMN IF NOT EXISTS vehicle_category VARCHAR(50);
