@@ -35,6 +35,9 @@ public class Score {
   @Column(nullable = false)
   private Integer points;
 
+  @Column(name = "run_number", nullable = false)
+  private int runNumber;
+
   @Column(length = 500)
   private String note;
 
@@ -44,9 +47,14 @@ public class Score {
   protected Score() {}
 
   public Score(RacerRegistration racerRegistration, User judge, Checkpoint checkpoint, Integer points, String note, Instant createdAt) {
+    this(racerRegistration, judge, checkpoint, 1, points, note, createdAt);
+  }
+
+  public Score(RacerRegistration racerRegistration, User judge, Checkpoint checkpoint, int runNumber, Integer points, String note, Instant createdAt) {
     this.racerRegistration = racerRegistration;
     this.judge = judge;
     this.checkpoint = checkpoint;
+    this.runNumber = runNumber;
     this.points = points;
     this.note = note;
     this.createdAt = createdAt;
@@ -56,6 +64,7 @@ public class Score {
   public RacerRegistration getRacerRegistration() { return racerRegistration; }
   public User getJudge() { return judge; }
   public Checkpoint getCheckpoint() { return checkpoint; }
+  public int getRunNumber() { return runNumber; }
   public Integer getPoints() { return points; }
   public String getNote() { return note; }
   public Instant getCreatedAt() { return createdAt; }
