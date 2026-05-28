@@ -76,7 +76,7 @@ public class AdminNotifyController {
     )).toList();
     log.info("CHECK {}: {} users found", type, result.size());
     log.debug("CHECK {} users: {}", type, result);
-    return ResponseEntity.ok(ApiResponse.ok(Map.of("type", type, "users", result)));
+    return ResponseEntity.ok(Map.of("type", type, "users", result));
   }
 
   @PostMapping
@@ -125,10 +125,10 @@ public class AdminNotifyController {
     messageLogRepository.save(new MessageLog(recipientType, subject, messageBody, sent, Instant.now()));
     log.info("Notified {} / {} recipients (type={})", sent, emails.size(), recipientType);
 
-    return ResponseEntity.ok(ApiResponse.ok(Map.of(
+    return ResponseEntity.ok(Map.of(
         "sent", sent,
         "total", emails.size(),
-        "recipientType", recipientType)));
+        "recipientType", recipientType));
   }
 
   private void createNotifications(String type, String title, String message) {

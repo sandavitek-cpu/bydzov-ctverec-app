@@ -167,9 +167,11 @@ router.beforeEach((to, _from, next) => {
     return
   }
 
-  if (to.path.startsWith('/komisari') && !token) {
-    next('/admin/login')
-    return
+  if (to.path.startsWith('/komisari')) {
+    if (!token || (!roles.includes('ADMIN') && !roles.includes('JUDGE'))) {
+      next('/admin/login')
+      return
+    }
   }
 
   next()

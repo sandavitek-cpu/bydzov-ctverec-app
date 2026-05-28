@@ -191,7 +191,7 @@ public class AdminUserController {
       }
     }
     userRepository.save(user);
-    return ResponseEntity.ok(ApiResponse.ok(Map.of("id", user.getId(), "message", "Uživatel vytvořen")));
+    return ResponseEntity.ok(Map.of("id", user.getId(), "message", "Uživatel vytvořen"));
   }
 
   private static String getStr(Map<String, Object> map, String key) {
@@ -219,7 +219,7 @@ public class AdminUserController {
     }
     userOpt.get().setPassword(passwordEncoder.encode(newPassword));
     userRepository.save(userOpt.get());
-    return ResponseEntity.ok(ApiResponse.ok(Map.of("message", "Heslo změněno")));
+    return ResponseEntity.ok(Map.of("message", "Heslo změněno"));
   }
 
   @PostMapping("/{userId}/roles")
@@ -233,7 +233,7 @@ public class AdminUserController {
     if (role.isEmpty()) return ResponseEntity.badRequest().body(ApiResponse.error("Role neexistuje"));
     user.get().getAppRoles().add(role.get());
     userRepository.save(user.get());
-    return ResponseEntity.ok(ApiResponse.ok(Map.of("message", "Role přidána")));
+    return ResponseEntity.ok(Map.of("message", "Role přidána"));
   }
 
   @DeleteMapping("/{userId}/roles/{roleId}")
@@ -256,6 +256,6 @@ public class AdminUserController {
     String roleStr = user.getAppRoles().isEmpty()
         ? user.getRole().name()
         : user.getAppRoles().stream().map(AppRole::getName).collect(Collectors.joining(","));
-    return ResponseEntity.ok(ApiResponse.ok(Map.of("accessToken", accessToken, "username", user.getUsername(), "name", user.getName(), "role", roleStr)));
+    return ResponseEntity.ok(Map.of("accessToken", accessToken, "username", user.getUsername(), "name", user.getName(), "role", roleStr));
   }
 }

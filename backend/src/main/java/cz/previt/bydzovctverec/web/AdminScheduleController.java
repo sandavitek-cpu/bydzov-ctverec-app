@@ -38,7 +38,7 @@ public class AdminScheduleController {
   public ResponseEntity<?> list() {
     Edition edition = editionService.getCurrentEdition();
     if (edition == null) {
-      return ResponseEntity.ok(ApiResponse.ok(List.of()));
+      return ResponseEntity.ok(List.of());
     }
     return ResponseEntity.ok(
         scheduleItemRepository.findByEditionOrderBySortOrder(edition).stream()
@@ -90,7 +90,7 @@ public class AdminScheduleController {
     }
     scheduleItemRepository.delete(item);
     broadcast();
-    return ResponseEntity.ok(ApiResponse.ok(Map.of("deleted", true)));
+    return ResponseEntity.ok(Map.of("deleted", true));
   }
 
   private void broadcast() {

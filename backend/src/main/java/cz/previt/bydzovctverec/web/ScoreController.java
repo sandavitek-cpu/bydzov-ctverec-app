@@ -9,6 +9,7 @@ import cz.previt.bydzovctverec.domain.User;
 import cz.previt.bydzovctverec.service.ScoringService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,6 +45,17 @@ public class ScoreController {
     Checkpoint cp = checkpointRepository.findById(request.checkpointId()).orElse(null);
     if (cp == null) {
       return ResponseEntity.badRequest().body(ApiResponse.error("Checkpoint not found"));
+    }
+    boolean isAdmin = auth.getAuthorities().stream()
+        .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+    if (!isAdmin) {
+      String judgeName = judge.getUsername() != null ? judge.getUsername() : judge.getFirstName();
+      List<String> volunteers = cp.getVolunteers();
+      boolean isAssigned = volunteers != null && volunteers.stream()
+          .anyMatch(v -> v != null && judgeName.equalsIgnoreCase(v.trim()));
+      if (!isAssigned) {
+        return ResponseEntity.status(403).body(ApiResponse.error("Nejste přiřazen k tomuto stanovišti"));
+      }
     }
 
     try {

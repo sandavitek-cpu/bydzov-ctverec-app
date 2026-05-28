@@ -150,7 +150,8 @@ public class RegistrationService {
         .toList();
   }
 
-  public int assignStartNumber(RacerRegistration reg) {
+  @Transactional
+  public synchronized int assignStartNumber(RacerRegistration reg) {
     String variant = reg.getVariant();
     if (variant == null) throw new IllegalArgumentException("Přihláška nemá variantu");
     int rangeStart = "JEDNODENNI".equals(variant) ? 1 : 101;

@@ -30,9 +30,9 @@ public class NotificationController {
     List<Notification> notifications = notificationRepository
         .findByUserIdOrderByCreatedAtDesc(user.getId());
     long unreadCount = notificationRepository.countByUserIdAndIsReadFalse(user.getId());
-    return ResponseEntity.ok(ApiResponse.ok(Map.of(
+    return ResponseEntity.ok(Map.of(
         "notifications", notifications.stream().map(this::toDto).toList(),
-        "unreadCount", unreadCount)));
+        "unreadCount", unreadCount));
   }
 
   @PatchMapping("/{id}/read")

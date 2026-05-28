@@ -68,10 +68,10 @@ public class AdminRoleController {
       return ResponseEntity.badRequest().body(ApiResponse.error("Role již existuje"));
     }
     var role = appRoleRepository.save(new AppRole(name.toUpperCase(), displayName, Instant.now()));
-    return ResponseEntity.ok(ApiResponse.ok(Map.of(
+    return ResponseEntity.ok(Map.of(
         "id", role.getId(),
         "name", role.getName(),
-        "displayName", role.getDisplayName())));
+        "displayName", role.getDisplayName()));
   }
 
   @PutMapping("/{id}")
@@ -84,10 +84,10 @@ public class AdminRoleController {
       role.setDisplayName(displayName);
     }
     appRoleRepository.save(role);
-    return ResponseEntity.ok(ApiResponse.ok(Map.of(
+    return ResponseEntity.ok(Map.of(
         "id", role.getId(),
         "name", role.getName(),
-        "displayName", role.getDisplayName())));
+        "displayName", role.getDisplayName()));
   }
 
   @DeleteMapping("/{id}")

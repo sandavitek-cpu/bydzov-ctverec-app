@@ -47,6 +47,7 @@ const localPoints = ref<RoutePointData[]>([])
 
 const mapContainer = ref<HTMLElement | null>(null)
 let map: L.Map | null = null
+let initTimer: ReturnType<typeof setTimeout> | null = null
 let polyline: L.Polyline | null = null
 let markers: L.Marker[] = []
 const osrmPreview = ref(false)
@@ -506,7 +507,7 @@ function initMap() {
 
   rebuildMap()
 
-  setTimeout(() => map?.invalidateSize(), 200)
+  initTimer = setTimeout(() => map?.invalidateSize(), 200)
 }
 
 onMounted(async () => {
@@ -517,6 +518,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  if (initTimer) clearTimeout(initTimer)
   destroyMap()
 })
 </script>

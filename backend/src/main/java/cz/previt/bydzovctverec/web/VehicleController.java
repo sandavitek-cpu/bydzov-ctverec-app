@@ -84,7 +84,7 @@ public class VehicleController {
       return ResponseEntity.badRequest().body(ApiResponse.error("Vozidlo nenalezeno"));
     }
     vehicleRepository.delete(v);
-    return ResponseEntity.ok(ApiResponse.ok(Map.of("deleted", true)));
+    return ResponseEntity.ok(Map.of("deleted", true));
   }
 
   private static Map<String, Object> toMap(Vehicle v) {

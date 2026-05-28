@@ -22,7 +22,10 @@ public class RuiAnController {
   private final RestTemplate restTemplate;
 
   public RuiAnController() {
-    this.restTemplate = new RestTemplate();
+    var factory = new org.springframework.http.client.SimpleClientHttpRequestFactory();
+    factory.setConnectTimeout(5_000);
+    factory.setReadTimeout(10_000);
+    this.restTemplate = new RestTemplate(factory);
   }
 
   @GetMapping("/search")

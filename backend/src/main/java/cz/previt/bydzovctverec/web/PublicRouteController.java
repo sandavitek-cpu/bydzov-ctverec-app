@@ -33,7 +33,7 @@ public class PublicRouteController {
   public ResponseEntity<?> getPublishedRoutes(@PathVariable Integer year) {
     Edition edition = editionService.getByYear(year);
     if (edition == null) {
-      return ResponseEntity.ok(ApiResponse.ok(List.of()));
+      return ResponseEntity.ok(List.of());
     }
     var routes = routeRepository.findByEditionAndPublishedTrue(edition);
     var result = routes.stream().map(r -> {

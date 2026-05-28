@@ -12,6 +12,7 @@ import cz.previt.bydzovctverec.service.RegistrationService;
 import jakarta.validation.Valid;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -65,7 +66,7 @@ public class RegistrationController {
     if (!variant.isEnabled()) {
       return ResponseEntity.badRequest().body(ApiResponse.error("Přihlášky pro tuto variantu jsou uzavřeny"));
     }
-    LocalDate today = LocalDate.now();
+    LocalDate today = LocalDate.now(ZoneId.of("Europe/Prague"));
     if (variant.getRegistrationDeadline() != null && today.isAfter(variant.getRegistrationDeadline())) {
       if (variant.getRegistrationReopenedUntil() == null || Instant.now().isAfter(variant.getRegistrationReopenedUntil())) {
         return ResponseEntity.badRequest().body(ApiResponse.error(
@@ -197,7 +198,7 @@ public class RegistrationController {
     if (email == null || email.isBlank()) {
       return ResponseEntity.badRequest().body(ApiResponse.error("Email is required"));
     }
-    return ResponseEntity.ok(ApiResponse.ok(Map.of("found", true)));
+    return ResponseEntity.ok(Map.of("found", true));
   }
 
   @GetMapping("/lookup/{startNumber}")

@@ -32,11 +32,14 @@ public class RateLimitingFilter implements Filter {
     String path = req.getRequestURI();
 
     if (path.startsWith("/api/auth/") || path.startsWith("/api/public/")) {
+      long now = System.currentTimeMillis();
       String ip = req.getHeader("X-Forwarded-For");
       if (ip == null || ip.isBlank()) ip = req.getRemoteAddr();
       String key = ip + ":" + path;
+      if (counters.size() > 10_000) {
+        counters.entrySet().removeIf(e -> now - e.getValue().start > WINDOW_MS);
+      }
       Window w = counters.compute(key, (k, v) -> {
-        long now = System.currentTimeMillis();
         if (v == null || now - v.start > WINDOW_MS) {
           return new Window(now, 1);
         }

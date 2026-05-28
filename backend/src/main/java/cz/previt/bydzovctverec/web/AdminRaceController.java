@@ -29,11 +29,11 @@ public class AdminRaceController {
   public ResponseEntity<?> status() {
     Edition edition = editionService.getCurrentEdition();
     if (edition == null) {
-      return ResponseEntity.ok(ApiResponse.ok(Map.of("started", false, "finished", false)));
+      return ResponseEntity.ok(Map.of("started", false, "finished", false));
     }
-    return ResponseEntity.ok(ApiResponse.ok(Map.of(
+    return ResponseEntity.ok(Map.of(
         "started", edition.getRaceStartedAt() != null,
-        "finished", edition.getRaceFinishedAt() != null)));
+        "finished", edition.getRaceFinishedAt() != null));
   }
 
   @PostMapping("/start")
@@ -54,7 +54,7 @@ public class AdminRaceController {
     Map<String, Object> resp = new LinkedHashMap<>();
     resp.put("started", true);
     resp.put("startedAt", edition.getRaceStartedAt());
-    return ResponseEntity.ok(ApiResponse.ok(resp));
+    return ResponseEntity.ok(resp);
   }
 
   @PostMapping("/finish")
@@ -72,7 +72,7 @@ public class AdminRaceController {
     Map<String, Object> resp = new LinkedHashMap<>();
     resp.put("finished", true);
     resp.put("finishedAt", edition.getRaceFinishedAt());
-    return ResponseEntity.ok(ApiResponse.ok(resp));
+    return ResponseEntity.ok(resp);
   }
 
   @PostMapping("/reset")
@@ -85,6 +85,6 @@ public class AdminRaceController {
     edition.setRaceStartedAt(null);
     edition.setRaceFinishedAt(null);
     editionRepository.save(edition);
-    return ResponseEntity.ok(ApiResponse.ok(Map.of("started", false, "finished", false)));
-  }
+    return ResponseEntity.ok(Map.of("started", false, "finished", false));
+}
 }

@@ -38,7 +38,7 @@ public class AdminVariantConfigController {
   public ResponseEntity<?> list() {
     Edition edition = editionService.getCurrentEdition();
     if (edition == null) {
-      return ResponseEntity.ok(ApiResponse.ok(List.of()));
+      return ResponseEntity.ok(List.of());
     }
     List<Map<String, Object>> result = variantConfigRepository.findByEdition(edition).stream()
         .map(this::toMap)
@@ -91,7 +91,7 @@ public class AdminVariantConfigController {
     }
     Instant until;
     if (Boolean.TRUE.equals(body.get("untilMidnight"))) {
-      until = LocalDate.now().plusDays(1).atStartOfDay(ZoneId.of("Europe/Prague")).toInstant();
+      until = LocalDate.now(ZoneId.of("Europe/Prague")).plusDays(1).atStartOfDay(ZoneId.of("Europe/Prague")).toInstant();
     } else {
       Object duration = body.get("durationMinutes");
       if (duration == null) {
@@ -130,7 +130,7 @@ public class AdminVariantConfigController {
       return ResponseEntity.badRequest().body(ApiResponse.error("Varianta nenalezena"));
     }
     variantConfigRepository.delete(vc);
-    return ResponseEntity.ok(ApiResponse.ok(Map.of("deleted", true)));
+    return ResponseEntity.ok(Map.of("deleted", true));
   }
 
   private Map<String, Object> toMap(VariantConfig vc) {

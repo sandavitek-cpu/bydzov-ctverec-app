@@ -57,13 +57,13 @@ public class AdminArchiveController {
 
     ArchiveEntry entry = new ArchiveEntry(editionYear, rank, racerName, vehicle, points);
     archiveEntryRepository.save(entry);
-    return ResponseEntity.ok(ApiResponse.ok(Map.of(
+    return ResponseEntity.ok(Map.of(
         "id", entry.getId(),
         "editionYear", entry.getEditionYear(),
         "rank", entry.getRank(),
         "racerName", entry.getRacerName(),
         "vehicle", entry.getVehicle(),
-        "points", entry.getPoints())));
+        "points", entry.getPoints()));
   }
 
   @DeleteMapping("/{id}")
@@ -73,7 +73,7 @@ public class AdminArchiveController {
       return ResponseEntity.badRequest().body(ApiResponse.error("Záznam nenalezen"));
     }
     archiveEntryRepository.deleteById(id);
-    return ResponseEntity.ok(ApiResponse.ok(Map.of("deleted", true)));
+    return ResponseEntity.ok(Map.of("deleted", true));
   }
 
   @PostMapping(value = "/import", consumes = MediaType.TEXT_PLAIN_VALUE)
@@ -97,6 +97,6 @@ public class AdminArchiveController {
         saved.add(archiveEntryRepository.save(new ArchiveEntry(year, rank, name, veh, pts)));
       } catch (NumberFormatException ignored) {}
     }
-    return ResponseEntity.ok(ApiResponse.ok(Map.of("imported", saved.size())));
+    return ResponseEntity.ok(Map.of("imported", saved.size()));
   }
 }

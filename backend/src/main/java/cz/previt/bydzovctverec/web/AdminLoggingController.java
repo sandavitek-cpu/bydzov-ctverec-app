@@ -42,7 +42,7 @@ public class AdminLoggingController {
       case "DEBUG" -> "DEBUG";
       default -> "INFO";
     };
-    return ResponseEntity.ok(ApiResponse.ok(Map.of("level", label)));
+    return ResponseEntity.ok(Map.of("level", label));
   }
 
   @PostMapping("/level")
@@ -52,7 +52,7 @@ public class AdminLoggingController {
       return ResponseEntity.badRequest().body(ApiResponse.error("Neplatná úroveň (INFO / DEBUG)"));
     }
     loggingSystem.setLogLevel("ROOT", LogLevel.valueOf(level));
-    return ResponseEntity.ok(ApiResponse.ok(Map.of("level", level)));
+    return ResponseEntity.ok(Map.of("level", level));
   }
 
   @GetMapping("/download")

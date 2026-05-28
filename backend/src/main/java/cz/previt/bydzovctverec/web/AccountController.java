@@ -31,7 +31,7 @@ public class AccountController {
     var u = (User) authentication.getPrincipal();
     var phone = u.getPhone() != null ? u.getPhone() : "";
     var memberSince = u.getMemberSince() != null ? u.getMemberSince().toString() : "";
-    return ResponseEntity.ok(ApiResponse.ok(Map.of(
+    return ResponseEntity.ok(Map.of(
         "id", u.getId(),
         "email", u.getEmail(),
         "username", u.getUsername(),
@@ -40,7 +40,7 @@ public class AccountController {
         "name", u.getName(),
         "phone", phone,
         "memberSince", memberSince,
-        "role", u.getRole().name())));
+        "role", u.getRole().name()));
   }
 
   @PutMapping("/password")
@@ -61,7 +61,7 @@ public class AccountController {
     }
     u.setPassword(passwordEncoder.encode(newPassword));
     userRepository.save(u);
-    return ResponseEntity.ok(ApiResponse.ok(Map.of("message", "Heslo změněno")));
+    return ResponseEntity.ok(Map.of("message", "Heslo změněno"));
   }
 
   @PutMapping
@@ -85,7 +85,7 @@ public class AccountController {
     userRepository.save(u);
     var respPhone = u.getPhone() != null ? u.getPhone() : "";
     var memberSince = u.getMemberSince() != null ? u.getMemberSince().toString() : "";
-    return ResponseEntity.ok(ApiResponse.ok(Map.of(
+    return ResponseEntity.ok(Map.of(
         "id", u.getId(),
         "email", u.getEmail(),
         "username", u.getUsername(),
@@ -94,6 +94,6 @@ public class AccountController {
         "name", u.getName(),
         "phone", respPhone,
         "memberSince", memberSince,
-        "role", u.getRole().name())));
+        "role", u.getRole().name()));
   }
 }

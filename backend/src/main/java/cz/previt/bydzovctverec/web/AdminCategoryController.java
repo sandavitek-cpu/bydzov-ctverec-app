@@ -45,7 +45,7 @@ public class AdminCategoryController {
   public ResponseEntity<?> list() {
     Edition edition = editionService.getCurrentEdition();
     if (edition == null) {
-      return ResponseEntity.ok(ApiResponse.ok(List.of()));
+      return ResponseEntity.ok(List.of());
     }
     return ResponseEntity.ok(
         raceCategoryRepository.findByEditionOrderBySortOrder(edition).stream()
@@ -110,7 +110,7 @@ public class AdminCategoryController {
       return ResponseEntity.badRequest().body(ApiResponse.error("Kategorie nenalezena"));
     }
     raceCategoryRepository.delete(cat);
-    return ResponseEntity.ok(ApiResponse.ok(Map.of("deleted", true)));
+    return ResponseEntity.ok(Map.of("deleted", true));
   }
 
   @PostMapping("/compute")
@@ -121,7 +121,7 @@ public class AdminCategoryController {
       return ResponseEntity.badRequest().body(ApiResponse.error("Žádný aktivní ročník"));
     }
     int count = ceremonyService.computeCategoryWinners();
-    return ResponseEntity.ok(ApiResponse.ok(Map.of("computed", true, "count", count)));
+    return ResponseEntity.ok(Map.of("computed", true, "count", count));
   }
 
   private Map<String, Object> toMap(RaceCategory cat) {

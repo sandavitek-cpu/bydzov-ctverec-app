@@ -28,7 +28,7 @@ public class AdminCeremonyController {
   public ResponseEntity<?> data() {
     Edition edition = editionService.getCurrentEdition();
     if (edition == null) {
-      return ResponseEntity.ok(ApiResponse.ok(Map.of("year", 0, "overall", List.of(), "categories", List.of())));
+      return ResponseEntity.ok(Map.of("year", 0, "overall", List.of(), "categories", List.of()));
     }
     return ResponseEntity.ok(ceremonyService.generateCeremonyData(edition.getEditionYear()));
   }
@@ -42,6 +42,6 @@ public class AdminCeremonyController {
     }
     int computedCount = ceremonyService.computeCategoryWinners();
     var data = ceremonyService.generateCeremonyData(edition.getEditionYear());
-    return ResponseEntity.ok(ApiResponse.ok(Map.of("computed", computedCount, "data", data)));
+    return ResponseEntity.ok(Map.of("computed", computedCount, "data", data));
   }
 }

@@ -112,7 +112,7 @@ public class AdminRouteController {
     var points = routePointRepository.findByRouteOrderBySortOrder(route);
     routePointRepository.deleteAll(points);
     routeRepository.delete(route);
-    return ResponseEntity.ok(ApiResponse.ok(Map.of("deleted", true)));
+    return ResponseEntity.ok(Map.of("deleted", true));
   }
 
   @PostMapping("/{id}/publish")
