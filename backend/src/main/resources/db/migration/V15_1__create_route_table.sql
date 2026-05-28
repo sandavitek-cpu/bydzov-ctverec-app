@@ -1,4 +1,4 @@
-CREATE TABLE route (
+CREATE TABLE IF NOT EXISTS route (
     id BIGSERIAL PRIMARY KEY,
     edition_id BIGINT NOT NULL REFERENCES edition(id),
     variant VARCHAR(30),
@@ -8,7 +8,7 @@ CREATE TABLE route (
     created_at TIMESTAMP NOT NULL
 );
 
-CREATE TABLE route_point (
+CREATE TABLE IF NOT EXISTS route_point (
     id BIGSERIAL PRIMARY KEY,
     route_id BIGINT NOT NULL REFERENCES route(id),
     sort_order INTEGER,
