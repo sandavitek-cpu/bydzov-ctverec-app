@@ -6,6 +6,8 @@ import cz.previt.bydzovctverec.domain.RacerRegistration;
 import cz.previt.bydzovctverec.domain.RacerRegistrationRepository;
 import cz.previt.bydzovctverec.domain.ScoreRepository;
 import cz.previt.bydzovctverec.domain.Edition;
+import cz.previt.bydzovctverec.domain.Task;
+import cz.previt.bydzovctverec.domain.TaskRepository;
 import cz.previt.bydzovctverec.service.EditionService;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -31,15 +33,18 @@ public class AdminCheckpointController {
   private final CheckpointRepository checkpointRepository;
   private final RacerRegistrationRepository racerRegistrationRepository;
   private final ScoreRepository scoreRepository;
+  private final TaskRepository taskRepository;
 
   public AdminCheckpointController(EditionService editionService,
       CheckpointRepository checkpointRepository,
       RacerRegistrationRepository racerRegistrationRepository,
-      ScoreRepository scoreRepository) {
+      ScoreRepository scoreRepository,
+      TaskRepository taskRepository) {
     this.editionService = editionService;
     this.checkpointRepository = checkpointRepository;
     this.racerRegistrationRepository = racerRegistrationRepository;
     this.scoreRepository = scoreRepository;
+    this.taskRepository = taskRepository;
   }
 
   @GetMapping
@@ -93,6 +98,7 @@ public class AdminCheckpointController {
     if (body.containsKey("taskDescription")) cp.setTaskDescription(WebUtils.toString(body.get("taskDescription")));
     if (body.containsKey("maxPoints")) cp.setMaxPoints(((Number) body.get("maxPoints")).intValue());
     if (body.containsKey("volunteers")) cp.setVolunteers(toStringList(body.get("volunteers")));
+    if (body.containsKey("taskIds")) cp.setTasks(resolveTasks(body.get("taskIds")));
     checkpointRepository.save(cp);
     return ResponseEntity.ok(toMap(cp));
   }
@@ -110,6 +116,7 @@ public class AdminCheckpointController {
     if (body.containsKey("taskDescription")) cp.setTaskDescription(WebUtils.toString(body.get("taskDescription")));
     if (body.containsKey("maxPoints") && body.get("maxPoints") instanceof Number n) cp.setMaxPoints(n.intValue());
     if (body.containsKey("volunteers")) cp.setVolunteers(toStringList(body.get("volunteers")));
+    if (body.containsKey("taskIds")) cp.setTasks(resolveTasks(body.get("taskIds")));
     checkpointRepository.save(cp);
     return ResponseEntity.ok(toMap(cp));
   }
@@ -135,6 +142,7 @@ public class AdminCheckpointController {
     m.put("taskDescription", cp.getTaskDescription());
     m.put("maxPoints", cp.getMaxPoints());
     m.put("volunteers", cp.getVolunteers());
+    m.put("taskIds", cp.getTasks().stream().map(Task::getId).toList());
     return m;
   }
 
@@ -142,6 +150,17 @@ public class AdminCheckpointController {
   private List<String> toStringList(Object v) {
     if (v instanceof List<?> list) {
       return ((List<Object>) list).stream().map(Object::toString).toList();
+    }
+    return List.of();
+  }
+
+  @SuppressWarnings("unchecked")
+  private List<Task> resolveTasks(Object v) {
+    if (v instanceof List<?> list) {
+      List<Long> ids = ((List<Object>) list).stream()
+          .map(x -> x instanceof Number n ? n.longValue() : Long.valueOf(x.toString()))
+          .toList();
+      return taskRepository.findAllById(ids);
     }
     return List.of();
   }

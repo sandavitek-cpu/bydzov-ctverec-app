@@ -85,6 +85,23 @@ const routes = [
     meta: { requiresAdmin: true },
   },
   {
+    path: '/admin/ukoly',
+    name: 'admin-tasks',
+    component: () => import('../views/admin/AdminTasksView.vue'),
+    meta: { requiresAdmin: true },
+  },
+  {
+    path: '/admin/incidenty',
+    name: 'admin-incidents',
+    component: () => import('../views/admin/AdminIncidentsView.vue'),
+    meta: { requiresAdmin: true },
+  },
+  {
+    path: '/zavodnik/ukoly',
+    name: 'user-incidents',
+    component: () => import('../views/UserIncidentsView.vue'),
+  },
+  {
     path: '/ceremoniál/:rok',
     name: 'ceremony',
     component: () => import('../views/CeremonyView.vue'),

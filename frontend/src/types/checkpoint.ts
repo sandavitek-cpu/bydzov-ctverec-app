@@ -10,6 +10,7 @@ export interface CheckpointData {
   taskDescription: string | null
   maxPoints: number | null
   volunteers: string[]
+  taskIds?: number[]
 }
 
 export interface ScoreSubmit {

@@ -28,6 +28,7 @@ const overlayCountdown = ref(3)
 const overlaySlide = ref<Slide | null>(null)
 const doneIds = ref<Set<string>>(new Set())
 const isAdmin = ref(false)
+const isSingleMode = ref(false)
 let countdownInterval: ReturnType<typeof setInterval> | null = null
 const pendingTimeouts: ReturnType<typeof setTimeout>[] = []
 
@@ -35,6 +36,48 @@ onUnmounted(() => {
   if (countdownInterval) clearInterval(countdownInterval)
   pendingTimeouts.forEach(clearTimeout)
 })
+
+function closeOverlay() {
+  if (countdownInterval) {
+    clearInterval(countdownInterval)
+    countdownInterval = null
+  }
+  pendingTimeouts.forEach(clearTimeout)
+  pendingTimeouts.length = 0
+  showOverlay.value = false
+  currentSlideIndex.value = -1
+  overlaySlide.value = null
+  overlayPhase.value = 'countdown'
+  overlayCountdown.value = 3
+  isSingleMode.value = false
+}
+
+function handleOverlayClick() {
+  if (overlayPhase.value === 'countdown') {
+    skipCountdown()
+  } else if (overlayPhase.value === 'reveal') {
+    nextSlide()
+  }
+}
+
+function skipCountdown() {
+  if (countdownInterval) {
+    clearInterval(countdownInterval)
+    countdownInterval = null
+  }
+  overlayPhase.value = 'reveal'
+  overlayCountdown.value = 0
+  if (overlaySlide.value) {
+    doneIds.value = new Set([...doneIds.value, overlaySlide.value.id])
+  }
+}
+
+function announceSlide(slide: Slide) {
+  isSingleMode.value = true
+  currentSlideIndex.value = slides.value.indexOf(slide)
+  showSlide(currentSlideIndex.value)
+  showOverlay.value = true
+}
 
 const adminToken = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null
 const adminRole = typeof window !== 'undefined' ? localStorage.getItem('admin_role') : null
@@ -103,6 +146,10 @@ function showSlide(index: number) {
 }
 
 function nextSlide() {
+  if (isSingleMode.value) {
+    closeOverlay()
+    return
+  }
   const next = currentSlideIndex.value + 1
   if (next >= slides.value.length) {
     showOverlay.value = false
@@ -157,8 +204,16 @@ onMounted(load)
     <!-- Fullscreen presentation overlay -->
     <div v-if="showOverlay"
       class="fixed inset-0 z-[99999] flex flex-col items-center justify-center cursor-pointer select-none ceremony-overlay"
-      @click="overlayPhase === 'reveal' && nextSlide()"
+      @click="handleOverlayClick"
     >
+      <button @click.stop="closeOverlay"
+        class="absolute top-4 right-4 z-[999999] w-11 h-11 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white/70 hover:text-white text-xl transition-all duration-200"
+        title="Zavřít"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
       <template v-if="overlayPhase === 'countdown'">
         <div class="text-[15vw] font-black ceremony-overlay-text ceremony-pulse">
           {{ overlayCountdown }}
@@ -227,7 +282,7 @@ onMounted(load)
                   <span v-if="slide.winnerPoints != null">{{ slide.winnerPoints }} b.</span>
                 </div>
               </div>
-              <button v-else @click="currentSlideIndex = slides.indexOf(slide); showSlide(currentSlideIndex); showOverlay = true"
+              <button v-else @click="announceSlide(slide)"
                 :disabled="showOverlay"
                 class="mt-4 btn-primary"
               >

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, RouterLink } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import CheckpointMap from '@/components/CheckpointMap.vue'
 import UserPickerModal from '@/components/UserPickerModal.vue'
-import { apiBaseUrl, createAdminCheckpoint, updateAdminCheckpoint, deleteAdminCheckpoint, fetchAdminUsers, fetchAdminRoutes, type AdminUser, type CheckpointData, type RouteData } from '@/api'
+import { apiBaseUrl, createAdminCheckpoint, updateAdminCheckpoint, deleteAdminCheckpoint, fetchAdminUsers, fetchAdminRoutes, fetchAdminTasks, type AdminUser, type CheckpointData, type RouteData, type TaskData } from '@/api'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import { reverseGeocode } from '@/utils/mapUtils'
 
@@ -14,6 +14,7 @@ const { isAdmin, authHeaders, logout } = useAuth()
 const checkpoints = ref<CheckpointData[]>([])
 const users = ref<AdminUser[]>([])
 const routes = ref<RouteData[]>([])
+const allTasks = ref<TaskData[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 const editing = ref<CheckpointData | null>(null)
@@ -36,6 +37,7 @@ const form = ref({
   taskDescription: '',
   maxPoints: null as number | null,
   volunteers: [] as string[],
+  taskIds: [] as number[],
 })
 
 const routeLines = computed(() =>
@@ -87,12 +89,13 @@ function startEdit(cp: CheckpointData) {
     taskDescription: cp.taskDescription ?? '',
     maxPoints: cp.maxPoints,
     volunteers: cp.volunteers ?? [],
+    taskIds: cp.taskIds ?? [],
   }
 }
 
 function resetForm() {
   editing.value = null
-  form.value = { name: '', lat: 50.2415, lng: 15.4900, radius: 300, sortOrder: 0, taskDescription: '', maxPoints: null, volunteers: [] }
+  form.value = { name: '', lat: 50.2415, lng: 15.4900, radius: 300, sortOrder: 0, taskDescription: '', maxPoints: null, volunteers: [], taskIds: [] }
 }
 
 async function save() {
@@ -133,6 +136,9 @@ onMounted(async () => {
   await loadAddresses()
   try {
     users.value = await fetchAdminUsers(authHeaders())
+  } catch {}
+  try {
+    allTasks.value = await fetchAdminTasks(authHeaders())
   } catch {}
 })
 </script>
@@ -199,6 +205,24 @@ onMounted(async () => {
                 </div>
               </div>
             </div>
+            <div>
+              <label class="input-label">Přiřazené úkoly</label>
+              <div v-if="allTasks.length === 0" class="text-meta text-text-soft">
+                Nejprve vytvořte úkoly v sekci <RouterLink to="/admin/ukoly" class="text-primary underline">Úkoly</RouterLink>
+              </div>
+              <div v-else class="mt-1 space-y-1 max-h-48 overflow-y-auto border border-border rounded-lg p-2">
+                <label v-for="task in allTasks" :key="task.id"
+                  class="flex items-center gap-2 py-1 px-2 rounded hover:bg-surface-2 cursor-pointer"
+                >
+                  <input type="checkbox" :value="task.id" v-model="form.taskIds"
+                    class="rounded border-border text-primary focus:ring-primary" />
+                  <span class="text-body-sm text-text">{{ task.name }}</span>
+                  <span v-if="task.recommendedPoints != null" class="text-meta text-text-soft ml-auto">
+                    {{ task.recommendedPoints }} b.
+                  </span>
+                </label>
+              </div>
+            </div>
             <div class="flex flex-wrap gap-3 pt-1">
               <button type="submit" class="btn-primary btn-sm">
                 {{ editing ? 'Uložit' : 'Přidat' }}
@@ -237,6 +261,11 @@ onMounted(async () => {
                 <div class="mt-1 flex gap-3 text-meta">
                   <span v-if="cp.maxPoints != null" class="text-primary">max {{ cp.maxPoints }} bodů</span>
                   <span v-if="cp.volunteers?.length" class="text-text-soft">{{ cp.volunteers.join(', ') }}</span>
+                </div>
+                <div v-if="cp.taskIds?.length" class="mt-1 flex flex-wrap gap-1">
+                  <span v-for="tid in cp.taskIds" :key="tid"
+                    class="inline-flex items-center rounded-full bg-surface-strong px-2 py-0.5 text-meta text-text"
+                  >{{ allTasks.find(t => t.id === tid)?.name ?? '?' }}</span>
                 </div>
               </div>
               <div class="flex gap-1 shrink-0">

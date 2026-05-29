@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
-import { apiBaseUrl, fetchNotifications, markNotificationRead, markAllNotificationsRead } from '@/api'
+import { apiBaseUrl, fetchNotifications, markNotificationRead, markAllNotificationsRead, fetchCurrentEdition } from '@/api'
 import type { NotificationItem } from '@/api'
 import logoCtverec from '@/assets/logo_ctverec.png'
 
@@ -23,6 +23,33 @@ const dropdownOpen = ref(false)
 const notificationOpen = ref(false)
 const notifications = ref<NotificationItem[]>([])
 const unreadCount = ref(0)
+
+const currentEdition = ref<{ id: number; year: number; label: string } | null>(null)
+
+const raceStarted = ref(false)
+const raceFinished = ref(false)
+const scheduleItems = ref<{ time: string; label: string; description: string | null }[]>([])
+const finishedCount = ref(0)
+const totalRacers = ref(0)
+let progressPoll: ReturnType<typeof setInterval> | null = null
+
+const racePhase = computed(() => {
+  if (raceFinished.value) return { label: 'Ukončen', class: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' }
+  if (raceStarted.value) return { label: 'Probíhá', class: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 animate-pulse' }
+  return null
+})
+
+const currentScheduleItem = computed(() => {
+  if (!scheduleItems.value.length) return null
+  const now = new Date()
+  const nowMinutes = now.getHours() * 60 + now.getMinutes()
+  const sorted = [...scheduleItems.value].sort((a, b) => a.time.localeCompare(b.time))
+  const current = sorted.findLast(item => {
+    const [h, m] = item.time.split(':').map(Number)
+    return h * 60 + m <= nowMinutes
+  })
+  return current || sorted[0]
+})
 
 const appInfo = ref<{ version: string; deployedAt: string; changelog: { version: string; description: string; createdAt: string }[] } | null>(null)
 const showInfo = ref(false)
@@ -55,6 +82,19 @@ function toggleNotifications() {
 
 function onLogout() {
   logout()
+}
+
+async function loadCheckpointProgress() {
+  if (!isLoggedIn.value || !hasAdmin.value) return
+  try {
+    const res = await fetch(`${apiBaseUrl}/api/admin/checkpoints/progress`, { headers: authHeaders() })
+    if (res.ok) {
+      const data = await res.json()
+      totalRacers.value = data.totalRacers ?? 0
+      const checkpoints = data.checkpoints as { scoredCount: number }[]
+      finishedCount.value = checkpoints.length > 0 ? checkpoints[checkpoints.length - 1].scoredCount : 0
+    }
+  } catch { /* ignore */ }
 }
 
 async function toggleInfo() {
@@ -91,17 +131,37 @@ function onDocumentClick(e: MouseEvent) {
 
 watch(() => route.path, () => { mobileNavOpen.value = false; dropdownOpen.value = false; notificationOpen.value = false })
 
-onMounted(() => {
+onMounted(async () => {
   document.addEventListener('click', onDocumentClick)
   if (isLoggedIn.value) {
     loadNotifications()
     notificationPoll = setInterval(loadNotifications, 30000)
   }
+  try {
+    currentEdition.value = await fetchCurrentEdition()
+    const infoRes = await fetch(`${apiBaseUrl}/api/public/info`)
+    if (infoRes.ok) {
+      const info = await infoRes.json()
+      raceStarted.value = info.raceStarted ?? false
+      raceFinished.value = info.raceFinished ?? false
+    }
+    if (isLoggedIn.value && (hasRacer.value || hasAdmin.value)) {
+      const h = authHeaders()
+      const endpoint = hasAdmin.value ? `${apiBaseUrl}/api/admin/schedule` : `${apiBaseUrl}/api/racer/schedule`
+      const schedRes = await fetch(endpoint, { headers: h })
+      if (schedRes.ok) scheduleItems.value = await schedRes.json()
+    }
+    await loadCheckpointProgress()
+    if (raceStarted.value) {
+      progressPoll = setInterval(loadCheckpointProgress, 15000)
+    }
+  } catch { /* ignore */ }
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', onDocumentClick)
   if (notificationPoll) clearInterval(notificationPoll)
+  if (progressPoll) clearInterval(progressPoll)
 })
 </script>
 
@@ -120,6 +180,39 @@ onUnmounted(() => {
           <span class="text-meta text-red -mt-0.5">Memoriál Elišky Junkové</span>
         </div>
       </RouterLink>
+
+      <div class="hidden xl:flex items-center gap-4 px-5 border-x border-border min-w-0">
+        <div v-if="currentEdition" class="flex items-center gap-3">
+          <span class="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+            {{ currentEdition.year }}
+          </span>
+        </div>
+        <div v-if="racePhase" class="flex items-center gap-2">
+          <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold" :class="racePhase.class">
+            {{ racePhase.label }}
+          </span>
+        </div>
+        <div v-if="finishedCount > 0 && totalRacers > 0" class="flex items-center gap-2">
+          <span class="flex items-center gap-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-400">
+            <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {{ finishedCount }} / {{ totalRacers }} v cíli
+          </span>
+        </div>
+        <div v-if="currentScheduleItem && raceStarted" class="flex flex-col leading-tight">
+          <span class="text-meta text-text-soft font-mono">{{ currentScheduleItem.time }}</span>
+          <span class="text-label font-medium text-text whitespace-nowrap">{{ currentScheduleItem.label }}</span>
+        </div>
+        <div v-if="!raceStarted" class="flex items-center gap-4">
+          <span class="flex items-center gap-1.5 text-meta text-text-muted">
+            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            {{ currentEdition?.label }}
+          </span>
+        </div>
+      </div>
 
       <div class="flex items-center gap-2 md:hidden">
         <button @click="mobileNavOpen = !mobileNavOpen" class="flex h-10 w-10 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-bg-alt">
@@ -178,6 +271,7 @@ onUnmounted(() => {
                   <RouterLink to="/admin/trasy" class="dropdown-item">Trasy</RouterLink>
                   <RouterLink to="/admin/stanoviste" class="dropdown-item">Stanoviště</RouterLink>
                   <RouterLink to="/admin/bodovani" class="dropdown-item">Bodování</RouterLink>
+                  <RouterLink to="/admin/incidenty" class="dropdown-item">Úkoly pro pořadatele</RouterLink>
                   <RouterLink to="/admin/komunikace" class="dropdown-item">Komunikace</RouterLink>
                   <RouterLink to="/admin/logovani" class="dropdown-item">Logování</RouterLink>
                   <RouterLink to="/admin/role" class="dropdown-item">Role</RouterLink>
@@ -195,6 +289,7 @@ onUnmounted(() => {
                   <RouterLink to="/zavodnik/mapa" class="dropdown-item">Mapa</RouterLink>
                   <RouterLink to="/zavodnik/stav" class="dropdown-item">Můj stav</RouterLink>
                   <RouterLink to="/zavodnik/vozidla" class="dropdown-item">Vozový park</RouterLink>
+                  <RouterLink to="/zavodnik/ukoly" class="dropdown-item">Moje úkoly</RouterLink>
                 </template>
                 <hr class="my-1 mx-3 border-border" />
                 <RouterLink to="/ucet" class="dropdown-item">Nastavení účtu</RouterLink>
@@ -310,6 +405,7 @@ onUnmounted(() => {
               <RouterLink to="/admin/trasy" class="mobile-nav-item" @click="mobileNavOpen = false">Trasy</RouterLink>
               <RouterLink to="/admin/stanoviste" class="mobile-nav-item" @click="mobileNavOpen = false">Stanoviště</RouterLink>
               <RouterLink to="/admin/bodovani" class="mobile-nav-item" @click="mobileNavOpen = false">Bodování</RouterLink>
+              <RouterLink to="/admin/incidenty" class="mobile-nav-item" @click="mobileNavOpen = false">Úkoly pro pořadatele</RouterLink>
               <RouterLink to="/admin/komunikace" class="mobile-nav-item" @click="mobileNavOpen = false">Komunikace</RouterLink>
               <RouterLink to="/admin/logovani" class="mobile-nav-item" @click="mobileNavOpen = false">Logování</RouterLink>
               <RouterLink to="/admin/role" class="mobile-nav-item" @click="mobileNavOpen = false">Role</RouterLink>
@@ -327,6 +423,7 @@ onUnmounted(() => {
               <RouterLink to="/zavodnik/mapa" class="mobile-nav-item" @click="mobileNavOpen = false">Mapa</RouterLink>
               <RouterLink to="/zavodnik/stav" class="mobile-nav-item" @click="mobileNavOpen = false">Můj stav</RouterLink>
               <RouterLink to="/zavodnik/vozidla" class="mobile-nav-item" @click="mobileNavOpen = false">Vozový park</RouterLink>
+              <RouterLink to="/zavodnik/ukoly" class="mobile-nav-item" @click="mobileNavOpen = false">Moje úkoly</RouterLink>
             </template>
             <hr class="my-2 border-border" />
             <RouterLink to="/ucet" class="mobile-nav-item" @click="mobileNavOpen = false">Nastavení účtu</RouterLink>

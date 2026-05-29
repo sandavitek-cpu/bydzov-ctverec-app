@@ -9,6 +9,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.util.ArrayList;
@@ -55,6 +57,12 @@ public class Checkpoint {
   @Column(name = "volunteer_name", length = 200)
   private List<String> volunteers = new ArrayList<>();
 
+  @ManyToMany(fetch = FetchType.LAZY)
+  @JoinTable(name = "checkpoint_task",
+      joinColumns = @JoinColumn(name = "checkpoint_id"),
+      inverseJoinColumns = @JoinColumn(name = "task_id"))
+  private List<Task> tasks = new ArrayList<>();
+
   protected Checkpoint() {}
 
   public Checkpoint(Edition edition, String name, Double lat, Double lng, Integer radius, Integer sortOrder) {
@@ -77,6 +85,7 @@ public class Checkpoint {
   public Integer getMaxPoints() { return maxPoints; }
   public List<String> getVolunteers() { return volunteers; }
   public String getPhone() { return phone; }
+  public List<Task> getTasks() { return tasks; }
 
   public void setName(String name) { this.name = name; }
   public void setLat(Double lat) { this.lat = lat; }
@@ -87,4 +96,5 @@ public class Checkpoint {
   public void setMaxPoints(Integer maxPoints) { this.maxPoints = maxPoints; }
   public void setVolunteers(List<String> volunteers) { this.volunteers = volunteers; }
   public void setPhone(String phone) { this.phone = phone; }
+  public void setTasks(List<Task> tasks) { this.tasks = tasks; }
 }

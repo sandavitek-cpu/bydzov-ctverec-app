@@ -14,7 +14,10 @@ const { isLoggedIn, impersonating, name, username, restoreFromImpersonation } = 
 const showImpersonateModal = ref(false)
 
 const isLoginPage = computed(() => route.path === '/admin/login')
-const isAdminPage = computed(() => route.path.startsWith('/admin') && !isLoginPage.value)
+const isAdminPage = computed(() =>
+  (route.path.startsWith('/admin') && !isLoginPage.value) ||
+  route.path.startsWith('/ceremoniál')
+)
 const showAdminSidebar = computed(() => isLoggedIn.value && isAdminPage.value)
 const mobileSidebarOpen = ref(false)
 </script>

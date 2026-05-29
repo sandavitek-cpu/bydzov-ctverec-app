@@ -6,6 +6,7 @@ defineProps<{ mobileOpen: boolean }>()
 const emit = defineEmits<{ close: [] }>()
 
 const sidebarCollapsed = ref(false)
+const kontrolyOpen = ref(true)
 </script>
 
 <template>
@@ -31,8 +32,11 @@ const sidebarCollapsed = ref(false)
           <RouterLink to="/admin/trasy" class="flex items-center justify-center h-12 text-text-soft hover:text-primary hover:bg-surface-2 transition-colors" title="Trasy" active-class="!text-primary" @click="emit('close')">
             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
           </RouterLink>
-          <RouterLink to="/admin/stanoviste" class="flex items-center justify-center h-12 text-text-soft hover:text-primary hover:bg-surface-2 transition-colors" title="Stanoviště" active-class="!text-primary" @click="emit('close')">
+          <RouterLink to="/admin/stanoviste" class="flex items-center justify-center h-12 text-text-soft hover:text-primary hover:bg-surface-2 transition-colors" title="Kontroly" active-class="!text-primary" @click="emit('close')">
             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          </RouterLink>
+          <RouterLink to="/admin/incidenty" class="flex items-center justify-center h-12 text-text-soft hover:text-primary hover:bg-surface-2 transition-colors" title="Úkoly pro pořadatele" active-class="!text-primary" @click="emit('close')">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           </RouterLink>
           <RouterLink to="/admin/bodovani" class="flex items-center justify-center h-12 text-text-soft hover:text-primary hover:bg-surface-2 transition-colors" title="Bodování" active-class="!text-primary" @click="emit('close')">
             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
@@ -76,9 +80,28 @@ const sidebarCollapsed = ref(false)
             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
             Trasy
           </RouterLink>
-          <RouterLink to="/admin/stanoviste" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="emit('close')">
-            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-            Stanoviště
+          <div class="admin-sidebar-section !text-text !border-l-primary !border-l-2 flex items-center justify-between cursor-pointer select-none" @click="kontrolyOpen = !kontrolyOpen">
+            <div class="flex items-center gap-2">
+              <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              Kontroly
+            </div>
+            <svg class="w-4 h-4 transition-transform duration-200" :class="kontrolyOpen ? 'rotate-90' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 18l6-6-6-6" />
+            </svg>
+          </div>
+          <div v-show="kontrolyOpen" class="!bg-surface !border-l-primary">
+            <RouterLink to="/admin/stanoviste" class="admin-sidebar-item !pl-10" active-class="!bg-surface !border-l-primary !text-primary" @click="emit('close')">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              Stanoviště
+            </RouterLink>
+            <RouterLink to="/admin/ukoly" class="admin-sidebar-item !pl-10" active-class="!bg-surface !border-l-primary !text-primary" @click="emit('close')">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+              Úkoly
+            </RouterLink>
+          </div>
+          <RouterLink to="/admin/incidenty" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="emit('close')">
+            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Úkoly pro pořadatele
           </RouterLink>
           <RouterLink to="/admin/bodovani" class="admin-sidebar-item" active-class="!bg-surface !border-l-primary !text-primary" @click="emit('close')">
             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>

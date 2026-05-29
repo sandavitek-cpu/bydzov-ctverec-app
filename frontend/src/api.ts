@@ -255,6 +255,7 @@ export interface CheckpointData {
   taskDescription: string | null
   maxPoints: number | null
   volunteers: string[]
+  taskIds?: number[]
 }
 
 export async function fetchAdminCheckpoints(headers: Record<string, string>) {
@@ -899,4 +900,132 @@ export async function fetchJudgeOverview(headers: Record<string, string>) {
   const res = await fetch(`${apiBaseUrl}/api/judge/overview`, { headers })
   if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<JudgeOverview>
+}
+
+export interface IncidentAssigneeData {
+  id: number
+  userId: number
+  userName: string
+  email: string
+  status: string
+  createdAt: string
+}
+
+export interface IncidentData {
+  id: number
+  title: string
+  description: string | null
+  dueDate: string | null
+  status: string
+  createdById: number
+  createdByName: string
+  createdAt: string
+  updatedAt: string
+  assignees: IncidentAssigneeData[]
+}
+
+export interface UserIncidentData {
+  assigneeId: number
+  assigneeStatus: string
+  id: number
+  title: string
+  description: string | null
+  dueDate: string | null
+  incidentStatus: string
+  createdById: number
+  createdByName: string
+  createdAt: string
+  updatedAt: string
+}
+
+export async function fetchAdminIncidents(headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/incidents`, { headers })
+  if (!res.ok) throw new Error(await apiError(res))
+  return res.json() as Promise<IncidentData[]>
+}
+
+export async function createAdminIncident(data: {
+  title: string
+  description?: string
+  dueDate?: string
+  assigneeIds: number[]
+}, headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/incidents`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...headers },
+    body: JSON.stringify(data),
+  })
+  const body = await res.json()
+  if (!res.ok) throw new Error(body.error ?? `API ${res.status}`)
+  return body as IncidentData
+}
+
+export async function deleteAdminIncident(id: number, headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/incidents/${id}`, {
+    method: 'DELETE',
+    headers,
+  })
+  if (!res.ok) throw new Error(await apiError(res))
+}
+
+export async function fetchUserIncidents(headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/incidents`, { headers })
+  if (!res.ok) throw new Error(await apiError(res))
+  return res.json() as Promise<UserIncidentData[]>
+}
+
+export async function updateIncidentStatus(assigneeId: number, status: string, headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/incidents/${assigneeId}/status`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...headers },
+    body: JSON.stringify({ status }),
+  })
+  const body = await res.json()
+  if (!res.ok) throw new Error(body.error ?? `API ${res.status}`)
+  return body
+}
+
+export interface TaskData {
+  id?: number
+  name: string
+  description: string | null
+  recommendedPoints: number | null
+  tools: string | null
+  createdAt?: string
+}
+
+export async function fetchAdminTasks(headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/tasks`, { headers })
+  if (!res.ok) throw new Error(await apiError(res))
+  return res.json() as Promise<TaskData[]>
+}
+
+export async function createAdminTask(data: Partial<TaskData>, headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/tasks`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...headers },
+    body: JSON.stringify(data),
+  })
+  const body = await res.json()
+  if (!res.ok) throw new Error(body.error ?? `API ${res.status}`)
+  return body as TaskData
+}
+
+export async function updateAdminTask(id: number, data: Partial<TaskData>, headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/tasks/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...headers },
+    body: JSON.stringify(data),
+  })
+  const body = await res.json()
+  if (!res.ok) throw new Error(body.error ?? `API ${res.status}`)
+  return body as TaskData
+}
+
+export async function deleteAdminTask(id: number, headers: Record<string, string>) {
+  const res = await fetch(`${apiBaseUrl}/api/admin/tasks/${id}`, {
+    method: 'DELETE',
+    headers,
+  })
+  if (!res.ok) throw new Error(await apiError(res))
 }
