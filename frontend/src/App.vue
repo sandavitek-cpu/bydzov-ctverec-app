@@ -45,7 +45,7 @@ const mobileSidebarOpen = ref(false)
 
     <!-- Main content area -->
     <div class="mx-auto w-full flex-1 flex flex-col" :class="isAdminPage ? 'max-w-none' : 'max-w-wide'">
-      <div v-if="showAdminSidebar" class="flex flex-1">
+      <div v-if="showAdminSidebar" class="flex flex-1 min-h-0">
         <AppSidebar :mobileOpen="mobileSidebarOpen" @close="mobileSidebarOpen = false" />
         <main class="flex-1 px-4 lg:px-8 py-8">
           <RouterView v-slot="{ Component, route: r }">
