@@ -113,6 +113,14 @@ const sidebarCollapsed = ref(false)
         </RouterLink>
       </template>
     </nav>
-    <div class="flex-1"></div>
+    <div class="mt-auto border-t border-border/40 px-4 py-3">
+      <template v-if="sidebarCollapsed">
+        <div class="flex justify-center text-meta text-text-soft" title="Bydžovský Čtverec">©</div>
+      </template>
+      <template v-else>
+        <div class="text-meta text-text-soft leading-tight">© Bydžovský Čtverec</div>
+        <div class="text-meta text-text-soft/60">{{ new Date().getFullYear() }}</div>
+      </template>
+    </div>
   </aside>
 </template>
