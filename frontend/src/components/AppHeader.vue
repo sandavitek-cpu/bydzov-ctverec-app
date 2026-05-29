@@ -107,7 +107,7 @@ onUnmounted(() => {
 
 <template>
   <header class="h-18 border-b border-border bg-surface shrink-0 relative">
-    <div class="mx-auto flex h-full max-w-wide items-center justify-between gap-4 px-4 lg:px-8">
+    <div class="flex h-full items-center justify-between gap-4 px-4 lg:px-8">
       <RouterLink to="/" class="flex items-center gap-3 no-underline group shrink-0" @click="mobileNavOpen = false">
         <img
           :src="logoCtverec"
