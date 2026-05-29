@@ -37,4 +37,6 @@ public class ChangeLogEntry {
   public String getVersion() { return version; }
   public String getDescription() { return description; }
   public Instant getCreatedAt() { return createdAt; }
+  public void setVersion(String version) { this.version = version; }
+  public void setDescription(String description) { this.description = description; }
 }

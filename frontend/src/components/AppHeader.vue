@@ -274,6 +274,7 @@ onUnmounted(() => {
                   <RouterLink to="/admin/incidenty" class="dropdown-item">Úkoly pro pořadatele</RouterLink>
                   <RouterLink to="/admin/komunikace" class="dropdown-item">Komunikace</RouterLink>
                   <RouterLink to="/admin/logovani" class="dropdown-item">Logování</RouterLink>
+                  <RouterLink to="/admin/changelog" class="dropdown-item">ChangeLog</RouterLink>
                   <RouterLink to="/admin/role" class="dropdown-item">Role</RouterLink>
                   <RouterLink to="/admin/uzivatele" class="dropdown-item">Uživatelé</RouterLink>
                   <button @click="emit('impersonate')" class="dropdown-item">Přihlásit jako</button>
@@ -408,6 +409,7 @@ onUnmounted(() => {
               <RouterLink to="/admin/incidenty" class="mobile-nav-item" @click="mobileNavOpen = false">Úkoly pro pořadatele</RouterLink>
               <RouterLink to="/admin/komunikace" class="mobile-nav-item" @click="mobileNavOpen = false">Komunikace</RouterLink>
               <RouterLink to="/admin/logovani" class="mobile-nav-item" @click="mobileNavOpen = false">Logování</RouterLink>
+              <RouterLink to="/admin/changelog" class="mobile-nav-item" @click="mobileNavOpen = false">ChangeLog</RouterLink>
               <RouterLink to="/admin/role" class="mobile-nav-item" @click="mobileNavOpen = false">Role</RouterLink>
               <RouterLink to="/admin/uzivatele" class="mobile-nav-item" @click="mobileNavOpen = false">Uživatelé</RouterLink>
               <button @click="emit('impersonate'); mobileNavOpen = false" class="mobile-nav-item w-full text-left">Přihlásit jako</button>

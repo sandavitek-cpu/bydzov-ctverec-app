@@ -22,8 +22,8 @@ public class Task {
   @Column(columnDefinition = "TEXT")
   private String description;
 
-  @Column(name = "recommended_points")
-  private Integer recommendedPoints;
+  @Column(name = "recommended_points", columnDefinition = "TEXT")
+  private String recommendedPoints;
 
   @Column(columnDefinition = "TEXT")
   private String tools;
@@ -41,12 +41,12 @@ public class Task {
   public Long getId() { return id; }
   public String getName() { return name; }
   public String getDescription() { return description; }
-  public Integer getRecommendedPoints() { return recommendedPoints; }
+  public String getRecommendedPoints() { return recommendedPoints; }
   public String getTools() { return tools; }
   public LocalDateTime getCreatedAt() { return createdAt; }
 
   public void setName(String name) { this.name = name; }
   public void setDescription(String description) { this.description = description; }
-  public void setRecommendedPoints(Integer recommendedPoints) { this.recommendedPoints = recommendedPoints; }
+  public void setRecommendedPoints(String recommendedPoints) { this.recommendedPoints = recommendedPoints; }
   public void setTools(String tools) { this.tools = tools; }
 }

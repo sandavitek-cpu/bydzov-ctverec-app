@@ -15,7 +15,7 @@ const editing = ref<TaskData | null>(null)
 const form = ref({
   name: '',
   description: '',
-  recommendedPoints: null as number | null,
+  recommendedPoints: null as string | null,
   tools: '',
 })
 
@@ -104,7 +104,7 @@ async function remove(id: number) {
             </div>
             <div>
               <label class="input-label">Doporučené bodování</label>
-              <input v-model.number="form.recommendedPoints" type="number" min="0" class="input-field" />
+              <input v-model="form.recommendedPoints" type="text" class="input-field" placeholder="např. 15, 1–5, volitelné" />
             </div>
             <div>
               <label class="input-label">Pomůcky</label>
@@ -143,7 +143,7 @@ async function remove(id: number) {
                 </div>
                 <div v-if="task.description" class="mt-1 text-body-sm text-text-muted">{{ task.description }}</div>
                 <div class="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-meta">
-                  <span v-if="task.recommendedPoints != null" class="text-primary">
+                  <span v-if="task.recommendedPoints" class="text-primary">
                     {{ task.recommendedPoints }} bodů
                   </span>
                   <span v-if="task.tools" class="text-text-soft">

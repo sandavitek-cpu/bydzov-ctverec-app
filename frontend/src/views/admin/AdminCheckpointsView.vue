@@ -217,7 +217,7 @@ onMounted(async () => {
                   <input type="checkbox" :value="task.id" v-model="form.taskIds"
                     class="rounded border-border text-primary focus:ring-primary" />
                   <span class="text-body-sm text-text">{{ task.name }}</span>
-                  <span v-if="task.recommendedPoints != null" class="text-meta text-text-soft ml-auto">
+                  <span v-if="task.recommendedPoints" class="text-meta text-text-soft ml-auto">
                     {{ task.recommendedPoints }} b.
                   </span>
                 </label>

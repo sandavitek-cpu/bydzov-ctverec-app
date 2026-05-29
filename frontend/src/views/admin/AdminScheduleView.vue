@@ -19,6 +19,7 @@ const items = ref<ScheduleItemData[]>([])
 const loading = ref(true)
 const editing = ref<Record<number, ScheduleItemData>>({})
 const adding = ref(false)
+const saving = ref(false)
 const newItem = ref<ScheduleItemData>({ time: '', label: '', description: null, sortOrder: 0 })
 
 async function load() {
@@ -29,6 +30,11 @@ async function load() {
   } finally {
     loading.value = false
   }
+}
+
+function startAdd() {
+  newItem.value = { time: '', label: '', description: null, sortOrder: items.value.length }
+  adding.value = true
 }
 
 function startEdit(item: ScheduleItemData) {
@@ -43,7 +49,7 @@ async function saveEdit(id: number) {
   const data = editing.value[id]
   if (!data) return
   if (!data.time || !data.label) {
-    error('time a label jsou povinné')
+    error('Čas a název jsou povinné')
     return
   }
   try {
@@ -69,13 +75,12 @@ async function removeItem(id: number) {
 
 async function addItem() {
   if (!newItem.value.time || !newItem.value.label) {
-    error('time a label jsou povinné')
+    error('Čas a název jsou povinné')
     return
   }
   try {
     await createAdminScheduleItem(newItem.value, authHeaders())
     success('Položka přidána')
-    newItem.value = { time: '', label: '', description: null, sortOrder: items.value.length }
     adding.value = false
     await load()
   } catch (e) {
@@ -83,34 +88,44 @@ async function addItem() {
   }
 }
 
-function moveUp(i: number) {
-  if (i <= 0) return
+async function moveUp(i: number) {
+  if (i <= 0 || saving.value) return
+  saving.value = true
   const arr = [...items.value]
-  const a = arr[i]
-  const b = arr[i - 1]
-  const tmp = a.sortOrder
-  a.sortOrder = b.sortOrder
-  b.sortOrder = tmp
+  const tmp = arr[i]
+  arr[i] = arr[i - 1]
+  arr[i - 1] = tmp
+  arr.forEach((item, idx) => item.sortOrder = idx)
   items.value = arr
-  Promise.all([
-    updateAdminScheduleItem(a.id!, { sortOrder: a.sortOrder }, authHeaders()),
-    updateAdminScheduleItem(b.id!, { sortOrder: b.sortOrder }, authHeaders()),
-  ]).catch(_e => show('Chyba uložení', 'error'))
+  try {
+    await Promise.all(arr.map(item =>
+      updateAdminScheduleItem(item.id!, { sortOrder: item.sortOrder }, authHeaders())
+    ))
+  } catch {
+    show('Chyba uložení', 'error')
+  }
+  await load()
+  saving.value = false
 }
 
-function moveDown(i: number) {
-  if (i >= items.value.length - 1) return
+async function moveDown(i: number) {
+  if (i >= items.value.length - 1 || saving.value) return
+  saving.value = true
   const arr = [...items.value]
-  const a = arr[i]
-  const b = arr[i + 1]
-  const tmp = a.sortOrder
-  a.sortOrder = b.sortOrder
-  b.sortOrder = tmp
+  const tmp = arr[i]
+  arr[i] = arr[i + 1]
+  arr[i + 1] = tmp
+  arr.forEach((item, idx) => item.sortOrder = idx)
   items.value = arr
-  Promise.all([
-    updateAdminScheduleItem(a.id!, { sortOrder: a.sortOrder }, authHeaders()),
-    updateAdminScheduleItem(b.id!, { sortOrder: b.sortOrder }, authHeaders()),
-  ]).catch(_e => show('Chyba uložení', 'error'))
+  try {
+    await Promise.all(arr.map(item =>
+      updateAdminScheduleItem(item.id!, { sortOrder: item.sortOrder }, authHeaders())
+    ))
+  } catch {
+    show('Chyba uložení', 'error')
+  }
+  await load()
+  saving.value = false
 }
 
 onMounted(load)
@@ -120,7 +135,7 @@ onMounted(load)
   <div>
     <div class="flex items-center justify-between mb-6">
       <h1 class="text-page-title text-text">Program závodu</h1>
-      <button v-if="!adding" @click="adding = true" class="btn-primary btn-sm">+ Přidat položku</button>
+      <button v-if="!adding" @click="startAdd()" class="btn-primary btn-sm">+ Přidat položku</button>
     </div>
 
     <div v-if="adding" class="mb-6 rounded-xl border border-border bg-surface p-4 space-y-3">
@@ -135,7 +150,7 @@ onMounted(load)
         </div>
         <div>
           <label class="text-meta text-text-soft block mb-1">Pořadí</label>
-          <input v-model.number="newItem.sortOrder" type="number" class="input w-full" />
+          <div class="input w-full bg-surface-strong/50 flex items-center text-text-muted">{{ items.length + 1 }}</div>
         </div>
       </div>
       <div>
@@ -166,10 +181,10 @@ onMounted(load)
           <tr v-for="(item, i) in items" :key="item.id" class="border-b border-border/50 hover:bg-surface-strong/30">
             <td class="py-3 pr-4">
               <div class="flex items-center gap-1">
-                <span class="text-meta text-text-soft">{{ item.sortOrder }}</span>
+                <span class="text-meta text-text-soft">{{ i + 1 }}</span>
                 <div class="flex flex-col gap-0.5 ml-1">
-                  <button @click="moveUp(i)" :disabled="i === 0" class="text-text-soft hover:text-primary disabled:opacity-30 leading-none text-xs">&uarr;</button>
-                  <button @click="moveDown(i)" :disabled="i === items.length - 1" class="text-text-soft hover:text-primary disabled:opacity-30 leading-none text-xs">&darr;</button>
+                  <button @click="moveUp(i)" :disabled="i === 0 || saving" class="text-text-soft hover:text-primary disabled:opacity-30 leading-none text-xs">&uarr;</button>
+                  <button @click="moveDown(i)" :disabled="i === items.length - 1 || saving" class="text-text-soft hover:text-primary disabled:opacity-30 leading-none text-xs">&darr;</button>
                 </div>
               </div>
             </td>

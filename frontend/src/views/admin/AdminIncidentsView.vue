@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { fetchAdminIncidents, createAdminIncident, deleteAdminIncident, fetchAdminUsers, type IncidentData, type AdminUser } from '@/api'
@@ -34,8 +34,6 @@ const filteredUsers = computed(() => {
     u.email.toLowerCase().includes(q)
   )
 })
-
-import { computed } from 'vue'
 
 function toggleAssignee(userId: number) {
   const idx = form.value.assigneeIds.indexOf(userId)

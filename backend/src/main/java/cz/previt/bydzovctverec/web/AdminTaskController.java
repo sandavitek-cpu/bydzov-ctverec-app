@@ -41,8 +41,9 @@ public class AdminTaskController {
     }
     Task task = new Task(name);
     if (body.containsKey("description")) task.setDescription(WebUtils.toString(body.get("description")));
-    if (body.containsKey("recommendedPoints") && body.get("recommendedPoints") instanceof Number n) {
-      task.setRecommendedPoints(n.intValue());
+    if (body.containsKey("recommendedPoints")) {
+      String val = WebUtils.toString(body.get("recommendedPoints"));
+      task.setRecommendedPoints(val != null && !val.isBlank() ? val : null);
     }
     if (body.containsKey("tools")) task.setTools(WebUtils.toString(body.get("tools")));
     taskRepository.save(task);
@@ -56,8 +57,9 @@ public class AdminTaskController {
     if (task == null) return ResponseEntity.badRequest().body(ApiResponse.error("Úkol nenalezen"));
     if (body.containsKey("name")) task.setName(WebUtils.toString(body.get("name")));
     if (body.containsKey("description")) task.setDescription(WebUtils.toString(body.get("description")));
-    if (body.containsKey("recommendedPoints") && body.get("recommendedPoints") instanceof Number n) {
-      task.setRecommendedPoints(n.intValue());
+    if (body.containsKey("recommendedPoints")) {
+      String val = WebUtils.toString(body.get("recommendedPoints"));
+      task.setRecommendedPoints(val != null && !val.isBlank() ? val : null);
     }
     if (body.containsKey("tools")) task.setTools(WebUtils.toString(body.get("tools")));
     taskRepository.save(task);

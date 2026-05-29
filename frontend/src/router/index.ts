@@ -97,6 +97,12 @@ const routes = [
     meta: { requiresAdmin: true },
   },
   {
+    path: '/admin/changelog',
+    name: 'admin-changelog',
+    component: () => import('../views/admin/AdminChangelogView.vue'),
+    meta: { requiresAdmin: true },
+  },
+  {
     path: '/zavodnik/ukoly',
     name: 'user-incidents',
     component: () => import('../views/UserIncidentsView.vue'),

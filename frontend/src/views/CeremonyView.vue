@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { useAuth } from '@/composables/useAuth'
 import { fetchCeremonyCategories, generateCeremonyPresentation, type CeremonyData } from '@/api'
 
 interface Slide {
@@ -27,7 +28,6 @@ const overlayPhase = ref<'countdown' | 'reveal'>('countdown')
 const overlayCountdown = ref(3)
 const overlaySlide = ref<Slide | null>(null)
 const doneIds = ref<Set<string>>(new Set())
-const isAdmin = ref(false)
 const isSingleMode = ref(false)
 let countdownInterval: ReturnType<typeof setInterval> | null = null
 const pendingTimeouts: ReturnType<typeof setTimeout>[] = []
@@ -79,13 +79,7 @@ function announceSlide(slide: Slide) {
   showOverlay.value = true
 }
 
-const adminToken = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null
-const adminRole = typeof window !== 'undefined' ? localStorage.getItem('admin_role') : null
-
-function authHeaders(): Record<string, string> {
-  const token = localStorage.getItem('admin_token')
-  return token ? { Authorization: 'Bearer ' + token } : {}
-}
+const { isAdmin, authHeaders } = useAuth()
 
 function buildSlides(data: CeremonyData): Slide[] {
   const result: Slide[] = []
@@ -169,9 +163,9 @@ function resetAll() {
 
 async function regenerate() {
   generating.value = true
+  error.value = null
   try {
-    const h = authHeaders()
-    const result = await generateCeremonyPresentation(h)
+    const result = await generateCeremonyPresentation(authHeaders())
     slides.value = buildSlides(result.data)
     doneIds.value = new Set()
     currentSlideIndex.value = -1
@@ -185,7 +179,6 @@ async function regenerate() {
 async function load() {
   loading.value = true
   error.value = null
-  isAdmin.value = !!(adminToken && adminRole?.includes('ADMIN'))
   try {
     const data = await fetchCeremonyCategories(year.value)
     slides.value = buildSlides(data)

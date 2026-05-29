@@ -989,7 +989,7 @@ export interface TaskData {
   id?: number
   name: string
   description: string | null
-  recommendedPoints: number | null
+  recommendedPoints: string | null
   tools: string | null
   createdAt?: string
 }
@@ -1006,9 +1006,8 @@ export async function createAdminTask(data: Partial<TaskData>, headers: Record<s
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(data),
   })
-  const body = await res.json()
-  if (!res.ok) throw new Error(body.error ?? `API ${res.status}`)
-  return body as TaskData
+  if (!res.ok) throw new Error(await apiError(res))
+  return res.json() as Promise<TaskData>
 }
 
 export async function updateAdminTask(id: number, data: Partial<TaskData>, headers: Record<string, string>) {
@@ -1017,9 +1016,8 @@ export async function updateAdminTask(id: number, data: Partial<TaskData>, heade
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(data),
   })
-  const body = await res.json()
-  if (!res.ok) throw new Error(body.error ?? `API ${res.status}`)
-  return body as TaskData
+  if (!res.ok) throw new Error(await apiError(res))
+  return res.json() as Promise<TaskData>
 }
 
 export async function deleteAdminTask(id: number, headers: Record<string, string>) {
