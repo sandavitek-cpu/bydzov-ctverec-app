@@ -14,17 +14,6 @@ const sidebarCollapsed = ref(false)
     'shrink-0 admin-sidebar transition-all duration-200',
     mobileOpen ? 'fixed inset-y-0 left-0 z-40 block' : 'hidden md:flex md:flex-col'
   ]">
-    <div class="flex items-center justify-end p-2">
-      <button @click="sidebarCollapsed = !sidebarCollapsed"
-        class="flex h-8 w-8 items-center justify-center rounded-md text-text-soft hover:bg-surface-strong transition-colors max-md:hidden"
-        :title="sidebarCollapsed ? 'Rozbalit menu' : 'Sbalit menu'"
-      >
-        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path v-if="!sidebarCollapsed" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-          <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-        </svg>
-      </button>
-    </div>
     <nav class="flex-1 overflow-y-auto py-2">
         <template v-if="sidebarCollapsed">
           <RouterLink to="/admin/prihlaseni" class="flex items-center justify-center h-12 text-text-soft hover:text-primary hover:bg-surface-2 transition-colors" title="Přihlášky" active-class="!text-primary" @click="emit('close')">
@@ -113,14 +102,16 @@ const sidebarCollapsed = ref(false)
           </RouterLink>
         </template>
       </nav>
-      <div class="mt-auto border-t border-border/40 px-4 py-3">
-        <template v-if="sidebarCollapsed">
-          <div class="flex justify-center text-meta text-text-soft" title="Bydžovský Čtverec">©</div>
-        </template>
-        <template v-else>
-          <div class="text-meta text-text-soft leading-tight">© Bydžovský Čtverec</div>
-          <div class="text-meta text-text-soft/60">{{ new Date().getFullYear() }}</div>
-        </template>
+      <div class="flex items-center justify-center border-t border-border/40 py-2">
+        <button @click="sidebarCollapsed = !sidebarCollapsed"
+          class="flex h-8 w-8 items-center justify-center rounded-md text-text-soft hover:bg-surface-strong transition-colors"
+          :title="sidebarCollapsed ? 'Rozbalit menu' : 'Sbalit menu'"
+        >
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path v-if="!sidebarCollapsed" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+            <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+          </svg>
+        </button>
       </div>
   </aside>
 </template>
