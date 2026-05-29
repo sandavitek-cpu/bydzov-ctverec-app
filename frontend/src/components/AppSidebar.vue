@@ -11,7 +11,7 @@ const sidebarCollapsed = ref(false)
 <template>
   <aside :class="[
     sidebarCollapsed ? 'w-14' : 'w-56',
-    'shrink-0 admin-sidebar transition-all duration-200',
+    'shrink-0 admin-sidebar transition-all duration-200 flex flex-col h-full',
     mobileOpen ? 'fixed inset-y-0 left-0 z-40 block' : 'hidden md:block'
   ]">
     <div class="flex items-center justify-end p-2">
@@ -25,7 +25,7 @@ const sidebarCollapsed = ref(false)
         </svg>
       </button>
     </div>
-    <nav class="py-2">
+    <nav class="flex-1 overflow-y-auto py-2 pb-4">
       <template v-if="sidebarCollapsed">
         <RouterLink to="/admin/prihlaseni" class="flex items-center justify-center h-12 text-text-soft hover:text-primary hover:bg-surface-2 transition-colors" title="Přihlášky" active-class="!text-primary" @click="emit('close')">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>
