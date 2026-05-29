@@ -4,7 +4,7 @@ import logoPrevit from '@/assets/logo_previt.png'
 </script>
 
 <template>
-  <footer class="bg-surface-strong mt-12 shrink-0">
+  <footer class="bg-surface-strong shrink-0">
     <div class="h-0.5 w-full" style="background: linear-gradient(90deg, var(--red), var(--primary), var(--red))"></div>
     <div class="mx-auto max-w-wide px-4 lg:px-8 py-10">
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 text-center sm:text-left">
