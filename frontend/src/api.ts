@@ -1,3 +1,5 @@
+import { showApiErrorToast } from '@/composables/useToast'
+
 export const apiBaseUrl =
   import.meta.env.VITE_API_BASE_URL ?? 'https://bydzov-ctverec-api.onrender.com'
 
@@ -6,6 +8,21 @@ const apiVersionPrefix = import.meta.env.VITE_API_VERSION ?? ''
 
 export function apiVersionedUrl(path: string): string {
   return `${apiBaseUrl}/api${apiVersionPrefix}${path}`
+}
+
+const originalFetch = window.fetch.bind(window)
+
+async function apiFetch(input: string | URL | Request, init?: RequestInit): Promise<Response> {
+  const res = await originalFetch(input, init)
+  if (!res.ok) {
+    const body = await res.clone().json().catch(() => ({}))
+    const errorCode = body?.errorCode as string | undefined
+    const message = body?.error ?? body?.message ?? `API ${res.status}`
+    showApiErrorToast(message, errorCode)
+    const path = typeof input === 'string' ? input : input instanceof URL ? input.pathname : 'url' in input ? input.url : ''
+    if (errorCode) console.error(`[${errorCode}] ${res.status} ${path} - ${message}`)
+  }
+  return res
 }
 
 export class ApiError extends Error {
@@ -31,7 +48,7 @@ async function tryRefreshToken(): Promise<boolean> {
   const rt = getRefreshToken()
   if (!rt) return false
   try {
-    const res = await fetch(`${apiBaseUrl}/api/auth/refresh`, {
+    const res = await apiFetch(`${apiBaseUrl}/api/auth/refresh`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refreshToken: rt }),
@@ -71,7 +88,7 @@ export async function authFetch(url: string, options: RequestInit = {}): Promise
   if (token) {
     headers['Authorization'] = `Bearer ${token}`
   }
-  return fetch(url, { ...options, headers })
+  return apiFetch(url, { ...options, headers })
 }
 
 async function apiError(res: Response): Promise<string> {
@@ -86,7 +103,7 @@ async function apiError(res: Response): Promise<string> {
 
 
 export async function fetchCurrentEdition() {
-  const res = await fetch(`${apiBaseUrl}/api/public/editions/current`)
+  const res = await apiFetch(`${apiBaseUrl}/api/public/editions/current`)
   if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<{ id: number; year: number; label: string }>
 }
@@ -143,7 +160,7 @@ export interface RegistrationResult {
 }
 
 export async function submitRegistration(data: RegistrationData) {
-  const res = await fetch(`${apiBaseUrl}/api/public/registrations`, {
+  const res = await apiFetch(`${apiBaseUrl}/api/public/registrations`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -164,7 +181,7 @@ export interface RacerLookup {
 }
 
 export async function lookupRacerByStartNumber(startNumber: number) {
-  const res = await fetch(`${apiBaseUrl}/api/public/registrations/lookup/${startNumber}`)
+  const res = await apiFetch(`${apiBaseUrl}/api/public/registrations/lookup/${startNumber}`)
   if (res.status === 404) return null
   if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<RacerLookup>
@@ -177,7 +194,7 @@ export interface UserLookup {
 }
 
 export async function lookupUserByEmail(email: string) {
-  const res = await fetch(`${apiBaseUrl}/api/public/registrations/lookup-user?email=${encodeURIComponent(email)}`)
+  const res = await apiFetch(`${apiBaseUrl}/api/public/registrations/lookup-user?email=${encodeURIComponent(email)}`)
   if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<UserLookup>
 }
@@ -210,7 +227,7 @@ export interface ResultsResponse {
 }
 
 export async function fetchResults(year: number) {
-  const res = await fetch(`${apiBaseUrl}/api/public/results/${year}`)
+  const res = await apiFetch(`${apiBaseUrl}/api/public/results/${year}`)
   if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<ResultsResponse>
 }
@@ -234,13 +251,13 @@ export async function fetchArchive(params?: { year?: number; name?: string; vehi
   if (params?.vehicle) q.set('vehicle', params.vehicle)
   const qs = q.toString()
   const url = `${apiBaseUrl}/api/public/archive${qs ? '?' + qs : ''}`
-  const res = await fetch(url)
+  const res = await apiFetch(url)
   if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<ArchiveResponse>
 }
 
 export async function fetchArchiveByYear(year: number) {
-  const res = await fetch(`${apiBaseUrl}/api/public/archive/${year}`)
+  const res = await apiFetch(`${apiBaseUrl}/api/public/archive/${year}`)
   if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<ArchiveResponse>
 }
@@ -259,13 +276,13 @@ export interface CheckpointData {
 }
 
 export async function fetchAdminCheckpoints(headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/checkpoints`, { headers })
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/checkpoints`, { headers })
   if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<CheckpointData[]>
 }
 
 export async function createAdminCheckpoint(data: Partial<CheckpointData>, headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/checkpoints`, {
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/checkpoints`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(data),
@@ -276,7 +293,7 @@ export async function createAdminCheckpoint(data: Partial<CheckpointData>, heade
 }
 
 export async function updateAdminCheckpoint(id: number, data: Partial<CheckpointData>, headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/checkpoints/${id}`, {
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/checkpoints/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(data),
@@ -287,7 +304,7 @@ export async function updateAdminCheckpoint(id: number, data: Partial<Checkpoint
 }
 
 export async function approveRegistration(id: number, headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/registrations/${id}/approve`, {
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/registrations/${id}/approve`, {
     method: 'POST',
     headers,
   })
@@ -297,7 +314,7 @@ export async function approveRegistration(id: number, headers: Record<string, st
 }
 
 export async function impersonateRegistration(id: number, headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/registrations/${id}/impersonate`, {
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/registrations/${id}/impersonate`, {
     method: 'POST',
     headers,
   })
@@ -307,7 +324,7 @@ export async function impersonateRegistration(id: number, headers: Record<string
 }
 
 export async function impersonateUser(userId: number, headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/users/${userId}/impersonate`, {
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/users/${userId}/impersonate`, {
     method: 'POST',
     headers,
   })
@@ -334,13 +351,13 @@ export interface RouteData {
 }
 
 export async function fetchAdminRoutes(headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/routes`, { headers })
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/routes`, { headers })
   if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<RouteData[]>
 }
 
 export async function deleteAdminCheckpoint(id: number, headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/checkpoints/${id}`, {
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/checkpoints/${id}`, {
     method: 'DELETE',
     headers,
   })
@@ -369,7 +386,7 @@ export interface MessageLogEntry {
 }
 
 export async function sendNotify(data: NotifyRequest, headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/notify`, {
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/notify`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(data),
@@ -380,7 +397,7 @@ export async function sendNotify(data: NotifyRequest, headers: Record<string, st
 }
 
 export async function fetchNotifyHistory(headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/notify`, { headers })
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/notify`, { headers })
   if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<MessageLogEntry[]>
 }
@@ -390,13 +407,13 @@ export interface LogLevelResponse {
 }
 
 export async function fetchLogLevel(headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/logging/level`, { headers })
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/logging/level`, { headers })
   if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<LogLevelResponse>
 }
 
 export async function setLogLevel(level: string, headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/logging/level`, {
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/logging/level`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify({ level }),
@@ -407,7 +424,7 @@ export async function setLogLevel(level: string, headers: Record<string, string>
 }
 
 export async function downloadLog(headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/logging/download`, { headers })
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/logging/download`, { headers })
   if (!res.ok) throw new Error(`API ${res.status}`)
   return res.blob()
 }
@@ -428,7 +445,7 @@ export interface AdminUser {
 
 export async function fetchAdminUsers(headers: Record<string, string>, q?: string) {
   const url = q ? `${apiBaseUrl}/api/admin/users?q=${encodeURIComponent(q)}` : `${apiBaseUrl}/api/admin/users`
-  const res = await fetch(url, { headers })
+  const res = await apiFetch(url, { headers })
   if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<AdminUser[]>
 }
@@ -444,13 +461,13 @@ export interface VariantConfig {
 }
 
 export async function fetchAdminVariants(headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/variants`, { headers })
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/variants`, { headers })
   if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<VariantConfig[]>
 }
 
 export async function createAdminVariant(data: Partial<VariantConfig>, headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/variants`, {
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/variants`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(data),
@@ -460,7 +477,7 @@ export async function createAdminVariant(data: Partial<VariantConfig>, headers: 
 }
 
 export async function updateAdminVariant(id: number, data: Partial<VariantConfig>, headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/variants/${id}`, {
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/variants/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(data),
@@ -470,7 +487,7 @@ export async function updateAdminVariant(id: number, data: Partial<VariantConfig
 }
 
 export async function deleteAdminVariant(id: number, headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/variants/${id}`, {
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/variants/${id}`, {
     method: 'DELETE',
     headers,
   })
@@ -478,7 +495,7 @@ export async function deleteAdminVariant(id: number, headers: Record<string, str
 }
 
 export async function reopenAdminVariant(id: number, data: { durationMinutes: number } | { untilMidnight: boolean }, headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/variants/${id}/reopen`, {
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/variants/${id}/reopen`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(data),
@@ -489,7 +506,7 @@ export async function reopenAdminVariant(id: number, data: { durationMinutes: nu
 }
 
 export async function closeAdminVariantReopen(id: number, headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/variants/${id}/reopen`, {
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/variants/${id}/reopen`, {
     method: 'DELETE',
     headers,
   })
@@ -508,7 +525,7 @@ export interface RuiAnAddress {
 
 export async function searchRuiAnAddress(q: string): Promise<RuiAnAddress[]> {
   if (!q.trim()) return []
-  const res = await fetch(`${apiBaseUrl}/api/public/ruian/search?q=${encodeURIComponent(q)}`)
+  const res = await apiFetch(`${apiBaseUrl}/api/public/ruian/search?q=${encodeURIComponent(q)}`)
   if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<RuiAnAddress[]>
 }
@@ -528,19 +545,19 @@ export interface FeeConfig {
 }
 
 export async function fetchFees() {
-  const res = await fetch(`${apiBaseUrl}/api/public/fees`)
+  const res = await apiFetch(`${apiBaseUrl}/api/public/fees`)
   if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<Record<string, FeeConfig>>
 }
 
 export async function fetchPublicVariants() {
-  const res = await fetch(`${apiBaseUrl}/api/public/variants`)
+  const res = await apiFetch(`${apiBaseUrl}/api/public/variants`)
   if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<PublicVariant[]>
 }
 
 export async function submitScore(data: ScoreSubmit, headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/scores`, {
+  const res = await apiFetch(`${apiBaseUrl}/api/scores`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(data),
@@ -553,13 +570,13 @@ export async function submitScore(data: ScoreSubmit, headers: Record<string, str
 }
 
 export async function fetchAccount(headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/account`, { headers })
+  const res = await apiFetch(`${apiBaseUrl}/api/account`, { headers })
   if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<AdminUser>
 }
 
 export async function assignStartNumber(id: number, headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/registrations/${id}/assign-start-number`, {
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/registrations/${id}/assign-start-number`, {
     method: 'POST',
     headers,
   })
@@ -569,13 +586,13 @@ export async function assignStartNumber(id: number, headers: Record<string, stri
 }
 
 export async function fetchRacerProfile(headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/racer/profile`, { headers })
+  const res = await apiFetch(`${apiBaseUrl}/api/racer/profile`, { headers })
   if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<{ firstName: string; lastName: string; email: string; phone: string }>
 }
 
 export async function fetchRacerStatus(headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/racer/status`, { headers })
+  const res = await apiFetch(`${apiBaseUrl}/api/racer/status`, { headers })
   if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<{
     id: number; paymentReference: number; teamName: string; startNumber: number; startFee: number
@@ -586,7 +603,7 @@ export async function fetchRacerStatus(headers: Record<string, string>) {
 }
 
 export async function updateAccount(data: { name?: string; email?: string; phone?: string }, headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/account`, {
+  const res = await apiFetch(`${apiBaseUrl}/api/account`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(data),
@@ -610,13 +627,13 @@ export interface VehicleData {
 }
 
 export async function fetchVehicles(headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/racer/vehicles`, { headers })
+  const res = await apiFetch(`${apiBaseUrl}/api/racer/vehicles`, { headers })
   if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<VehicleData[]>
 }
 
 export async function createVehicle(data: Partial<VehicleData>, headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/racer/vehicles`, {
+  const res = await apiFetch(`${apiBaseUrl}/api/racer/vehicles`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(data),
@@ -627,7 +644,7 @@ export async function createVehicle(data: Partial<VehicleData>, headers: Record<
 }
 
 export async function updateVehicle(id: number, data: Partial<VehicleData>, headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/racer/vehicles/${id}`, {
+  const res = await apiFetch(`${apiBaseUrl}/api/racer/vehicles/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(data),
@@ -638,7 +655,7 @@ export async function updateVehicle(id: number, data: Partial<VehicleData>, head
 }
 
 export async function deleteVehicle(id: number, headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/racer/vehicles/${id}`, {
+  const res = await apiFetch(`${apiBaseUrl}/api/racer/vehicles/${id}`, {
     method: 'DELETE',
     headers,
   })
@@ -685,19 +702,19 @@ export interface CeremonyData {
 }
 
 export async function fetchCeremonyCategories(year: number) {
-  const res = await fetch(`${apiBaseUrl}/api/public/ceremony/${year}`)
+  const res = await apiFetch(`${apiBaseUrl}/api/public/ceremony/${year}`)
   if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<CeremonyData>
 }
 
 export async function fetchAdminCeremonyData(headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/ceremony/data`, { headers })
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/ceremony/data`, { headers })
   if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<CeremonyData>
 }
 
 export async function generateCeremonyPresentation(headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/ceremony/generate`, {
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/ceremony/generate`, {
     method: 'POST',
     headers,
   })
@@ -707,13 +724,13 @@ export async function generateCeremonyPresentation(headers: Record<string, strin
 }
 
 export async function fetchAdminCategories(headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/categories`, { headers })
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/categories`, { headers })
   if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<RaceCategory[]>
 }
 
 export async function createAdminCategory(data: Partial<RaceCategory>, headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/categories`, {
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/categories`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(data),
@@ -724,7 +741,7 @@ export async function createAdminCategory(data: Partial<RaceCategory>, headers: 
 }
 
 export async function updateAdminCategory(id: number, data: Partial<RaceCategory>, headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/categories/${id}`, {
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/categories/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(data),
@@ -735,7 +752,7 @@ export async function updateAdminCategory(id: number, data: Partial<RaceCategory
 }
 
 export async function deleteAdminCategory(id: number, headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/categories/${id}`, {
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/categories/${id}`, {
     method: 'DELETE',
     headers,
   })
@@ -743,7 +760,7 @@ export async function deleteAdminCategory(id: number, headers: Record<string, st
 }
 
 export async function computeCategoryWinners(headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/categories/compute`, {
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/categories/compute`, {
     method: 'POST',
     headers,
   })
@@ -761,13 +778,13 @@ export interface ScheduleItemData {
 }
 
 export async function fetchAdminSchedule(headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/schedule`, { headers })
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/schedule`, { headers })
   if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<ScheduleItemData[]>
 }
 
 export async function createAdminScheduleItem(data: Partial<ScheduleItemData>, headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/schedule`, {
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/schedule`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(data),
@@ -778,7 +795,7 @@ export async function createAdminScheduleItem(data: Partial<ScheduleItemData>, h
 }
 
 export async function updateAdminScheduleItem(id: number, data: Partial<ScheduleItemData>, headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/schedule/${id}`, {
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/schedule/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(data),
@@ -789,7 +806,7 @@ export async function updateAdminScheduleItem(id: number, data: Partial<Schedule
 }
 
 export async function deleteAdminScheduleItem(id: number, headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/schedule/${id}`, {
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/schedule/${id}`, {
     method: 'DELETE',
     headers,
   })
@@ -812,20 +829,20 @@ export interface NotificationResponse {
 }
 
 export async function fetchNotifications(headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/notifications`, { headers })
+  const res = await apiFetch(`${apiBaseUrl}/api/notifications`, { headers })
   if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<NotificationResponse>
 }
 
 export async function markNotificationRead(id: number, headers: Record<string, string>) {
-  await fetch(`${apiBaseUrl}/api/notifications/${id}/read`, {
+  await apiFetch(`${apiBaseUrl}/api/notifications/${id}/read`, {
     method: 'PATCH',
     headers,
   })
 }
 
 export async function markAllNotificationsRead(headers: Record<string, string>) {
-  await fetch(`${apiBaseUrl}/api/notifications/read-all`, {
+  await apiFetch(`${apiBaseUrl}/api/notifications/read-all`, {
     method: 'POST',
     headers,
   })
@@ -864,7 +881,7 @@ export interface ItineraryResponse {
 }
 
 export async function fetchRacerItinerary(headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/racer/itinerary`, { headers })
+  const res = await apiFetch(`${apiBaseUrl}/api/racer/itinerary`, { headers })
   if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<ItineraryResponse>
 }
@@ -897,7 +914,7 @@ export interface JudgeOverview {
 }
 
 export async function fetchJudgeOverview(headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/judge/overview`, { headers })
+  const res = await apiFetch(`${apiBaseUrl}/api/judge/overview`, { headers })
   if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<JudgeOverview>
 }
@@ -939,7 +956,7 @@ export interface UserIncidentData {
 }
 
 export async function fetchAdminIncidents(headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/incidents`, { headers })
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/incidents`, { headers })
   if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<IncidentData[]>
 }
@@ -950,7 +967,7 @@ export async function createAdminIncident(data: {
   dueDate?: string
   assigneeIds: number[]
 }, headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/incidents`, {
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/incidents`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(data),
@@ -961,7 +978,7 @@ export async function createAdminIncident(data: {
 }
 
 export async function deleteAdminIncident(id: number, headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/incidents/${id}`, {
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/incidents/${id}`, {
     method: 'DELETE',
     headers,
   })
@@ -969,13 +986,13 @@ export async function deleteAdminIncident(id: number, headers: Record<string, st
 }
 
 export async function fetchUserIncidents(headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/incidents`, { headers })
+  const res = await apiFetch(`${apiBaseUrl}/api/incidents`, { headers })
   if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<UserIncidentData[]>
 }
 
 export async function updateIncidentStatus(assigneeId: number, status: string, headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/incidents/${assigneeId}/status`, {
+  const res = await apiFetch(`${apiBaseUrl}/api/incidents/${assigneeId}/status`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify({ status }),
@@ -995,13 +1012,13 @@ export interface TaskData {
 }
 
 export async function fetchAdminTasks(headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/tasks`, { headers })
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/tasks`, { headers })
   if (!res.ok) throw new Error(await apiError(res))
   return res.json() as Promise<TaskData[]>
 }
 
 export async function createAdminTask(data: Partial<TaskData>, headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/tasks`, {
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/tasks`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(data),
@@ -1011,7 +1028,7 @@ export async function createAdminTask(data: Partial<TaskData>, headers: Record<s
 }
 
 export async function updateAdminTask(id: number, data: Partial<TaskData>, headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/tasks/${id}`, {
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/tasks/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(data),
@@ -1021,7 +1038,7 @@ export async function updateAdminTask(id: number, data: Partial<TaskData>, heade
 }
 
 export async function deleteAdminTask(id: number, headers: Record<string, string>) {
-  const res = await fetch(`${apiBaseUrl}/api/admin/tasks/${id}`, {
+  const res = await apiFetch(`${apiBaseUrl}/api/admin/tasks/${id}`, {
     method: 'DELETE',
     headers,
   })

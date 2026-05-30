@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { vDraggable } from 'vue-draggable-plus'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import {
@@ -88,41 +89,15 @@ async function addItem() {
   }
 }
 
-async function moveUp(i: number) {
-  if (i <= 0 || saving.value) return
+async function saveOrder() {
   saving.value = true
-  const arr = [...items.value]
-  const tmp = arr[i]
-  arr[i] = arr[i - 1]
-  arr[i - 1] = tmp
-  arr.forEach((item, idx) => item.sortOrder = idx)
-  items.value = arr
+  items.value.forEach((item, idx) => item.sortOrder = idx)
   try {
-    await Promise.all(arr.map(item =>
+    await Promise.all(items.value.map(item =>
       updateAdminScheduleItem(item.id!, { sortOrder: item.sortOrder }, authHeaders())
     ))
   } catch {
-    show('Chyba uložení', 'error')
-  }
-  await load()
-  saving.value = false
-}
-
-async function moveDown(i: number) {
-  if (i >= items.value.length - 1 || saving.value) return
-  saving.value = true
-  const arr = [...items.value]
-  const tmp = arr[i]
-  arr[i] = arr[i + 1]
-  arr[i + 1] = tmp
-  arr.forEach((item, idx) => item.sortOrder = idx)
-  items.value = arr
-  try {
-    await Promise.all(arr.map(item =>
-      updateAdminScheduleItem(item.id!, { sortOrder: item.sortOrder }, authHeaders())
-    ))
-  } catch {
-    show('Chyba uložení', 'error')
+    show('Chyba uložení pořadí', 'error')
   }
   await load()
   saving.value = false
@@ -177,15 +152,12 @@ onMounted(load)
             <th class="py-3 w-32">Akce</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody v-draggable="[items, { handle: '.drag-handle', animation: 200, ghostClass: 'opacity-30', onEnd: saveOrder }]">
           <tr v-for="(item, i) in items" :key="item.id" class="border-b border-border/50 hover:bg-surface-strong/30">
             <td class="py-3 pr-4">
               <div class="flex items-center gap-1">
+                <span class="drag-handle cursor-grab active:cursor-grabbing text-text-soft hover:text-primary mr-1 select-none" title="Táhnutím změňte pořadí">⠿</span>
                 <span class="text-meta text-text-soft">{{ i + 1 }}</span>
-                <div class="flex flex-col gap-0.5 ml-1">
-                  <button @click="moveUp(i)" :disabled="i === 0 || saving" class="text-text-soft hover:text-primary disabled:opacity-30 leading-none text-xs">&uarr;</button>
-                  <button @click="moveDown(i)" :disabled="i === items.length - 1 || saving" class="text-text-soft hover:text-primary disabled:opacity-30 leading-none text-xs">&darr;</button>
-                </div>
               </div>
             </td>
             <td class="py-3 pr-4">

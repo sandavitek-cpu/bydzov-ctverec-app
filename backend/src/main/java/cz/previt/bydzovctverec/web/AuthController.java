@@ -126,9 +126,12 @@ public class AuthController {
   private LoginResponse buildLoginResponse(User user) {
     String accessToken = jwtService.generateAccessToken(user);
     String refreshToken = jwtService.generateRefreshToken(user);
-    var roleStr = user.getAppRoles().isEmpty()
-        ? user.getRole().name()
-        : user.getAppRoles().stream().map(AppRole::getName).collect(java.util.stream.Collectors.joining(","));
+    var roleParts = new java.util.ArrayList<String>();
+    roleParts.add(user.getRole().name());
+    user.getAppRoles().stream().map(AppRole::getName)
+        .filter(n -> !n.equals(user.getRole().name()))
+        .forEach(roleParts::add);
+    var roleStr = String.join(",", roleParts);
     return new LoginResponse(accessToken, refreshToken, roleStr, user.getName(), user.getUsername());
   }
 

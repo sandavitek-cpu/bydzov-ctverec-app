@@ -1,3 +1,5 @@
+import { showApiErrorToast } from '@/composables/useToast'
+
 const apiBaseUrl =
   import.meta.env.VITE_API_BASE_URL ?? 'https://bydzov-ctverec-api.onrender.com'
 
@@ -5,6 +7,7 @@ export class ApiError extends Error {
   constructor(
     message: string,
     public status: number,
+    public errorCode?: string,
     public body?: unknown
   ) {
     super(message)
@@ -71,14 +74,13 @@ interface RequestOptions {
   headers?: Record<string, string>
 }
 
-async function extractError(res: Response): Promise<string> {
+async function extractError(res: Response): Promise<{ message: string; errorCode?: string }> {
   try {
     const body = await res.json()
-    if (body?.error) return body.error
-    if (body?.message) return body.message
-    return `API ${res.status}`
+    const message = body?.error ?? body?.message ?? `API ${res.status}`
+    return { message, errorCode: body?.errorCode }
   } catch {
-    return `API ${res.status}`
+    return { message: `API ${res.status}` }
   }
 }
 
@@ -105,7 +107,10 @@ async function request<T>(method: string, path: string, options: RequestOptions 
   })
 
   if (!res.ok) {
-    throw new ApiError(await extractError(res), res.status)
+    const { message, errorCode } = await extractError(res)
+    showApiErrorToast(message, errorCode)
+    console.error(`[${errorCode ?? 'FE-' + generateShortCode()}] ${method} ${path} - ${message}`)
+    throw new ApiError(message, res.status, errorCode)
   }
 
   const contentType = res.headers.get('content-type') ?? ''
@@ -118,6 +123,15 @@ async function request<T>(method: string, path: string, options: RequestOptions 
   }
 
   return undefined as T
+}
+
+function generateShortCode(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  let result = ''
+  for (let i = 0; i < 8; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return result
 }
 
 export const api = {

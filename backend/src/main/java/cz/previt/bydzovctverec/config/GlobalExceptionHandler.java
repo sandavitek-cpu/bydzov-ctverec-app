@@ -19,26 +19,33 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<ApiResponse<Void>> handleValidation(MethodArgumentNotValidException ex) {
+    String errorCode = ErrorCodeGenerator.generate();
     List<String> errors = ex.getBindingResult().getFieldErrors().stream()
         .map(FieldError::getDefaultMessage)
         .collect(Collectors.toList());
-    return ResponseEntity.badRequest().body(ApiResponse.error("Validační chyba", errors));
+    log.warn("ErrorCode={} Validation error: {}", errorCode, errors);
+    return ResponseEntity.badRequest().body(ApiResponse.error("Validační chyba", errors, errorCode));
   }
 
   @ExceptionHandler(IllegalArgumentException.class)
   public ResponseEntity<ApiResponse<Void>> handleIllegalArgument(IllegalArgumentException ex) {
-    return ResponseEntity.badRequest().body(ApiResponse.error(ex.getMessage()));
+    String errorCode = ErrorCodeGenerator.generate();
+    log.warn("ErrorCode={} Bad request: {}", errorCode, ex.getMessage());
+    return ResponseEntity.badRequest().body(ApiResponse.error(ex.getMessage(), errorCode));
   }
 
   @ExceptionHandler(IllegalStateException.class)
   public ResponseEntity<ApiResponse<Void>> handleIllegalState(IllegalStateException ex) {
-    return ResponseEntity.badRequest().body(ApiResponse.error(ex.getMessage()));
+    String errorCode = ErrorCodeGenerator.generate();
+    log.warn("ErrorCode={} Bad state: {}", errorCode, ex.getMessage());
+    return ResponseEntity.badRequest().body(ApiResponse.error(ex.getMessage(), errorCode));
   }
 
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ApiResponse<Void>> handleGeneral(Exception ex) {
-    log.error("Unhandled exception", ex);
+    String errorCode = ErrorCodeGenerator.generate();
+    log.error("ErrorCode={} Unhandled exception", errorCode, ex);
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .body(ApiResponse.error("Došlo k neočekávané chybě"));
+        .body(ApiResponse.error("Došlo k neočekávané chybě", errorCode));
   }
 }

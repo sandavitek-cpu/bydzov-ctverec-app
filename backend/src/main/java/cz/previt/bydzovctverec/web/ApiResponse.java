@@ -9,21 +9,30 @@ public record ApiResponse<T>(
     T data,
     String error,
     List<String> errors,
-    Long totalCount
+    Long totalCount,
+    String errorCode
 ) {
   public static <T> ApiResponse<T> ok(T data) {
-    return new ApiResponse<>(true, data, null, null, null);
+    return new ApiResponse<>(true, data, null, null, null, null);
   }
 
   public static <T> ApiResponse<T> ok(T data, long totalCount) {
-    return new ApiResponse<>(true, data, null, null, totalCount);
+    return new ApiResponse<>(true, data, null, null, totalCount, null);
   }
 
   public static <T> ApiResponse<T> error(String error) {
-    return new ApiResponse<>(false, null, error, null, null);
+    return new ApiResponse<>(false, null, error, null, null, null);
   }
 
   public static <T> ApiResponse<T> error(String error, List<String> errors) {
-    return new ApiResponse<>(false, null, error, errors, null);
+    return new ApiResponse<>(false, null, error, errors, null, null);
+  }
+
+  public static <T> ApiResponse<T> error(String error, String errorCode) {
+    return new ApiResponse<>(false, null, error, null, null, errorCode);
+  }
+
+  public static <T> ApiResponse<T> error(String error, List<String> errors, String errorCode) {
+    return new ApiResponse<>(false, null, error, errors, null, errorCode);
   }
 }

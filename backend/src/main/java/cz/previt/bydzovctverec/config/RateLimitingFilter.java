@@ -48,11 +48,12 @@ public class RateLimitingFilter implements Filter {
       });
 
       if (w.count > MAX_REQUESTS) {
-        log.warn("Rate limit exceeded for {} from {}", path, ip);
+        String errorCode = ErrorCodeGenerator.generate();
+        log.warn("ErrorCode={} Rate limit exceeded for {} from {}", errorCode, path, ip);
         HttpServletResponse res = (HttpServletResponse) response;
         res.setStatus(429);
         res.setContentType("application/json");
-        res.getWriter().write("{\"error\":\"Příliš mnoho požadavků, zkuste později\"}");
+        res.getWriter().write("{\"error\":\"Příliš mnoho požadavků, zkuste později\",\"errorCode\":\"" + errorCode + "\"}");
         return;
       }
     }

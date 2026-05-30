@@ -63,7 +63,7 @@ public class NotificationController {
         "title", n.getTitle(),
         "message", n.getMessage(),
         "type", n.getType(),
-        "relatedUrl", n.getRelatedUrl(),
+        "relatedUrl", n.getRelatedUrl() != null ? n.getRelatedUrl() : "",
         "isRead", n.getIsRead(),
         "createdAt", n.getCreatedAt().toString());
   }

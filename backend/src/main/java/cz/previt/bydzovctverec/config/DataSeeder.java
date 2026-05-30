@@ -215,11 +215,14 @@ public class DataSeeder {
   CommandLineRunner seedChangeLog(ChangeLogEntryRepository repo) {
     return args -> {
       try {
-        if (repo.count() > 0) return;
-        repo.saveAll(List.of(
-            new ChangeLogEntry("0.1.0", "Inicializace projektu – JWT auth, role ADMIN/JUDGE/RACER, přihlášky, výsledky", Instant.parse("2026-04-01T00:00:00Z")),
-            new ChangeLogEntry("0.2.0", "Username login, interaktivní mapa stanovišť, CRUD uživatelů, nastavení účtu, změna hesla, telefon", Instant.parse("2026-05-01T00:00:00Z")),
-            new ChangeLogEntry("0.3.0", "Datum vstupu do klubu (memberSince), info lišta s verzí, přejmenování Rozhodčí → Komisaři", Instant.now())));
+        if (!repo.existsByVersion("0.1.0"))
+          repo.save(new ChangeLogEntry("0.1.0", "Inicializace projektu – JWT auth, role ADMIN/JUDGE/RACER, přihlášky, výsledky", Instant.parse("2026-04-01T00:00:00Z")));
+        if (!repo.existsByVersion("0.2.0"))
+          repo.save(new ChangeLogEntry("0.2.0", "Username login, interaktivní mapa stanovišť, CRUD uživatelů, nastavení účtu, změna hesla, telefon", Instant.parse("2026-05-01T00:00:00Z")));
+        if (!repo.existsByVersion("0.3.0"))
+          repo.save(new ChangeLogEntry("0.3.0", "Datum vstupu do klubu (memberSince), info lišta s verzí, přejmenování Rozhodčí → Komisaři", Instant.parse("2026-05-15T00:00:00Z")));
+        if (!repo.existsByVersion("0.4.0"))
+          repo.save(new ChangeLogEntry("0.4.0", "Refresh token, rate limiting, ceny z API, Google SSO, incident management, variabilní přihlášky, opravy chyb a migrace", Instant.parse("2026-05-27T00:00:00Z")));
         log.info("Changelog seeded");
       } catch (Exception e) {
         log.error("seedChangeLog failed: {}", e.getMessage());

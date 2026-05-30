@@ -8,6 +8,40 @@ const name = ref(localStorage.getItem('admin_name') ?? '')
 const username = ref(localStorage.getItem('admin_username') ?? '')
 const impersonating = ref(localStorage.getItem('admin_impersonating') === 'true')
 
+let refreshPromise: Promise<boolean> | null = null
+
+function isTokenExpiring(t: string): boolean {
+  try {
+    const payload = JSON.parse(atob(t.split('.')[1]))
+    return payload.exp * 1000 < Date.now() + 60000
+  } catch {
+    return true
+  }
+}
+
+async function tryRefresh(): Promise<boolean> {
+  const rt = localStorage.getItem('admin_refresh_token')
+  if (!rt) return false
+  try {
+    const res = await fetch(`${apiBaseUrl}/api/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken: rt }),
+    })
+    if (!res.ok) return false
+    const data = await res.json()
+    localStorage.setItem('admin_token', data.accessToken)
+    return true
+  } catch {
+    return false
+  }
+}
+
+function syncTokenRef() {
+  const stored = localStorage.getItem('admin_token') ?? ''
+  if (token.value !== stored) token.value = stored
+}
+
 export function useAuth() {
   function saveTokens(accessToken: string, userRole: string, userName: string, userUsername?: string, rt?: string) {
     token.value = accessToken
@@ -44,7 +78,18 @@ export function useAuth() {
   }
 
   function authHeaders(): Record<string, string> {
-    return token.value ? { Authorization: `Bearer ${token.value}` } : {}
+    const t = localStorage.getItem('admin_token') ?? token.value
+    return t ? { Authorization: `Bearer ${t}` } : {}
+  }
+
+  async function ensureValidToken(): Promise<void> {
+    const t = localStorage.getItem('admin_token')
+    if (!t || !isTokenExpiring(t)) return
+    if (!refreshPromise) {
+      refreshPromise = tryRefresh().finally(() => { refreshPromise = null })
+    }
+    await refreshPromise
+    syncTokenRef()
   }
 
   function impersonateAs(newToken: string, newRole: string, newName: string, newUsername: string) {
@@ -110,5 +155,5 @@ export function useAuth() {
     return data
   }
 
-  return { token, role, roles, name, username, impersonating, logout, authHeaders, isAdmin, hasAdmin, hasJudge, hasRacer, isLoggedIn, loginRequest, googleLogin, saveTokens, impersonateAs, restoreFromImpersonation }
+  return { token, role, roles, name, username, impersonating, logout, authHeaders, ensureValidToken, isAdmin, hasAdmin, hasJudge, hasRacer, isLoggedIn, loginRequest, googleLogin, saveTokens, impersonateAs, restoreFromImpersonation }
 }

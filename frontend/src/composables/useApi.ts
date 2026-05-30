@@ -1,5 +1,6 @@
 import { ref, type Ref } from 'vue'
 import { ApiError, authFetch } from '@/api'
+import { showApiErrorToast } from '@/composables/useToast'
 
 export interface AsyncState<T> {
   data: Ref<T | null>
@@ -46,9 +47,17 @@ export async function safeFetch(url: string, options?: RequestInit): Promise<Res
   try {
     return await authFetch(url, options)
   } catch (e) {
-    throw new ApiError(
-      e instanceof TypeError ? 'Síťová chyba – zkontrolujte připojení' : 'Neočekávaná chyba',
-      0
-    )
+    const msg = e instanceof TypeError ? 'Síťová chyba – zkontrolujte připojení' : 'Neočekávaná chyba'
+    showApiErrorToast(msg)
+    throw new ApiError(msg, 0)
   }
+}
+
+function generateShortCode(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  let result = ''
+  for (let i = 0; i < 8; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return result
 }

@@ -6,7 +6,7 @@ import { fetchAdminTasks, createAdminTask, updateAdminTask, deleteAdminTask, typ
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 
 const router = useRouter()
-const { isAdmin, authHeaders } = useAuth()
+const { isAdmin, authHeaders, ensureValidToken } = useAuth()
 
 const tasks = ref<TaskData[]>([])
 const loading = ref(true)
@@ -27,6 +27,7 @@ async function load() {
   loading.value = true
   error.value = null
   try {
+    await ensureValidToken()
     tasks.value = await fetchAdminTasks(authHeaders())
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Chyba načítání'
@@ -53,6 +54,7 @@ function resetForm() {
 async function save() {
   error.value = null
   try {
+    await ensureValidToken()
     const h = authHeaders()
     if (editing.value) {
       await updateAdminTask(editing.value.id!, form.value, h)
@@ -69,6 +71,7 @@ async function save() {
 async function remove(id: number) {
   if (!confirm('Opravdu smazat tento úkol?')) return
   try {
+    await ensureValidToken()
     await deleteAdminTask(id, authHeaders())
     await load()
   } catch (e) {

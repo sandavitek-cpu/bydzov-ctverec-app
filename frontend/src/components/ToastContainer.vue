@@ -24,7 +24,10 @@ const iconMap: Record<string, string> = {
       <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="iconMap[t.type]" />
       </svg>
-      <span class="text-body-sm flex-1">{{ t.message }}</span>
+      <div class="flex-1 min-w-0">
+        <span class="text-body-sm block">{{ t.message }}</span>
+        <span v-if="t.errorCode" class="block text-xs font-mono mt-1 opacity-60 select-all">{{ t.errorCode }}</span>
+      </div>
       <button @click.stop="remove(t.id)" class="text-current opacity-40 hover:opacity-100 leading-none text-lg">&times;</button>
       <span
         class="absolute bottom-0 left-0 h-0.5 bg-current opacity-25 toast-progress"

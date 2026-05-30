@@ -2,6 +2,7 @@ package cz.previt.bydzovctverec.config;
 
 import cz.previt.bydzovctverec.domain.User;
 import cz.previt.bydzovctverec.domain.UserRepository;
+import java.util.ArrayList;
 import java.util.List;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -41,11 +42,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         chain.doFilter(request, response);
         return;
       }
-      var authorities = user.getAppRoles().isEmpty()
-          ? List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
-          : user.getAppRoles().stream()
-              .map(r -> new SimpleGrantedAuthority("ROLE_" + r.getName()))
-              .toList();
+      var authorities = new ArrayList<SimpleGrantedAuthority>();
+      authorities.add(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
+      user.getAppRoles().stream()
+          .map(r -> new SimpleGrantedAuthority("ROLE_" + r.getName()))
+          .forEach(authorities::add);
       var auth = new UsernamePasswordAuthenticationToken(user, null, authorities);
       SecurityContextHolder.getContext().setAuthentication(auth);
     } catch (Exception e) {
